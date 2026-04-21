@@ -9,7 +9,7 @@ How Claude conducts a clone-creation interview and consolidates the transcript i
 3. Category-specific deep dive (6–10 questions per chosen category — trim if many)
 4. Speaking-style elicitation (3–4 questions)
 5. Guardrails — always/never (2–3 questions)
-6. Consolidation into `~/.openclone/clones/<name>.md` (flat storage)
+6. Consolidation into `~/.openclone/clones/<name>/persona.md` (folder-per-clone layout)
 
 The user can stop at any time by saying "done", "끝", "저장해" or similar. Consolidate with whatever has been captured.
 
@@ -101,10 +101,10 @@ Pull **3–6** questions from the matching block. Prioritize depth over coverage
 
 ## Stage 6 — Consolidation
 
-When the user signals done (or after the last stage), write the clone file.
+When the user signals done (or after the last stage), write the clone folder.
 
-- Path: `~/.openclone/clones/<name>.md` (flat — no category subdirectories)
-- Ensure parent directory exists: `mkdir -p ~/.openclone/clones/`
+- Persona path: `~/.openclone/clones/<name>/persona.md`
+- Ensure the folder exists: `mkdir -p "$HOME/.openclone/clones/<name>/knowledge"`
 - Follow the schema in `clone-schema.md` exactly: frontmatter + Persona + Speaking style + Guidelines + Background.
 - **Frontmatter must include `categories: [...]`** with every category the user chose, and `primary_category` if they named one.
 - If the user picked **multiple categories** and the Stage 3 answers indicate distinct framing per role, include a `## Category-specific framing` section with one `### As a <category>` block per category. Each block: 2–4 bullets on emphasis/extra-always/extra-never that only apply in that category's context.
@@ -113,9 +113,10 @@ When the user signals done (or after the last stage), write the clone file.
 - Do not mention "interview", "AI", "clone" inside the clone body.
 - Match the language the user used throughout the interview.
 
-Also save the raw transcript as supplementary knowledge:
+Also save the raw transcript as the clone's first knowledge entry:
 
-- Path: `~/.openclone/knowledge/<name>/sources/interview-YYYY-MM-DD.md`
+- Path: `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-interview.md` (where `YYYY-MM-DD` is today)
+- Frontmatter: `topic: interview`, `source_type: interview`, `fetched: YYYY-MM-DD`
 - Format: simple `### Q:` / `A:` pairs in the user's language.
 
 After saving, confirm to the user in one line with the final file path, and suggest:

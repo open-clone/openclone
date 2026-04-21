@@ -11,6 +11,11 @@ voice_traits:                        # 3–5 short tone tags
   - evidence-first
 ---
 
+<!--
+Save this file as ~/.openclone/clones/<slug>/persona.md
+(Create the folder: mkdir -p ~/.openclone/clones/<slug>/knowledge)
+-->
+
 ## Persona
 
 REPLACE WITH 3–8 SENTENCES:

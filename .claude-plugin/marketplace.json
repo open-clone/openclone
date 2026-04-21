@@ -9,7 +9,7 @@
     {
       "name": "openclone",
       "description": "Create AI clones with categorized personas (vc, dev, founder, pm, designer, writer) and converse with them inside Claude Code. Activate a clone and every following message is answered in that clone's voice; call /openclone:<category> for multi-perspective panels.",
-      "source": "./plugins/openclone",
+      "source": ".",
       "category": "productivity",
       "keywords": ["persona", "clone", "agent", "multi-agent", "panel"]
     }
