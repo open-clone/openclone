@@ -1,12 +1,12 @@
 # Refine workflow
 
-How Claude turns raw ingested material (scraped URL, YouTube transcript, pasted text, document) into topic-organized markdown under `~/.openclone/knowledge/<category>/<name>/refined/`.
+How Claude turns raw ingested material (scraped URL, YouTube transcript, pasted text, document) into topic-organized markdown under `~/.openclone/knowledge/<name>/refined/`.
 
 Loaded by `/oc-ingest`.
 
 ## Goal
 
-Given a raw source file at `~/.openclone/knowledge/<category>/<name>/sources/<id>.md`, produce one or more refined files at `~/.openclone/knowledge/<category>/<name>/refined/` such that:
+Given a raw source file at `~/.openclone/knowledge/<name>/sources/<id>.md`, produce one or more refined files at `~/.openclone/knowledge/<name>/refined/` such that:
 
 - Each refined file covers **one topic or theme** the clone might be asked about.
 - Each file is self-contained enough to be read in isolation and still make sense.
@@ -20,7 +20,7 @@ Given a raw source file at `~/.openclone/knowledge/<category>/<name>/sources/<id
 
 3. **For each topic, produce a refined file:**
 
-   Path: `~/.openclone/knowledge/<category>/<name>/refined/<slug>.md`
+   Path: `~/.openclone/knowledge/<name>/refined/<slug>.md`
 
    Format:
    ```markdown
@@ -41,7 +41,7 @@ Given a raw source file at `~/.openclone/knowledge/<category>/<name>/sources/<id
    - Update `sources:` to include both source filenames
    - Update `updated:` to today
 
-5. **Update the clone's knowledge index.** In the clone file at `~/.openclone/clones/<category>/<name>.md`, ensure there is a `## Knowledge index` section. Rewrite it as:
+5. **Update the clone's knowledge index.** In the clone file at `~/.openclone/clones/<name>.md`, ensure there is a `## Knowledge index` section. Rewrite it as:
    ```markdown
    ## Knowledge index
 
@@ -64,4 +64,4 @@ Given a raw source file at `~/.openclone/knowledge/<category>/<name>/sources/<id
 
 If the raw source is already short (<1000 chars) and single-topic, skip steps 2–3 and just produce one refined file covering it.
 
-If the raw source is clearly off-topic relative to the clone's category and persona, save it to `sources/` but note in chat that refinement was skipped because the content doesn't match the clone's scope. Do not auto-fabricate relevance.
+If the raw source is clearly off-topic relative to the clone's categories and persona, save it to `sources/` but note in chat that refinement was skipped because the content doesn't match the clone's scope. Do not auto-fabricate relevance.

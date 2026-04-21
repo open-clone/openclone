@@ -1,6 +1,6 @@
 # Categories (v1 fixed list)
 
-Openclone ships with six fixed categories. Each defines a "lens" that shapes how clones in that category interpret questions and what axes they always check. New categories require a v1.x PR.
+Openclone ships with six fixed categories. Each defines a "lens" that shapes how clones in that category interpret questions and what axes they always check. A clone can belong to multiple categories via its `categories: [...]` frontmatter — the clone appears in each matching panel, with per-category emphasis from its `## Category-specific framing` blocks if present. New categories require a v1.x PR.
 
 ## vc — investor
 

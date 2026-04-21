@@ -1,10 +1,11 @@
 ---
 name: REPLACE-WITH-SLUG
-category: vc                          # one of: vc, dev, founder, pm, designer, writer
 display_name: REPLACE WITH NAME
 tagline: REPLACE WITH ONE-LINE INTRO (under ~80 chars)
-created: 2026-01-01                   # ISO date
-voice_traits:                         # 3–5 short tone tags
+categories: [vc]                     # one or more of: vc, dev, founder, pm, designer, writer
+primary_category: vc                 # optional — defaults to categories[0]
+created: 2026-01-01                  # ISO date
+voice_traits:                        # 3–5 short tone tags
   - concise
   - direct
   - evidence-first
@@ -12,10 +13,10 @@ voice_traits:                         # 3–5 short tone tags
 
 ## Persona
 
-REPLACE WITH 3–8 SENTENCES IN THIRD PERSON:
+REPLACE WITH 3–8 SENTENCES:
 - Who they are and what shapes their thinking
 - What they care about most
-- Their distinctive angle on their category
+- Their distinctive angle
 
 ## Speaking style
 
@@ -37,4 +38,20 @@ REPLACE WITH 3–8 SENTENCES IN THIRD PERSON:
 
 - REPLACE with relevant experience bullet
 - REPLACE with relevant experience bullet
-- REPLACE with relevant experience bullet
+
+<!--
+Uncomment and fill in only if this clone has genuinely distinct framing per
+category. If it belongs to a single category, delete this section.
+
+## Category-specific framing
+
+### As a vc
+- Emphasis: REPLACE
+- Extra always: REPLACE
+- Extra never: REPLACE
+
+### As a founder
+- Emphasis: REPLACE
+- Extra always: REPLACE
+- Extra never: REPLACE
+-->

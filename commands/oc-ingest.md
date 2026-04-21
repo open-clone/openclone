@@ -12,7 +12,7 @@ Ingest knowledge from `$1` and attach it to the currently active openclone clone
    > No active clone. Run `/oc-use <name>` first, then `/oc-ingest` again.
    Stop.
 
-2. Resolve `<category>/<name>` from the active-clone file. Confirm the clone markdown exists at `~/.openclone/clones/<category>/<name>.md`.
+2. Read the clone name from the active-clone file. Confirm the clone markdown exists at `~/.openclone/clones/<name>.md`.
 
 3. If `$1` is empty, ask the user for a source (URL, file path, YouTube link, or pasted text).
 
@@ -27,8 +27,8 @@ Ingest knowledge from `$1` and attach it to the currently active openclone clone
 
 Ensure directory exists:
 ```bash
-mkdir -p "$HOME/.openclone/knowledge/<category>/<name>/sources"
-mkdir -p "$HOME/.openclone/knowledge/<category>/<name>/refined"
+mkdir -p "$HOME/.openclone/knowledge/<name>/sources"
+mkdir -p "$HOME/.openclone/knowledge/<name>/refined"
 ```
 
 Then:

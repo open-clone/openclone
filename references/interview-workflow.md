@@ -4,12 +4,12 @@ How Claude conducts a clone-creation interview and consolidates the transcript i
 
 ## Overall shape
 
-1. Category selection (required)
+1. Category selection (at least one required; multiple allowed)
 2. Core identity block (5–7 questions)
-3. Category-specific deep dive (6–10 questions)
+3. Category-specific deep dive (6–10 questions per chosen category — trim if many)
 4. Speaking-style elicitation (3–4 questions)
 5. Guardrails — always/never (2–3 questions)
-6. Consolidation into `~/.openclone/clones/<category>/<name>.md`
+6. Consolidation into `~/.openclone/clones/<name>.md` (flat storage)
 
 The user can stop at any time by saying "done", "끝", "저장해" or similar. Consolidate with whatever has been captured.
 
@@ -24,11 +24,13 @@ The user can stop at any time by saying "done", "끝", "저장해" or similar. C
 
 ## Stage 1 — Category selection
 
-If the user did not supply a category (either in the command or in chat), ask:
+If the user did not supply categories (either in the command or in chat), ask:
 
-> 어떤 카테고리의 클론인가요? 다음 중 하나를 골라주세요: **vc**, **dev**, **founder**, **pm**, **designer**, **writer**
+> 어떤 카테고리인가요? 다음 중 **하나 이상** 골라주세요 — 둘 이상 맡는 사람이면 복수 선택 OK: **vc**, **dev**, **founder**, **pm**, **designer**, **writer**
 
-Do not proceed until the user picks a value from this list.
+Do not proceed until the user names at least one value from this list. If they pick more than one, also ask which is the **primary** category (default lens for `/oc-use`). Parse inputs like `vc`, `vc, founder`, `founder+vc` etc.
+
+If the chosen categories are genuinely distinct roles the same person plays (e.g. founder + vc), Stage 3 should cover each category briefly — do not interview for every category at full depth; prioritize the primary one plus 2–3 key questions per additional category.
 
 ## Stage 2 — Core identity (always run, any category)
 
@@ -101,9 +103,11 @@ Pull **3–6** questions from the matching block. Prioritize depth over coverage
 
 When the user signals done (or after the last stage), write the clone file.
 
-- Path: `~/.openclone/clones/<category>/<name>.md`
-- Ensure parent directory exists: `mkdir -p ~/.openclone/clones/<category>/`
+- Path: `~/.openclone/clones/<name>.md` (flat — no category subdirectories)
+- Ensure parent directory exists: `mkdir -p ~/.openclone/clones/`
 - Follow the schema in `clone-schema.md` exactly: frontmatter + Persona + Speaking style + Guidelines + Background.
+- **Frontmatter must include `categories: [...]`** with every category the user chose, and `primary_category` if they named one.
+- If the user picked **multiple categories** and the Stage 3 answers indicate distinct framing per role, include a `## Category-specific framing` section with one `### As a <category>` block per category. Each block: 2–4 bullets on emphasis/extra-always/extra-never that only apply in that category's context.
 - Summarize the user's answers into prose; do NOT copy raw Q&A. Extract facts and rephrase in third person for Persona/Background, in imperative bullets for Speaking style/Guidelines.
 - Preserve concrete facts: names, numbers, dates, specific anecdotes.
 - Do not mention "interview", "AI", "clone" inside the clone body.
@@ -111,7 +115,7 @@ When the user signals done (or after the last stage), write the clone file.
 
 Also save the raw transcript as supplementary knowledge:
 
-- Path: `~/.openclone/knowledge/<category>/<name>/sources/interview-YYYY-MM-DD.md`
+- Path: `~/.openclone/knowledge/<name>/sources/interview-YYYY-MM-DD.md`
 - Format: simple `### Q:` / `A:` pairs in the user's language.
 
 After saving, confirm to the user in one line with the final file path, and suggest:

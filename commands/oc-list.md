@@ -1,31 +1,28 @@
 ---
-description: List all openclone clones grouped by category, marking the active one
+description: List all openclone clones with their categories, marking the active one
 allowed-tools: Bash, Read
 ---
 
-List every openclone clone the user has defined, grouped by category, with the active clone marked.
+List every openclone clone the user has defined, showing each clone's categories as tags, with the active clone marked.
 
 Steps:
 
-1. If `~/.openclone/clones/` does not exist or is empty, tell the user they have no clones yet and suggest `/oc-new <name>`. Stop.
+1. If `~/.openclone/clones/` does not exist or has no `.md` files, tell the user they have no clones yet and suggest `/oc-new <name>`. Stop.
 
-2. Read the active clone reference from `~/.openclone/active-clone` (may not exist).
+2. Read the active clone name from `~/.openclone/active-clone` (may not exist).
 
-3. For each category directory under `~/.openclone/clones/`, list each `.md` file. For each clone, read the frontmatter to extract `display_name` and `tagline`.
+3. For each `.md` file directly under `~/.openclone/clones/` (no recursion — storage is flat), read the frontmatter to extract `display_name`, `tagline`, `categories`, `primary_category`.
 
-4. Render a compact table grouped by category:
+4. Render a compact list, one line per clone:
 
    ```
-   ## vc
-   - hayun       Hayun Kim — Seed-stage investor, AI infra       [active]
-   - jane        Jane Park — Series A, consumer
-
-   ## dev
-   - mk          Min-Kyu — Backend, distributed systems
+   - douglas       권도균 — 프라이머 대표                 [founder*, vc]   [active]
+   - mk            Min-Kyu — Backend, distributed systems  [dev*]
    ```
 
-   - Mark the active clone with `[active]` at end of line.
-   - Keep it to one line per clone.
+   - Format: `- <name>   <display_name> — <tagline>   [<categories with primary marked by *>]   [active]?`
+   - Primary category in the categories bracket is marked with a trailing `*`.
+   - The `[active]` tag only appears for the currently active clone.
    - If no tagline, show just the display_name.
 
 5. At the end, print a one-line hint:
