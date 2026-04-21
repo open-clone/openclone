@@ -17,7 +17,7 @@ This repository is both the plugin **and** a self-hosted marketplace. In Claude 
 
 ```
 /plugin marketplace add taurin-inc/openclone
-/plugin install openclone@openclone
+/plugin install openclone
 ```
 
 If the repo is private, make sure you've authenticated `gh` (`gh auth status`) so Claude Code can clone it.
@@ -26,7 +26,7 @@ For local development (no GitHub round-trip):
 
 ```
 /plugin marketplace add /absolute/path/to/openclone
-/plugin install openclone@openclone
+/plugin install openclone
 ```
 
 After install, restart Claude Code once. The `/oc-*` commands should autocomplete.
