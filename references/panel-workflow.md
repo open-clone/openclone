@@ -1,6 +1,6 @@
 # Category panel workflow
 
-How a `/openclone:<category>` command broadcasts a question to every clone that belongs to that category (via its `categories` frontmatter list) and returns side-by-side perspectives.
+How `/openclone panel <category> "<question>"` broadcasts a question to every clone that belongs to that category (via its `categories` frontmatter list) and returns side-by-side perspectives.
 
 ## Inputs
 
@@ -9,7 +9,7 @@ How a `/openclone:<category>` command broadcasts a question to every clone that 
 
 ## Steps
 
-1. **Validate.** If `$ARGUMENTS` is empty, tell the user the usage is `/openclone:<category> "질문"` and stop.
+1. **Validate.** If `$ARGUMENTS` is empty, tell the user the usage is `/openclone panel <category> "질문"` and stop.
 
 2. **Locate clones.** Each clone is a folder containing a `persona.md`. Collect clone folders from BOTH:
    - `~/.openclone/clones/<name>/persona.md` (user clones)
@@ -18,7 +18,7 @@ How a `/openclone:<category>` command broadcasts a question to every clone that 
    If the same `<name>` folder exists in both roots, the user clone wins and the built-in is skipped.
 
    Parse each `persona.md` frontmatter and **select only those whose `categories` list contains `<category>`**. If the resulting set is empty, tell the user:
-   > No clones in category `<category>` yet. Create one with `/openclone:new <name>` and include `<category>`.
+   > No clones in category `<category>` yet. Create one with `/openclone new <name>` and include `<category>`.
    Stop.
 
 3. **Load clone bodies.** For each selected clone, extract from `persona.md` frontmatter: `name`, `display_name`, `tagline`, `voice_traits`, `categories`. Keep the full body in memory.
@@ -28,7 +28,7 @@ How a `/openclone:<category>` command broadcasts a question to every clone that 
    - If the clone has a `## Category-specific framing` section with a `### As a <category>` block matching the current category, **apply that block's emphasis and extra guardrails** in addition to the universal ones.
    - Apply the "Always checks" axes from `categories.md` for this category — the clone should touch at least 2–3 of them when relevant, without robotically listing them all.
    - Keep each perspective to 3–8 sentences. Concise is better than comprehensive.
-   - If the clone has knowledge files under EITHER `~/.openclone/clones/<name>/knowledge/` (user) OR `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (built-in — note: lazy-fetched, so may not exist if the clone was never activated via `/openclone:use`) that match the topic of the question, skim them and let the content inform the response. Knowledge files are named `YYYY-MM-DD-<topic>.md` — weight newer dates more heavily when several entries touch the same subject; older entries remain valid background. When both locations contain files on the same topic, prefer the user-ingested version. Do not dump or quote.
+   - If the clone has knowledge files under EITHER `~/.openclone/clones/<name>/knowledge/` (user) OR `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (built-in — note: lazy-fetched, so may not exist if the clone was never activated via `/openclone <name>`) that match the topic of the question, skim them and let the content inform the response. Knowledge files are named `YYYY-MM-DD-<topic>.md` — weight newer dates more heavily when several entries touch the same subject; older entries remain valid background. When both locations contain files on the same topic, prefer the user-ingested version. Do not dump or quote.
 
 5. **Format output.**
 

@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # UserPromptSubmit hook for openclone.
 #
-# Reads ~/.openclone/active-clone (format: "<name>") and injects the matching
-# clone's persona as additional context so Claude responds as that clone for
-# the upcoming user message. The clone's primary_category framing (if any) is
-# applied as the default lens.
+# Two modes are supported; the first one that applies wins:
+#   1. Room mode — if ~/.openclone/room exists and is non-empty, every listed
+#      clone persona is injected along with routing rules so Claude picks the
+#      1 (or occasionally 2) best-fit clone(s) to respond as. Room mode
+#      overrides active-clone entirely.
+#   2. Active-clone mode — if ~/.openclone/active-clone resolves to a persona,
+#      that clone is embodied for the upcoming turn with its primary_category
+#      framing as the default lens.
 #
 # Clone layout (both built-in and user share the same structure):
 #   <root>/clones/<name>/persona.md
@@ -19,10 +23,10 @@
 #   2. ${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md (built-in / shipped clone)
 #
 # Knowledge: Claude is told to read from BOTH the user and built-in knowledge
-# directories for the active clone; user-ingested notes layer on top.
+# directories for every active/room clone; user-ingested notes layer on top.
 #
 # Output: JSON on stdout (additionalContext), always exit 0.
-# If no active clone is set, emits empty JSON object — no effect on conversation.
+# If neither mode has something to inject, emits empty JSON — no effect.
 # Errors (missing file, bad reference) also emit empty JSON to avoid derailing.
 
 set -u
@@ -72,31 +76,102 @@ emit_empty() {
   emit_json "$force_push_banner"
 }
 
+# Resolve plugin root. Prefer the env var Claude Code sets for plugin hooks;
+# fall back to deriving it from this script's own location.
+plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Returns 0 if the given clone name resolves to a persona.md (user or built-in);
+# on success prints "<origin>\t<persona_path>\t<user_knowledge_dir>\t<builtin_knowledge_dir>".
+resolve_clone() {
+  local name="$1"
+  local user_dir="$HOME/.openclone/clones/${name}"
+  local builtin_dir="${plugin_root}/clones/${name}"
+  if [ -f "${user_dir}/persona.md" ]; then
+    printf 'user\t%s\t%s\t%s\n' "${user_dir}/persona.md" "${user_dir}/knowledge" "${builtin_dir}/knowledge"
+    return 0
+  fi
+  if [ -f "${builtin_dir}/persona.md" ]; then
+    printf 'built-in\t%s\t%s\t%s\n' "${builtin_dir}/persona.md" "${user_dir}/knowledge" "${builtin_dir}/knowledge"
+    return 0
+  fi
+  return 1
+}
+
+# --- Room mode: takes precedence over active-clone ---
+room_file="$HOME/.openclone/room"
+if [ -f "$room_file" ] && [ -s "$room_file" ]; then
+  room_members=""
+  while IFS= read -r raw_name || [ -n "$raw_name" ]; do
+    member=$(printf '%s' "$raw_name" | tr -d '[:space:]')
+    [ -n "$member" ] || continue
+    if info=$(resolve_clone "$member"); then
+      origin=$(printf '%s' "$info" | cut -f1)
+      persona_path=$(printf '%s' "$info" | cut -f2)
+      user_kn=$(printf '%s' "$info" | cut -f3)
+      builtin_kn=$(printf '%s' "$info" | cut -f4)
+      room_members+=$'\n--- member: '"$member"$' (origin: '"$origin"$') ---\n'
+      room_members+="knowledge directories (read on demand, user wins on collision):"$'\n'
+      room_members+="  - ${user_kn}"$'\n'
+      room_members+="  - ${builtin_kn}"$'\n\n'
+      room_members+=$(cat "$persona_path")
+      room_members+=$'\n'
+    fi
+  done < "$room_file"
+
+  if [ -n "$room_members" ]; then
+    room_context=$(cat <<EOF
+<openclone-room>
+You are moderating a group chat among the openclone clones listed below. For the upcoming user message, answer AS one — or at most two — of them. Room mode overrides any active clone setting; ignore ~/.openclone/active-clone while this block is in effect.
+
+Routing rules:
+  - Default: exactly ONE clone answers. Pick the member whose categories / expertise best fit the topic of the message.
+  - Maximum TWO clones answer, and only when two have clearly distinct angles that both deserve voice (e.g. an operator take plus an investor take on the same pitch). Never three or more.
+  - Never zero. If nothing seems like a great fit, still pick the closest member rather than answering as plain Claude.
+  - No rotation memory. Do not track who spoke last — judge every turn on its merits. If the same clone fits three questions in a row, they answer three times.
+  - If the message is clearly a system task (file edit, code change, build, shell command), carry it out correctly using your normal tools, but narrate briefly in the voice of the most task-appropriate clone.
+
+Format each speaking clone like this:
+
+  ## <display_name> — _<tagline>_
+
+  <answer, 3-6 sentences by default, applying that clone's universal Persona + Speaking style + Guidelines plus its "### As a <primary_category>" block when one exists>
+
+When two clones speak, separate them with a line containing only "---". Put the more category-appropriate clone first. Do not prefix with greetings or meta commentary. No emojis. Match the language of the user's message (Korean in, Korean out; English in, English out).
+
+Knowledge rules (apply per member as they speak):
+  - Knowledge files live at the two directories listed beside each member below. Files are named YYYY-MM-DD-<topic>.md.
+  - Weight newer dates more heavily; older files remain valid background. When user-ingested and built-in files cover the same topic, prefer the user-ingested version.
+  - Use Read on specific files when relevant. Do not dump, quote verbatim, or announce the directories to the user.
+
+If the user asks for facts that require current information you do not have (recent events, specific companies or numbers), use WebSearch or WebFetch first, then answer in the chosen clone's voice. Do not fabricate facts to stay in character; if even a search fails, admit the gap in that clone's tone.
+
+Never invent a clone that is not in the list below.
+
+--- room members ---${room_members}
+--- end room members ---
+</openclone-room>
+EOF
+)
+    emit_json "${force_push_banner}${room_context}"
+  fi
+  # If no members resolved, fall through to active-clone handling below.
+fi
+
+# --- Active-clone mode ---
 active_file="$HOME/.openclone/active-clone"
 [ -f "$active_file" ] || emit_empty
 
 clone_name=$(tr -d '[:space:]' < "$active_file" 2>/dev/null || true)
 [ -n "$clone_name" ] || emit_empty
 
-# Resolve plugin root. Prefer the env var Claude Code sets for plugin hooks;
-# fall back to deriving it from this script's own location.
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-
-user_clone_dir="$HOME/.openclone/clones/${clone_name}"
-builtin_clone_dir="${plugin_root}/clones/${clone_name}"
-
-if [ -f "${user_clone_dir}/persona.md" ]; then
-  persona_md="${user_clone_dir}/persona.md"
-  clone_origin="user"
-elif [ -f "${builtin_clone_dir}/persona.md" ]; then
-  persona_md="${builtin_clone_dir}/persona.md"
-  clone_origin="built-in"
+if info=$(resolve_clone "$clone_name"); then
+  clone_origin=$(printf '%s' "$info" | cut -f1)
+  persona_md=$(printf '%s' "$info" | cut -f2)
+  user_knowledge_dir=$(printf '%s' "$info" | cut -f3)
+  builtin_knowledge_dir=$(printf '%s' "$info" | cut -f4)
 else
   emit_empty
 fi
-
-user_knowledge_dir="${user_clone_dir}/knowledge"
-builtin_knowledge_dir="${builtin_clone_dir}/knowledge"
 
 # Build the additionalContext payload.
 context=$(cat <<EOF

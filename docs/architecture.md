@@ -48,28 +48,44 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 | 목적 | 내장 (read-only, 배포) | 사용자 (writable) |
 | --- | --- | --- |
 | 페르소나 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` | `~/.openclone/clones/<name>/persona.md` |
-| 지식 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (sparse-excluded; `/openclone:use` 시 fetch) | `~/.openclone/clones/<name>/knowledge/` |
+| 지식 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (sparse-excluded; `/openclone <name>` 시 fetch) | `~/.openclone/clones/<name>/knowledge/` |
 | 활성 포인터 | — | `~/.openclone/active-clone` (텍스트 파일, 내용은 클론 이름 한 줄) |
+| Room 로스터 | — | `~/.openclone/room` (한 줄에 클론 한 명. 존재하고 비어있지 않으면 room 모드 — 훅이 active-clone보다 우선) |
+| 홈 패널 메뉴 컨텍스트 | — | `~/.openclone/menu-context` (마지막 홈 패널의 번호→이름 JSON, `/openclone <N>` 해석용) |
 
 원칙:
 
-- **이름 충돌 시 사용자가 이긴다.** 같은 `<name>`이 양쪽에 있으면 사용자 버전이 내장 버전을 완전히 가립니다(`/openclone:list`·`/openclone:use`·패널 모두).
-- **내장 클론은 절대 수정하지 않는다.** `${CLAUDE_PLUGIN_ROOT}/` 아래 어떤 파일도 런타임에 변경되지 않습니다. 사용자가 내장 클론에 지식을 주입하면 `/openclone:ingest`가 먼저 **폴더 전체를 `~/.openclone/clones/`로 복사**(fork-on-write)한 다음, 새 복사본에만 씁니다.
+- **이름 충돌 시 사용자가 이긴다.** 같은 `<name>`이 양쪽에 있으면 사용자 버전이 내장 버전을 완전히 가립니다(홈 패널·활성화·패널 모두).
+- **내장 클론은 절대 수정하지 않는다.** `${CLAUDE_PLUGIN_ROOT}/` 아래 어떤 파일도 런타임에 변경되지 않습니다. 사용자가 내장 클론에 지식을 주입하면 `/openclone ingest`가 먼저 **폴더 전체를 `~/.openclone/clones/`로 복사**(fork-on-write)한 다음, 새 복사본에만 씁니다.
 - **지식은 append-only.** 파일 이름은 `YYYY-MM-DD-<topic>.md` 형식. 같은 토픽이 반복되어도 덮어쓰지 않고 새 날짜 파일이 추가됩니다. 훅은 Claude에게 "최신 파일을 더 무겁게, 오래된 파일도 배경 맥락으로 유효"하다고 지시합니다.
 
 ## 훅 생명주기 상세
 
-`hooks/inject-active-clone.sh`는 다음 단계를 지납니다(`hooks/hooks.json`에 `UserPromptSubmit`으로 등록됨).
+`hooks/inject-active-clone.sh`는 다음 단계를 지납니다(`hooks/hooks.json`에 `UserPromptSubmit`으로 등록됨). **두 모드**가 있으며 먼저 맞는 쪽이 이깁니다: room > active-clone.
 
-1. `~/.openclone/active-clone` 파일이 없거나 비어 있으면 → `{}` 출력 후 종료.
-2. 파일이 있으면 클론 이름을 읽고 공백을 제거.
-3. `CLAUDE_PLUGIN_ROOT` 환경변수(Claude Code가 플러그인 훅 실행 시 주입)로 플러그인 루트 결정. 없으면 스크립트 위치에서 역추적.
-4. 사용자 클론(`~/.openclone/clones/<name>/persona.md`)을 먼저 확인. 있으면 `clone_origin=user`, 없으면 내장(`${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md`)으로 폴백해 `clone_origin=built-in`.
-5. `persona.md` 내용 + 최신성·카테고리 프레이밍·Web 조회 지침 등을 heredoc으로 조합.
-6. JSON 문자열 이스케이프 — `python3`이 있으면 `json.dumps`, 없으면 `sed`/`awk` 폴백(macOS는 python3 경로 사용).
-7. `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}` 형태로 stdout에 방출.
+공통 전처리
 
-파일 [hooks/inject-active-clone.sh](../hooks/inject-active-clone.sh)의 주석과 [references/clone-schema.md](../references/clone-schema.md)의 "Injection format" 섹션이 공식 사양입니다.
+1. `CLAUDE_PLUGIN_ROOT` 환경변수(Claude Code가 플러그인 훅 실행 시 주입)로 플러그인 루트 결정. 없으면 스크립트 위치에서 역추적.
+2. `force-push-detected` 배너 유무 확인(모든 경로에서 포함).
+
+Room 분기
+
+1. `~/.openclone/room`이 존재하고 비어 있지 않으면 각 줄을 클론 이름으로 읽어 `resolve_clone`에 넘겨 persona 경로 + 양쪽 knowledge 디렉터리를 확보. 존재하지 않는 이름은 조용히 skip.
+2. 유효한 멤버가 최소 1명이면 `<openclone-room>` 블록으로 방출 — 라우팅 규칙(기본 1명·최대 2명·절대 0명 아님), 포맷 규칙, 각 멤버의 persona 전문을 heredoc으로 조합해 JSON 이스케이프 후 출력하고 종료.
+3. 멤버가 전부 깨졌으면 active-clone 분기로 fall-through.
+
+Active-clone 분기
+
+1. `~/.openclone/active-clone` 파일이 없거나 비어 있으면 → `{}`만 출력 후 종료.
+2. 이름을 읽어 `resolve_clone`으로 user(우선) → built-in 순으로 persona 경로 확보. 둘 다 없으면 빈 JSON.
+3. `persona.md` 내용 + 최신성·카테고리 프레이밍·Web 조회 지침을 heredoc으로 조합.
+
+공통 후처리
+
+1. JSON 문자열 이스케이프 — `python3`이 있으면 `json.dumps`, 없으면 `sed`/`awk` 폴백(macOS는 python3 경로 사용).
+2. `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}` 형태로 stdout에 방출.
+
+파일 [hooks/inject-active-clone.sh](../hooks/inject-active-clone.sh)의 주석, [references/clone-schema.md](../references/clone-schema.md)의 "Injection format" 섹션, [references/room-workflow.md](../references/room-workflow.md)의 "Runtime routing" 섹션이 공식 사양입니다.
 
 ### 훅 편집 시 주의
 
@@ -79,25 +95,22 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 
 ## 슬래시 커맨드 구조
 
-각 `commands/<name>.md`는 프론트매터 + 프롬프트 본문으로 구성된 마크다운 파일입니다.
+v1.0부터 슬래시 커맨드는 **단 하나**입니다 — `commands/openclone.md`. 프론트매터(`description`·`allowed-tools`·`argument-hint`) + 프롬프트 본문으로 구성되며, 본문이 `$ARGUMENTS`의 첫 토큰을 읽어 서브액션으로 분기합니다.
 
-```markdown
----
-description: 사용자에게 보이는 한 줄 설명
-allowed-tools: Bash, Read
-argument-hint: "<required-arg>"    # 인자를 받는 커맨드에만
----
-
-Claude가 실행할 프롬프트 본문.
-여기에 `Load ${CLAUDE_PLUGIN_ROOT}/references/<name>.md` 같은 lazy-load 지시가 들어갑니다.
+```text
+$1 값                   → 동작                    → 로드할 레퍼런스
+───────────────────────────────────────────────────────────────────
+(없음)                  → 홈 패널                 → references/home-workflow.md
+<N> (숫자)              → 메뉴 선택(활성화)        → menu-context 해석
+stop                    → 활성 클론 + room 정리   → 인라인
+new [<name>]            → 클론 생성 인터뷰        → references/interview-workflow.md
+ingest <source>         → 지식 ingest             → references/refine-workflow.md
+room <a> [<b>...]       → 단체 대화방 설정         → references/room-workflow.md
+panel <category> "<q>"  → 카테고리 패널            → references/panel-workflow.md
+<clone-name>            → 해당 클론 활성화         → 인라인 (fetch-clone-knowledge.sh)
 ```
 
-커맨드는 크게 두 부류:
-
-- **액션 커맨드** — `new`, `use`, `list`, `ingest`, `stop`. 각자 고유한 본문 로직.
-- **패널 커맨드** — `vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`. **얇은 스텁**입니다. 본문은 각 카테고리 코드를 고정하고 `references/panel-workflow.md`에 위임합니다.
-
-패널 로직을 바꾸고 싶다면 패널 커맨드를 일일이 건드리지 말고, [references/panel-workflow.md](../references/panel-workflow.md) 한 파일만 수정하세요.
+새 서브액션을 추가하고 싶다면 `commands/openclone.md`의 분기 표를 확장하고, 로직은 새 `references/<name>-workflow.md`에 두세요. 별도의 `commands/*.md` 파일은 추가하지 않습니다 — 사용자가 기억해야 하는 엔트리는 `/openclone` 하나뿐이어야 합니다.
 
 ## 레퍼런스 lazy-load 패턴
 
@@ -112,18 +125,22 @@ Claude가 실행할 프롬프트 본문.
 | --- | --- |
 | [clone-schema.md](../references/clone-schema.md) | `persona.md` 프론트매터·본문 섹션·`knowledge/` 파일명 규약의 **진실 공급원** |
 | [categories.md](../references/categories.md) | v1 고정 8개 카테고리 정의와 각 카테고리의 렌즈 |
-| [interview-workflow.md](../references/interview-workflow.md) | `/openclone:new`의 인터뷰 진행 방식 |
-| [panel-workflow.md](../references/panel-workflow.md) | `/openclone:<category>` 패널 커맨드의 공통 절차(이모지 금지 규칙 포함) |
-| [refine-workflow.md](../references/refine-workflow.md) | `/openclone:ingest`의 정제·저장 규약(append-only, 날짜 파일명) |
+| [home-workflow.md](../references/home-workflow.md) | `/openclone`(인자 없음) 시 홈 패널을 렌더링하고 `menu-context`를 기록하는 절차 |
+| [interview-workflow.md](../references/interview-workflow.md) | `/openclone new`의 인터뷰 진행 방식 |
+| [panel-workflow.md](../references/panel-workflow.md) | `/openclone panel <category>`의 공통 절차(이모지 금지 규칙 포함) |
+| [refine-workflow.md](../references/refine-workflow.md) | `/openclone ingest`의 정제·저장 규약(append-only, 날짜 파일명) |
+| [room-workflow.md](../references/room-workflow.md) | `/openclone room` 로스터 관리 + 훅이 주입할 그룹챗 라우팅 규칙 |
 
 ## 새 기능 추가 워크스루
 
-### 새 슬래시 커맨드 추가
+### 새 서브액션 추가 (디스패처 확장)
 
-1. `commands/<name>.md` 생성. 최소 프론트매터: `description`, `allowed-tools`. 인자를 받으면 `argument-hint`도 추가.
-2. 본문에 프롬프트 작성. 규약이 복잡하면 별도 `references/<name>.md`에 빼고 `Load ...`로 끌어쓰기.
-3. 자연어로도 부를 수 있게 하려면 [skills/openclone/SKILL.md](../skills/openclone/SKILL.md)의 트리거 설명에 추가.
-4. [commands/list.md](../commands/list.md)가 frontmatter 스타일의 좋은 참고 샘플입니다.
+v1.0 이후 새 동작은 전부 `/openclone <sub>`의 새 분기로 들어갑니다. 독립 커맨드 파일을 만들지 마세요.
+
+1. 로직을 새 `references/<name>-workflow.md`에 작성. `$ARGUMENTS` 해석·에러 메시지·출력 포맷까지 포함해 완결형으로.
+2. `commands/openclone.md` 상단의 분기 표에 한 줄 추가 → 본문에 `## <name>` 섹션 추가해 "$2 이후를 `<name>-workflow.md`로 넘겨라" 정도만 지시.
+3. 자연어로도 부를 수 있게 [skills/openclone/SKILL.md](../skills/openclone/SKILL.md) 매핑 표에 한 줄 추가.
+4. 상태 파일을 쓰는 서브액션이라면 `~/.openclone/` 아래 파일명을 결정하고, 훅이 읽어야 하면 `hooks/inject-active-clone.sh`의 분기 순서(room > active-clone)에 편입.
 
 ### 새 내장 클론 추가
 
@@ -131,20 +148,21 @@ Claude가 실행할 프롬프트 본문.
    - 필수 키: `name`, `display_name`, `tagline`, `categories`, `created`, `voice_traits`
    - 선택: `primary_category`(지정 시 `categories`에 포함돼야 함)
 2. 본문 섹션 순서: `## Persona` → `## Speaking style` → `## Guidelines` → `## Background`. 필요 시 `## Category-specific framing` 추가.
-3. 내장 지식을 함께 싣는다면 `clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` 형식으로 작성. 이 `knowledge/` 서브폴더는 install 시 sparse-excluded(`!/clones/*/knowledge/`)이고 `/openclone:use <name>` 최초 호출에만 fetch되므로 용량이 커도 install 무게에 영향 없습니다.
+3. 내장 지식을 함께 싣는다면 `clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` 형식으로 작성. 이 `knowledge/` 서브폴더는 install 시 sparse-excluded(`!/clones/*/knowledge/`)이고 `/openclone <name>` 최초 호출에만 fetch되므로 용량이 커도 install 무게에 영향 없습니다.
 4. 프론트매터에 `created` 날짜를 ISO 형식으로 기입.
 5. **import 푸터, "Knowledge index" 섹션 같은 후기를 본문에 넣지 않습니다.** 순수 페르소나 정의만.
 6. CI의 `.github/scripts/validate-clones.ts`가 위 규칙을 자동 검사합니다 — 커밋 전에 로컬에서 돌려보면 안전합니다.
 
 ### 새 카테고리 추가 (v1은 고정 8개)
 
-네 곳을 **동시에** 고쳐야 합니다. 반만 반영되면 패널·리스트·스킬이 어긋납니다.
+디스패처는 카테고리 토큰을 그대로 `panel-workflow.md`에 넘기므로 `commands/` 변경이 필요 없습니다. 대신 다섯 곳을 **동시에** 고쳐야 패널·홈·인터뷰·스킬·README가 일관됩니다.
 
-1. `commands/<cat>.md` 신규 생성 — 기존 `commands/vc.md`를 복사해 카테고리 코드만 교체.
-2. `references/categories.md` — 새 렌즈 정의 추가.
-3. `skills/openclone/SKILL.md` — 자연어로도 트리거되도록 설명 추가.
-4. `README.md` — 카테고리 표 갱신.
-5. `.github/scripts/validate-clones.ts`의 `FIXED_CATEGORIES` Set에 새 값 추가.
+1. `references/categories.md` — 새 렌즈 정의 추가.
+2. `references/home-workflow.md` — 섹션 순서 목록에 새 카테고리 추가.
+3. `references/interview-workflow.md` — Stage 1 안내문과 Stage 3 카테고리별 질문 블록 추가.
+4. `skills/openclone/SKILL.md` — 자연어 트리거 추가.
+5. `README.md` — 카테고리 표 갱신.
+6. `.github/scripts/validate-clones.ts`의 `FIXED_CATEGORIES` Set에 새 값 추가.
 
 ## 주요 불변 원칙 (코드 인용)
 
@@ -164,7 +182,7 @@ else
 fi
 ```
 
-읽기는 **사용자 먼저**. 수정 요청이 오면 `/openclone:ingest`(또는 그에 상응하는 로직)가 먼저 사용자 네임스페이스로 폴더를 복사한 뒤 거기에만 씁니다. `${CLAUDE_PLUGIN_ROOT}/`는 런타임에 건드리지 않습니다.
+읽기는 **사용자 먼저**. 수정 요청이 오면 `/openclone ingest`(또는 그에 상응하는 로직)가 먼저 사용자 네임스페이스로 폴더를 복사한 뒤 거기에만 씁니다. `${CLAUDE_PLUGIN_ROOT}/`는 런타임에 건드리지 않습니다.
 
 ### 2. Knowledge append-only
 

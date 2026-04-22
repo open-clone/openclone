@@ -27,20 +27,22 @@ Every read path merges two locations with **user-wins-on-collision** precedence 
 | Persona | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` | `~/.openclone/clones/<name>/persona.md` |
 | Knowledge | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` | `~/.openclone/clones/<name>/knowledge/` |
 | Active pointer | — | `~/.openclone/active-clone` (just a clone name) |
+| Room roster | — | `~/.openclone/room` (one clone name per line, non-empty = room mode) |
+| Home-panel menu context | — | `~/.openclone/menu-context` (JSON; last home panel's numbering for `/openclone <N>`) |
 
-Both layouts use the same shape — persona and knowledge live together under `clones/<name>/`. The built-in side adds a sparse-checkout wrinkle: the install command uses **non-cone mode** (`git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'`), which materializes everything except the per-clone knowledge subdirs. Individual clones' knowledge is fetched on demand by `scripts/fetch-clone-knowledge.sh <slug>` (invoked from `commands/use.md`) — this runs `git sparse-checkout add clones/<slug>/knowledge/` which appends an inclusion pattern that overrides the base exclusion, and partial-clone semantics auto-fetch the blobs from the promisor remote.
+Both layouts use the same shape — persona and knowledge live together under `clones/<name>/`. The built-in side adds a sparse-checkout wrinkle: the install command uses **non-cone mode** (`git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'`), which materializes everything except the per-clone knowledge subdirs. Individual clones' knowledge is fetched on demand by `scripts/fetch-clone-knowledge.sh <slug>` (invoked from the activation branch of `commands/openclone.md`) — this runs `git sparse-checkout add clones/<slug>/knowledge/` which appends an inclusion pattern that overrides the base exclusion, and partial-clone semantics auto-fetch the blobs from the promisor remote.
 
-Clones are deduped by name. Knowledge is append-only — files are named `YYYY-MM-DD-<topic>.md` and never overwritten. When the same topic recurs, a fresh dated file is added; the hook tells Claude to weight newer dates more heavily while still treating older ones as valid background. When a user tries to modify a built-in clone, `/openclone:ingest` does **fork-on-write**: copies the built-in `clones/<name>/persona.md` into `~/.openclone/clones/<name>/` and writes any new knowledge there. Never mutate anything under `${CLAUDE_PLUGIN_ROOT}/`.
+Clones are deduped by name. Knowledge is append-only — files are named `YYYY-MM-DD-<topic>.md` and never overwritten. When the same topic recurs, a fresh dated file is added; the hook tells Claude to weight newer dates more heavily while still treating older ones as valid background. When a user tries to modify a built-in clone, `/openclone ingest` does **fork-on-write**: copies the built-in `clones/<name>/persona.md` into `~/.openclone/clones/<name>/` and writes any new knowledge there. Never mutate anything under `${CLAUDE_PLUGIN_ROOT}/`.
 
-### Slash commands are markdown
+### Single-dispatcher command
 
-Each `commands/*.md` file is a slash command. The frontmatter declares `allowed-tools` and `argument-hint`; the body is a prompt Claude Code runs when the command fires. Panel commands (`vc.md`, `dev.md`, `founder.md`, `pm.md`, `designer.md`, `writer.md`, `marketing.md`, `hr.md`) are thin stubs that pin a category and defer to `references/panel-workflow.md` — editing panel logic means editing that one reference, not every panel file.
+`commands/openclone.md` is the only slash command file — it exposes `/openclone:openclone` (rendered to users as `/openclone <sub>`). Its body parses `$ARGUMENTS` into a sub-action (`<empty>` → home panel, `<N>` → menu selection, `stop`, `new`, `ingest`, `room`, `panel`, `<clone-name>` → activate) and delegates to the matching reference under `references/`. The frontmatter declares `allowed-tools` and `argument-hint`; the body is the prompt Claude Code runs when the command fires. When adding a new sub-action, extend the dispatch table in `commands/openclone.md` and write the new logic as a reference — do not add separate `commands/*.md` files.
 
 ### Persona injection via UserPromptSubmit hook
 
-`hooks/inject-active-clone.sh` runs on every user prompt. If `~/.openclone/active-clone` exists and resolves to a `persona.md` (user first, then built-in), the hook emits `additionalContext` JSON containing an `<openclone-active-clone>` block: a persona-embodiment instruction + the full persona markdown + both candidate knowledge directory paths (`~/.openclone/clones/<name>/knowledge/` and `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/`) + recency-weighting guidance. Otherwise it emits `{}` and is a silent no-op. The hook never fails loudly — all error paths fall through to empty JSON.
+`hooks/inject-active-clone.sh` runs on every user prompt. Precedence: **room mode wins over active-clone.** If `~/.openclone/room` exists and is non-empty, the hook emits a group-chat moderator context with every listed member's full persona and routing rules (default one clone answers, max two if perspectives genuinely diverge). Else, if `~/.openclone/active-clone` exists and resolves to a `persona.md` (user first, then built-in), the hook emits an `<openclone-active-clone>` block: a persona-embodiment instruction + the full persona markdown + both candidate knowledge directory paths (`~/.openclone/clones/<name>/knowledge/` and `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/`) + recency-weighting guidance. Otherwise it emits `{}` and is a silent no-op. The hook never fails loudly — all error paths fall through to empty JSON.
 
-The hook is the only mechanism that makes the active clone "alive." `/openclone:use` writes the name to `active-clone` and (for built-in clones) calls `fetch-clone-knowledge.sh` to materialize the knowledge directory. The skill/commands do not re-inject persona themselves.
+The hook is the only mechanism that makes the active clone or room "alive." `/openclone <name>` writes the name to `active-clone` and (for built-in clones) calls `fetch-clone-knowledge.sh` to materialize the knowledge directory. `/openclone room <a> <b> ...` writes the roster to `room`. The dispatcher does not re-inject persona itself.
 
 ### Auto-update via SessionStart hook
 
@@ -58,17 +60,17 @@ The same script also runs a one-shot migration for pre-v0.3 installs that used c
 
 ### References are lazy-loaded
 
-`references/*.md` (clone-schema, categories, interview-workflow, refine-workflow, panel-workflow) are **not** auto-loaded. Commands tell Claude to `Load ${CLAUDE_PLUGIN_ROOT}/references/<file>.md and follow it exactly`. This keeps context lean — only the reference relevant to the current command gets pulled in. When changing a workflow, edit the reference, not every command.
+`references/*.md` (clone-schema, categories, home-workflow, interview-workflow, refine-workflow, panel-workflow, room-workflow) are **not** auto-loaded. The dispatcher tells Claude to `Load ${CLAUDE_PLUGIN_ROOT}/references/<file>.md and follow it exactly` for the specific sub-action. This keeps context lean — only the reference relevant to the current sub-action gets pulled in. When changing a workflow, edit the reference, not `commands/openclone.md`.
 
 ### Skill vs. commands
 
-`skills/openclone/SKILL.md` is the entry point for natural-language requests (e.g. "create a clone named X"). Slash commands are the direct UI. The skill should delegate to slash commands rather than duplicating their logic.
+`skills/openclone/SKILL.md` is the entry point for natural-language requests (e.g. "create a clone named X"). The skill delegates everything to `/openclone:openclone <sub>` rather than duplicating workflow logic.
 
 ## Editing conventions
 
 - **Clone schema is canonical.** `references/clone-schema.md` is the source of truth for the clone folder layout (persona.md frontmatter, required sections, `Category-specific framing` block, knowledge filename convention, the built-in vs user split). Keep examples there in sync with the built-in `clones/douglas/persona.md`.
-- **Categories are a fixed v1 list** (`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`). Adding a new category means: new command file + update `references/categories.md` + update `skills/openclone/SKILL.md` + update README + update `FIXED_CATEGORIES` in `.github/scripts/validate-clones.ts`. Don't half-add.
-- **User ↔ built-in precedence** must be consistent across every read path. If you add a new command that reads clones or knowledge, mirror the lookup order from `hooks/inject-active-clone.sh` and `commands/use.md`. Remember: persona is user-OR-built-in (user wins), knowledge is user-AND-built-in (both read).
+- **Categories are a fixed v1 list** (`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`). Adding a new category means: update `references/categories.md` + update `references/home-workflow.md` (section order) + update `references/interview-workflow.md` (stage 3 prompt list) + update `skills/openclone/SKILL.md` + update README + update `FIXED_CATEGORIES` in `.github/scripts/validate-clones.ts`. The dispatcher (`commands/openclone.md`) accepts any token as a panel category, so no change there. Don't half-add.
+- **User ↔ built-in precedence** must be consistent across every read path. If you add a new sub-action that reads clones or knowledge, mirror the lookup order from `hooks/inject-active-clone.sh` and the activation branch of `commands/openclone.md`. Remember: persona is user-OR-built-in (user wins), knowledge is user-AND-built-in (both read).
 - **Knowledge is append-only.** Ingestion never overwrites or merges with earlier dated files on the same topic. If `refine-workflow.md` changes, preserve this invariant.
 - **No emojis** in clone output (explicit rule in `panel-workflow.md`) and no emojis in code/docs unless the user asks.
 - Paths in command markdown use `${CLAUDE_PLUGIN_ROOT}` for shipped files and `$HOME/.openclone` or `~/.openclone` for user state — do not hardcode absolute paths.
@@ -77,7 +79,7 @@ The same script also runs a one-shot migration for pre-v0.3 installs that used c
 
 ## Gotchas
 
-- `clones/<name>/persona.md` ships **with** the plugin (sparse-default ON) — built-in personas. `clones/<name>/knowledge/` lives under the same folder but is **sparse-default OFF** (excluded by the non-cone pattern `!/clones/*/knowledge/`) — only fetched when `/openclone:use <name>` activates that clone. If you ever change the sparse-checkout pattern structure, update (a) the install one-liner in `README.md`, (b) `scripts/fetch-clone-knowledge.sh`, and (c) the migration branch in `scripts/session-update.sh` together.
+- `clones/<name>/persona.md` ships **with** the plugin (sparse-default ON) — built-in personas. `clones/<name>/knowledge/` lives under the same folder but is **sparse-default OFF** (excluded by the non-cone pattern `!/clones/*/knowledge/`) — only fetched when `/openclone <name>` activates that clone. If you ever change the sparse-checkout pattern structure, update (a) the install one-liner in `README.md`, (b) `scripts/fetch-clone-knowledge.sh`, and (c) the migration branch in `scripts/session-update.sh` together.
 - The hook uses `python3` for JSON-escaping with a sed/awk fallback. If you touch the escaping path, test both branches — the fallback is not exercised on macOS by default.
 - Apostrophes inside the hook's heredoc body break shell parsing (bash parses `$(...)` command substitutions and gets confused by unmatched single quotes in the heredoc content). Avoid contractions like "clone's" in the heredoc — use "this clone" or typographic apostrophes if needed.
 - After editing hooks or `hooks.json`, Claude Code needs a restart to pick up the changes. Editing clone files, commands, or references is picked up live.

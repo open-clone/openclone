@@ -9,7 +9,7 @@ Built-in and user clones share the **same folder shape** — persona and knowled
 ```text
 ${CLAUDE_PLUGIN_ROOT}/clones/<name>/       # built-in, read-only
 ├── persona.md                             # always present after install
-└── knowledge/                             # sparse-excluded by default; fetched on first /openclone:use
+└── knowledge/                             # sparse-excluded by default; fetched on first /openclone <name>
     └── YYYY-MM-DD-<topic>.md
 
 ~/.openclone/clones/<name>/                # user, writable
@@ -36,7 +36,7 @@ ${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/     # built-in (lazy-fetched)
 
 - `<name>` is a lowercase slug, `[a-z0-9-]+`, globally unique within each root.
 - If the same `<name>` exists in both roots, the user persona wins and user knowledge layers on top of built-in knowledge (both are read).
-- To customize a built-in clone, copy the folder to `~/.openclone/clones/<name>/` and edit there. `/openclone:ingest` does this automatically (fork-on-write) when the active clone is built-in.
+- To customize a built-in clone, copy the folder to `~/.openclone/clones/<name>/` and edit there. `/openclone ingest` does this automatically (fork-on-write) when the active clone is built-in.
 
 ## `persona.md` frontmatter (required)
 
@@ -46,7 +46,7 @@ name: douglas                    # slug, matches folder name
 display_name: 권도균              # name shown in lists and panels
 tagline: 프라이머 대표             # one-line intro (<80 chars)
 categories: [founder, vc]        # one or more from the fixed list
-primary_category: founder        # default lens for /openclone:use (optional, falls back to categories[0])
+primary_category: founder        # default lens when activated via /openclone <name> (optional, falls back to categories[0])
 created: 2026-04-21              # ISO date
 voice_traits:                    # 3–5 short tone tags
   - concise
@@ -58,11 +58,11 @@ voice_traits:                    # 3–5 short tone tags
 
 - Must be a non-empty list.
 - Each value must be one of the fixed categories in `categories.md` (`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`).
-- A clone in N categories appears in N panel commands (`/openclone:<cat>`) but is **still one folder**.
+- A clone in N categories appears in N panels (`/openclone panel <cat> "…"`) but is **still one folder**.
 
 ### `primary_category`
 
-- Optional. When `/openclone:use <name>` is invoked, the clone is activated with this lens as emphasis.
+- Optional. When the clone is activated via `/openclone <name>`, this lens is applied as emphasis.
 - If omitted, the first entry in `categories` is used.
 
 ## `persona.md` body sections (required in this order)
@@ -109,7 +109,7 @@ When the clone has genuinely different guardrails or emphasis across its categor
 - Extra never: quote specific portfolio financials or equity splits
 ```
 
-Panel commands (`/openclone:<category>`) read the matching `### As a <category>` block and apply it on top of the universal Persona/Speaking style/Guidelines. `/openclone:use` applies the primary category's block (if any).
+Panel queries (`/openclone panel <category> "…"`) read the matching `### As a <category>` block and apply it on top of the universal Persona/Speaking style/Guidelines. Single-clone activation (`/openclone <name>`) applies the primary category's block (if any).
 
 If a clone has only one category, this section is unnecessary.
 

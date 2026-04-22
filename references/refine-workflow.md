@@ -2,7 +2,7 @@
 
 How Claude turns ingested material (scraped URL, YouTube transcript, pasted text, document) into dated topic files under the clone's `knowledge/` directory.
 
-Loaded by `/openclone:ingest`.
+Loaded by `/openclone ingest`.
 
 ## Target path
 
@@ -67,4 +67,4 @@ If the raw source is clearly off-topic relative to the clone's categories and pe
 
 ## Why no "knowledge index" in persona.md
 
-In the folder-per-clone layout, the `knowledge/` directory is itself the index — `/openclone:list` counts files, and Claude enumerates the directory at read time. Do **not** write a `## Knowledge index` section into `persona.md`; it would go stale immediately given append-only semantics.
+In the folder-per-clone layout, the `knowledge/` directory is itself the index — the home panel counts files, and Claude enumerates the directory at read time. Do **not** write a `## Knowledge index` section into `persona.md`; it would go stale immediately given append-only semantics.

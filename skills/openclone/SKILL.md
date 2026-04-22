@@ -1,39 +1,37 @@
 ---
 name: openclone
-description: Use when the user wants to create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, dev, founder, pm, designer, writer, marketing, hr) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "ask all VCs", "stop being <name>". Also triggers when the user refers to `/openclone:*` commands or wants to understand the openclone system.
+description: Use when the user wants to create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, dev, founder, pm, designer, writer, marketing, hr) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "ask all VCs", "stop being <name>". Also triggers when the user refers to `/openclone` or `/openclone:openclone` or wants to understand the openclone system.
 ---
 
 # openclone
 
-Openclone lets a user create AI persona "clones" — each a folder containing a `persona.md` and optional knowledge — and either (a) activate one so that every subsequent message is answered in that persona, or (b) broadcast a question to a category for side-by-side perspectives. Each clone can belong to one or more categories. Clones come from two sources: **built-in clones** that ship with the plugin under `${CLAUDE_PLUGIN_ROOT}/clones/` (read-only, curated presets), and **user clones** the user creates under `~/.openclone/clones/` (writable). User clones shadow built-ins on name collision.
+Openclone lets the user create AI persona "clones" — each a folder containing a `persona.md` and optional knowledge — and either (a) activate one so that every subsequent message is answered in that persona, (b) open a group **room** where multiple clones share a chat and the most relevant one auto-responds per turn, or (c) broadcast a question to a category for side-by-side panel perspectives. Each clone can belong to one or more categories.
 
-## When to use this skill
+Clones come from two sources: **built-in clones** that ship with the plugin under `${CLAUDE_PLUGIN_ROOT}/clones/` (read-only, curated presets), and **user clones** the user creates under `~/.openclone/clones/` (writable). User clones shadow built-ins on name collision.
 
-- User asks to create, list, activate, deactivate, or delete a clone.
-- User asks to feed knowledge (URL, YouTube, file, text) to a clone.
-- User runs any `/openclone:*` slash command or references one by name.
-- User asks "what is openclone" or how the persona system works.
-- User wants a multi-perspective panel answer from a category (e.g. "ask all the VCs").
+## Single entry point — `/openclone`
+
+As of v1.0, **all openclone actions go through one slash command**: `/openclone:openclone` (invoked as `/openclone` in most Claude Code UIs, or spelled out as `/openclone:openclone` in full). It is the only command in `commands/`.
+
+| User intent | What to run |
+| --- | --- |
+| "Show me what's available", "openclone", no args | `/openclone:openclone` — renders the **home panel** (clones grouped by category, numbered for keyboard selection) |
+| "Talk as douglas", "switch to alice" | `/openclone:openclone <name>` (activate clone) |
+| Pick by number after seeing home panel | `/openclone:openclone <N>` |
+| Stop / exit current clone or room | `/openclone:openclone stop` |
+| "Make a new clone named hayun" | `/openclone:openclone new hayun` |
+| "Add this URL to my clone's knowledge" | `/openclone:openclone ingest <url>` (requires an active clone) |
+| "Open a group chat with X, Y, Z" | `/openclone:openclone room <X> <Y> <Z>` |
+| "Add bob to the room" | `/openclone:openclone room add bob` |
+| "Close the room" | `/openclone:openclone room leave` |
+| "Ask all VCs …" | `/openclone:openclone panel vc "…"` |
+
+If the user asks in natural language, **prefer running the equivalent `/openclone:openclone <sub>` invocation** so the user can see what is happening. Do not duplicate the dispatcher's parsing inline — let `commands/openclone.md` handle it.
 
 ## Do not use this skill when
 
-- The user is having a normal conversation with an already-active clone. The `UserPromptSubmit` hook handles persona injection automatically — do not re-invoke this skill for every turn.
+- The user is already in a conversation with an active clone or inside a room. The `UserPromptSubmit` hook injects the persona on every user message automatically — do not re-invoke this skill for every turn.
 - The user is doing unrelated coding or research work.
-
-## Primary entry points
-
-Direct slash commands are the main interface:
-
-| Command | Purpose |
-| --- | --- |
-| `/openclone:new <name>` | Create a clone via interactive interview (≥1 category required, multi-category allowed). See `references/interview-workflow.md`. |
-| `/openclone:use <name>` | Activate a clone — subsequent messages answered as this clone, using its `primary_category` framing. |
-| `/openclone:stop` | Deactivate the active clone. |
-| `/openclone:list` | List clones with their categories, marking active. |
-| `/openclone:ingest <source>` | Add knowledge to the active clone. See `references/refine-workflow.md`. |
-| `/openclone:<category> "<q>"` | Panel: every clone whose `categories` includes `<category>` answers `<q>`, with that category's framing applied. See `references/panel-workflow.md`. |
-
-If the user asks for one of these in natural language, offer to run the corresponding command but prefer explicit command invocation so the user sees what's happening.
 
 ## Data layout
 
@@ -44,63 +42,71 @@ ${CLAUDE_PLUGIN_ROOT}/clones/          # built-in, shipped with the plugin (read
 └── <name>/
     ├── persona.md                     # curated preset persona
     └── knowledge/
-        └── YYYY-MM-DD-<topic>.md
+        └── YYYY-MM-DD-<topic>.md      # sparse-checked only when clone is used
 
 ~/.openclone/                          # user state (writable)
 ├── active-clone                       # current active clone name (absent = none)
+├── room                               # room members, one name per line (absent = no room)
+├── menu-context                       # JSON: most recent home-panel number → name mapping
 └── clones/
     └── <name>/
         ├── persona.md                 # user-created persona — see references/clone-schema.md
         └── knowledge/
-            └── YYYY-MM-DD-<topic>.md  # written by /openclone:ingest; append-only
+            └── YYYY-MM-DD-<topic>.md  # written by ingest; append-only
 ```
 
-**Precedence.** On name collision, user clones shadow built-in clones: `/openclone:use`, `/openclone:list`, and category panels all use the user version and skip the built-in duplicate. Knowledge is additive — the hook tells Claude to read from both clones' `knowledge/` directories when relevant, with newer dates weighted more heavily; on exact filename collision the user-ingested file wins.
+**Precedence.**
 
-A clone's `categories` is a frontmatter list field on `persona.md`, so one clone can appear in multiple category panels from a single folder.
+- **Persona**: on name collision, user clones shadow built-ins.
+- **Knowledge**: additive — the hook reads from both the user and built-in knowledge dirs for the active clone/room members, with newer dates weighted more heavily. On exact filename collision the user-ingested file wins.
 
-Categories are a fixed v1 list: `vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`. See `references/categories.md` for the lens each one enforces.
+**Mode precedence (hook side):**
+
+1. If `~/.openclone/room` exists and is non-empty → **room mode**: hook injects all members' personas + routing rules, one clone (max two) responds per turn.
+2. Else if `~/.openclone/active-clone` exists → **single-clone mode**: that clone answers every turn.
+3. Else → default Claude, no injection.
+
+A clone's `categories` frontmatter list decides which category panels it participates in when the user runs `/openclone:openclone panel <category> "…"`.
+
+Categories are a fixed v1 list: `vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`. See `references/categories.md`.
 
 ### Knowledge filenames
 
-Every file under `knowledge/` is `YYYY-MM-DD-<topic-slug>.md` with frontmatter capturing the source (`source_type`, `source_url`, `fetched`, etc.). Ingestion is append-only — re-ingesting on the same topic later creates a new dated file, it does not overwrite. The hook instructs Claude to prefer newer entries when the same subject appears in multiple files, while still using older entries as valid background.
+Every file under `knowledge/` is `YYYY-MM-DD-<topic-slug>.md` with frontmatter capturing the source. Ingestion is append-only — re-ingesting the same topic creates a new dated file, never overwrites. The hook prefers newer entries while still using older ones as valid background.
 
 ## Built-in clones are read-only
 
-Users cannot edit files under `${CLAUDE_PLUGIN_ROOT}/` — those ship with the plugin and get overwritten on update. To customize a built-in clone:
+Users cannot edit files under `${CLAUDE_PLUGIN_ROOT}/`. To customize a built-in:
 
-1. `/openclone:ingest` on a built-in active clone auto-forks (copies the whole clone folder to `~/.openclone/clones/`) before ingestion.
-2. For manual edits, `cp -R "${CLAUDE_PLUGIN_ROOT}/clones/<name>" ~/.openclone/clones/<name>` and edit `persona.md` there; the user copy will override from the next activation.
+1. `/openclone:openclone ingest` on a built-in active clone auto-forks (copies the whole folder to `~/.openclone/clones/`) before ingestion.
+2. For manual edits: `cp -R "${CLAUDE_PLUGIN_ROOT}/clones/<name>" ~/.openclone/clones/<name>` and edit `persona.md` there.
 
-## How "active clone conversation" works
+## How active-clone and room conversation work
 
-A `UserPromptSubmit` hook (`hooks/inject-active-clone.sh`) reads `~/.openclone/active-clone` (contains just a clone `<name>`) on every user message. If set, it resolves the clone's `persona.md` (user first, then built-in) and injects its content as additional system context, instructing Claude to respond as that clone. When the clone has a `## Category-specific framing` section, the block matching `primary_category` (or the first entry in `categories`) is applied as the default lens.
+A `UserPromptSubmit` hook (`hooks/inject-active-clone.sh`) fires on every user message and reads the state files above. See the **Mode precedence** table. The hook injects a `<openclone-active-clone>` block (single-clone mode) or `<openclone-room>` block (room mode) as additionalContext, with persona text + knowledge dir paths + recency-weighting guidance.
 
-The hook also tells Claude where to find the clone's knowledge files (both the user and built-in `knowledge/` dirs for that clone) and how to weight recency.
-
-The hook is no-op when:
-
-- The active-clone file does not exist
-- It is empty
-- It points to a non-existent clone folder in both roots
+The hook is a no-op when neither `~/.openclone/active-clone` nor `~/.openclone/room` is set (or both are empty/invalid).
 
 ## Files in this skill
 
+- `commands/openclone.md` — the single dispatcher command
 - `references/clone-schema.md` — clone file format (frontmatter + sections, including multi-category rules)
 - `references/categories.md` — fixed category list and per-category "always checks" axes
-- `references/interview-workflow.md` — how `/openclone:new` conducts and consolidates the interview
-- `references/refine-workflow.md` — how `/openclone:ingest` turns raw sources into refined topic files
-- `references/panel-workflow.md` — how `/openclone:<category>` produces multi-clone panel output
-- `assets/clone-template.md` — starter template for hand-authored clones (bypassing `/openclone:new`)
+- `references/home-workflow.md` — how `/openclone:openclone` (no args) renders the home panel + writes menu-context
+- `references/interview-workflow.md` — how `new` conducts and consolidates the interview
+- `references/refine-workflow.md` — how `ingest` turns raw sources into refined topic files
+- `references/panel-workflow.md` — how `panel <category>` produces multi-clone side-by-side output
+- `references/room-workflow.md` — how room routing works (which clone speaks per turn)
+- `assets/clone-template.md` — starter template for hand-authored clones
 
 ## Editing clones manually
 
 A clone is a folder with a `persona.md` (plus optional `knowledge/`). Power users can:
 
-- Copy `assets/clone-template.md` to `~/.openclone/clones/<name>/persona.md` and fill it in (create the folder first: `mkdir -p ~/.openclone/clones/<name>/knowledge`).
-- Edit any existing **user** clone directly in their editor — add a category to the `categories` list to make the clone appear in that panel.
-- Drop hand-authored knowledge files into `~/.openclone/clones/<name>/knowledge/` using the `YYYY-MM-DD-<topic>.md` convention; they'll be picked up automatically.
-- Version-control `~/.openclone/clones/` in their own dotfiles repo.
-- Customize a **built-in** clone by copying its folder to `~/.openclone/clones/` first (the user copy shadows the built-in from the next activation).
+- Copy `assets/clone-template.md` to `~/.openclone/clones/<name>/persona.md` and fill it in.
+- Edit any existing **user** clone directly — add a category to the `categories` list to make it show up in a panel.
+- Drop hand-authored knowledge files into `~/.openclone/clones/<name>/knowledge/` using `YYYY-MM-DD-<topic>.md`.
+- Version-control `~/.openclone/clones/` in a dotfiles repo.
+- Customize a **built-in** by copying its folder to `~/.openclone/clones/` first.
 
 The hook only requires that `persona.md` exists in either root and parses.
