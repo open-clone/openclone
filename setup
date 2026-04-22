@@ -19,6 +19,58 @@ if [ "$here" != "$expected_dir" ]; then
   exit 1
 fi
 
+# Self-heal on re-run. Only active when this is a git checkout (normal install).
+# Dev-link users who intentionally symlink plugin files should keep their links
+# intact: we only clean broken or out-of-repo symlinks.
+if [ -d "$here/.git" ]; then
+  cd "$here"
+
+  # 1) marketplace.json: clean broken / foreign symlinks, restore shipped file.
+  mp="$here/.claude-plugin/marketplace.json"
+  if [ -L "$mp" ]; then
+    raw_target=$(readlink "$mp" 2>/dev/null || true)
+    # Resolve both the symlink and the install root to their physical paths so
+    # macOS /private-prefix canonicalization doesn't make internal targets look
+    # external.
+    here_real=$(cd "$here" && pwd -P 2>/dev/null || printf '%s' "$here")
+    if command -v python3 >/dev/null 2>&1; then
+      resolved=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$mp" 2>/dev/null || true)
+    else
+      resolved=$(readlink -f "$mp" 2>/dev/null || true)
+    fi
+    heal=0
+    if [ -z "$resolved" ] || [ ! -e "$resolved" ]; then
+      heal=1
+    elif [ "${resolved#"$here_real"/}" = "$resolved" ]; then
+      # target is outside this repo — treat as stale dev-link leftover
+      heal=1
+    fi
+    if [ "$heal" = "1" ]; then
+      printf 'self-heal: marketplace.json이 외부/깨진 symlink입니다 (→ %s). shipped 파일로 복원합니다.\n' "$raw_target"
+      rm -f "$mp"
+      git checkout -- .claude-plugin/marketplace.json >/dev/null 2>&1 || true
+    fi
+  fi
+
+  # 2) sparse-checkout: migrate cone layout to non-cone (lazy-fetch knowledge).
+  is_cone=$(git config --local --get core.sparseCheckoutCone 2>/dev/null || echo "")
+  if [ "$is_cone" = "true" ] && [ -f ".git/info/sparse-checkout" ]; then
+    printf 'self-heal: sparse-checkout을 non-cone 레이아웃으로 전환합니다.\n'
+    git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' >/dev/null 2>&1 || true
+  fi
+
+  # 3) non-fast-forward warning: when origin/main was rewritten, this install
+  #    can no longer auto-update. Do NOT reset — just tell the user to reinstall.
+  if GIT_TERMINAL_PROMPT=0 git fetch origin "+refs/heads/main:refs/remotes/origin/main" --quiet 2>/dev/null; then
+    if ! git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+      printf '\n경고: 원격 main이 rewrite되어 자동 업데이트가 따라갈 수 없습니다.\n' >&2
+      printf '      복구: rm -rf %s\n' "$expected_dir" >&2
+      printf '            rm -f ~/.openclone/no-auto-update\n' >&2
+      printf '      그 후 README의 설치 one-liner를 재실행해 주세요.\n\n' >&2
+    fi
+  fi
+fi
+
 settings_file="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
 

@@ -9,6 +9,13 @@
 ### Fixed
 
 - 신규 설치 시 Claude Code가 `openclone@openclone` 플러그인 로드에 실패하던 문제. `setup`이 `enabledPlugins`만 등록하고 `extraKnownMarketplaces`는 등록하지 않아 "Plugin openclone not found in marketplace openclone" 에러로 커맨드·스킬이 뜨지 않았습니다. `setup`이 이제 마켓플레이스 경로도 함께 기록하고, `uninstall`도 같이 정리합니다.
+- force-push된 `origin/main`에 막혀 기존 설치가 stale 상태로 멈추던 문제. `session-update.sh`가 이제 force refspec으로 fetch하고 ff 여부를 검사해, non-ff면 `~/.openclone/force-push-detected` marker만 기록하고(자동 reset 금지) `UserPromptSubmit` 훅이 복구 안내 배너를 노출합니다.
+- 과거 `scripts/dev-link.sh`로 남은 깨진·외부 경로 symlink가 `.claude-plugin/marketplace.json`을 가리킬 때 `setup`이 자동 청소 후 shipped 파일을 복원. `pwd -P`로 macOS `/private` canonicalization까지 처리해 유효한 내부 dev-link는 보존.
+- cone-mode sparse-checkout을 `setup` 재실행 시 non-cone(`/*` + `!/clones/*/knowledge/`)으로 자동 전환.
+
+### Added
+
+- README에 "이미 설치됐는데 실패·깨짐 / 재설치" 섹션 — 기존 설치를 지우고 one-liner를 재실행하는 복구 흐름과 `~/.openclone/` 사용자 데이터 보존 사실을 명시.
 
 ## [0.0.1] — 2026-04-22
 

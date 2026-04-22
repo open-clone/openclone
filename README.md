@@ -51,6 +51,20 @@ git clone --filter=blob:none --sparse --depth=1 \
 - Partial + sparse 클론이라 첫 설치는 가볍습니다 (수 MB, 지식 제외).
 - 각 클론의 지식은 `/openclone:use <name>` 으로 활성화할 때 **필요한 것만** 내려받습니다.
 
+### 이미 설치됐는데 실패·깨짐 / 재설치
+
+설치가 과거에 한 번 됐다면 `git clone`이 디렉터리 충돌로 실패합니다. 또한 원격 저장소가 rewrite(force-push)된 경우 자동 업데이트가 `git pull --ff-only`로는 따라갈 수 없어 구버전에 멈춰 있을 수 있습니다. `/doctor`에 `Plugin openclone not found in marketplace openclone` 같은 에러가 나오면 이 상태일 확률이 높습니다.
+
+가장 확실한 복구는 기존 설치를 지우고 one-liner를 다시 돌리는 것입니다:
+
+```bash
+rm -rf ~/.claude/plugins/marketplaces/openclone
+rm -f  ~/.openclone/no-auto-update
+# 그 후 위 설치 one-liner 재실행
+```
+
+`~/.openclone/` 아래의 사용자 데이터(활성 클론 포인터, 직접 만든 클론, 수집한 지식)는 **그대로 보존됩니다** — 위 명령은 플러그인 설치 디렉터리와 자동 업데이트 opt-out 파일만 건드립니다.
+
 ### 업데이트
 
 세션을 시작할 때마다 백그라운드에서 `git pull --ff-only`를 시도합니다 (1시간당 최대 1회, 네트워크·git 실패 시 조용히 skip). 직접 업데이트하려면:
