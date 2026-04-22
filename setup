@@ -167,6 +167,12 @@ PY
 
 mkdir -p "$HOME/.openclone"
 
+star_marker="$HOME/.openclone/.star-prompted"
+first_install=0
+if [ ! -f "$star_marker" ]; then
+  first_install=1
+fi
+
 cat <<MSG
 openclone 설치 완료.
 
@@ -191,3 +197,16 @@ openclone 설치 완료.
 
 제거: 이 디렉터리에서 ./uninstall 실행.
 MSG
+
+if [ "$first_install" = "1" ]; then
+  cat <<'STAR_MSG'
+
+────────────────────────────────────────────────────────────
+openclone가 마음에 드셨다면 GitHub에서 스타를 눌러주세요.
+  https://github.com/taurin-inc/openclone
+
+스타 하나가 다음 기능 개발에 큰 힘이 됩니다. 감사합니다.
+────────────────────────────────────────────────────────────
+STAR_MSG
+  touch "$star_marker" 2>/dev/null || true
+fi
