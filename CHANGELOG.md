@@ -23,6 +23,7 @@
 - force-push된 `origin/main`에 막혀 기존 설치가 stale 상태로 멈추던 문제. `session-update.sh`가 이제 force refspec으로 fetch하고 ff 여부를 검사해, non-ff면 `~/.openclone/force-push-detected` marker만 기록하고(자동 reset 금지) `UserPromptSubmit` 훅이 복구 안내 배너를 노출합니다.
 - 과거 `scripts/dev-link.sh`로 남은 깨진·외부 경로 symlink가 `.claude-plugin/marketplace.json`을 가리킬 때 `setup`이 자동 청소 후 shipped 파일을 복원. `pwd -P`로 macOS `/private` canonicalization까지 처리해 유효한 내부 dev-link는 보존.
 - cone-mode sparse-checkout을 `setup` 재실행 시 non-cone(`/*` + `!/clones/*/knowledge/`)으로 자동 전환.
+- 첫 설치 후 `/reload-plugins`만 안내해 사용자가 `/openclone`에서 `Unknown command`로 막히던 문제. `setup`이 `enabledPlugins`에 openclone이 **이전부터 있었는지** 감지해 종료 메시지를 분기합니다 — 신규 활성화면 "Claude Code를 완전히 종료한 뒤 다시 실행" 안내를 1순위로 노출하고, 재설치/업데이트면 종전대로 `/reload-plugins`를 권합니다. README 옵션 A·B 안내도 풀 재시작을 1순위로 정정.
 
 ## [0.0.1] — 2026-04-22
 
