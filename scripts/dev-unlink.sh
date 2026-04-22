@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove dev-link symlinks from the installed plugin. If the path is tracked
+# Remove dev-link symlinks from the installed skill. If the path is tracked
 # in the installed repo, the shipped version is restored from git.
 #
 # Usage:
@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-installed="$HOME/.claude/plugins/marketplaces/openclone"
+installed="$HOME/.claude/skills/openclone"
 
 if [ $# -eq 0 ]; then
   cat >&2 <<USAGE
@@ -17,7 +17,7 @@ USAGE
 fi
 
 if [ ! -d "$installed" ]; then
-  echo "error: installed plugin not found at $installed" >&2
+  echo "error: installed skill not found at $installed" >&2
   exit 1
 fi
 

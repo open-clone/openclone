@@ -1,7 +1,6 @@
 # openclone
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](.claude-plugin/plugin.json)
 
 카테고리별 페르소나를 가진 AI 클론을 만들고, Claude Code 안에서 그 클론과 직접 대화합니다.
 
@@ -10,7 +9,7 @@
 ## 무엇을 하는가
 
 - **단일 진입점 `/openclone`** — `/openclone`만 치면 홈 패널이 뜹니다. 카테고리별로 그룹핑된 클론 목록에서 번호나 이름으로 바로 선택.
-- **기본 내장 클론을 바로 사용** — 플러그인에 큐레이션된 프리셋 클론이 함께 배포됩니다(예: `douglas` / 권도균). 설치 직후 활성화하거나 패널 브로드캐스트로 질문할 수 있습니다.
+- **기본 내장 클론을 바로 사용** — 스킬에 큐레이션된 프리셋 클론이 함께 배포됩니다(예: `douglas` / 권도균). 설치 직후 활성화하거나 패널 브로드캐스트로 질문할 수 있습니다.
 - **나만의 클론 만들기** — 카테고리(`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`) 하나 이상을 선택해 생성합니다. 하나의 클론은 여러 카테고리에 속할 수 있지만 파일은 하나입니다.
 - **클론 한 명과 대화** — `/openclone <name>` 이후 보내는 모든 메시지는 그 클론의 목소리로 응답됩니다.
 - **단체 대화방(room)** — `/openclone room <A> <B> <C>`로 여러 클론을 한 방에 모아두고 자연스럽게 대화하면, 질문의 성격에 따라 **가장 적절한 1명**(필요시 뚜렷이 다른 2명)이 자동 응답.
@@ -19,7 +18,7 @@
 
 모든 데이터는 로컬 파일시스템에 있습니다. 서버도, 계정도, SaaS도 없습니다.
 
-> **v1.0 breaking change.** `/openclone:list`, `/openclone:use`, `/openclone:stop`, `/openclone:new`, `/openclone:ingest`, 카테고리별 `/openclone:vc` … 등 기존 13개 커맨드는 모두 제거됐습니다. 전부 `/openclone <sub>` 하나로 통합되어요 — 예: `/openclone`(홈), `/openclone douglas`(활성화), `/openclone stop`(종료), `/openclone panel vc "…"`(패널). 자세한 사용법은 [사용법](#사용법) 섹션 참고.
+> **v2.0 breaking change.** openclone은 Claude Code **플러그인**에서 **Standalone skill**로 전환됐습니다. 설치 경로가 `~/.claude/plugins/marketplaces/openclone` → `~/.claude/skills/openclone` 으로 바뀌었고, 슬래시 커맨드는 `/openclone:openclone`이 아니라 `/openclone`으로 직접 호출됩니다. 이전 버전을 쓰고 있었다면 [재설치 안내](#이전-v1-플러그인-설치를-사용-중이라면) 참고.
 
 ## 설치
 
@@ -31,50 +30,64 @@ Claude Code 세션에 아래 문단을 그대로 붙여넣으세요:
 
 ```text
 Install openclone: run
-  git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/plugins/marketplaces/openclone && cd ~/.claude/plugins/marketplaces/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
-then run /reload-plugins to activate. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, dev, founder, pm, designer, writer, marketing, hr). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the plugin loaded by running /openclone and show me the output.
+  git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
+then restart Claude Code (or start a new session) so the skill's hooks are picked up. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, dev, founder, pm, designer, writer, marketing, hr). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the skill loaded by running /openclone and show me the output.
 ```
 
-Claude Code가 직접 클론·`./setup`·`/reload-plugins`를 실행하고, 앞으로의 세션에서 openclone을 자연스럽게 인식하도록 `~/.claude/CLAUDE.md`에 메모를 추가합니다.
+Claude Code가 직접 클론·`./setup`을 실행하고, 앞으로의 세션에서 openclone을 자연스럽게 인식하도록 `~/.claude/CLAUDE.md`에 메모를 추가합니다.
 
 ### 옵션 B — 터미널에서 직접
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
   https://github.com/taurin-inc/openclone.git \
-  ~/.claude/plugins/marketplaces/openclone \
-  && cd ~/.claude/plugins/marketplaces/openclone \
+  ~/.claude/skills/openclone \
+  && cd ~/.claude/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
   && ./setup
 ```
 
-설치 후 Claude Code 세션에서 `/reload-plugins`를 실행하거나 (안 집히면) 한 번 재시작하세요.
+설치 후 Claude Code 세션을 한 번 재시작하면 `/openclone` 이 바로 사용 가능합니다 (훅·statusline 적용을 위해 재시작이 필요합니다).
 
 ### 공통 동작
 
 - Partial + sparse 클론이라 첫 설치는 가볍습니다 (수 MB, 지식 제외).
 - 각 클론의 지식은 `/openclone <name>` 으로 활성화할 때 **필요한 것만** 내려받습니다.
+- Claude Code는 `~/.claude/skills/<skill-name>/SKILL.md` 를 자동 인식하므로 별도 플러그인 등록은 필요 없습니다.
+
+### 이전 v1 플러그인 설치를 사용 중이라면
+
+v1은 `~/.claude/plugins/marketplaces/openclone` 에 플러그인으로 설치됐습니다. v2 setup은 이 경로를 감지하면 중단하므로, 먼저 정리해 주세요:
+
+```bash
+cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
+rm -rf ~/.claude/plugins/marketplaces/openclone
+rm -f ~/.openclone/no-auto-update
+# 그 후 위 설치 one-liner 재실행
+```
+
+`./uninstall`이 `~/.claude/settings.json` 에서 v1 플러그인 등록(`enabledPlugins`, `extraKnownMarketplaces`)과 openclone이 심어둔 훅·상태줄을 정리합니다. v1 설치 디렉터리 삭제는 위의 `rm -rf`로 수동 처리합니다(실행 중인 스크립트가 자신을 지울 수 없어서).
+
+`~/.openclone/` 아래의 사용자 데이터(활성 클론 포인터, 직접 만든 클론, 수집한 지식)는 **그대로 보존됩니다**.
 
 ### 이미 설치됐는데 실패·깨짐 / 재설치
 
-설치가 과거에 한 번 됐다면 `git clone`이 디렉터리 충돌로 실패합니다. 또한 원격 저장소가 rewrite(force-push)된 경우 자동 업데이트가 `git pull --ff-only`로는 따라갈 수 없어 구버전에 멈춰 있을 수 있습니다. `/doctor`에 `Plugin openclone not found in marketplace openclone` 같은 에러가 나오면 이 상태일 확률이 높습니다.
+설치가 과거에 한 번 됐다면 `git clone`이 디렉터리 충돌로 실패합니다. 또한 원격 저장소가 rewrite(force-push)된 경우 자동 업데이트가 `git pull --ff-only`로는 따라갈 수 없어 구버전에 멈춰 있을 수 있습니다.
 
 가장 확실한 복구는 기존 설치를 지우고 one-liner를 다시 돌리는 것입니다:
 
 ```bash
-rm -rf ~/.claude/plugins/marketplaces/openclone
-rm -f  ~/.openclone/no-auto-update
+cd ~/.claude/skills/openclone && ./uninstall
+rm -f ~/.openclone/no-auto-update
 # 그 후 위 설치 one-liner 재실행
 ```
-
-`~/.openclone/` 아래의 사용자 데이터(활성 클론 포인터, 직접 만든 클론, 수집한 지식)는 **그대로 보존됩니다** — 위 명령은 플러그인 설치 디렉터리와 자동 업데이트 opt-out 파일만 건드립니다.
 
 ### 업데이트
 
 세션을 시작할 때마다 백그라운드에서 `git pull --ff-only`를 시도합니다 (1시간당 최대 1회, 네트워크·git 실패 시 조용히 skip). 직접 업데이트하려면:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/openclone && git pull --ff-only
+cd ~/.claude/skills/openclone && git pull --ff-only
 ```
 
 자동 업데이트를 끄려면:
@@ -88,7 +101,7 @@ touch ~/.openclone/no-auto-update
 ### 제거
 
 ```bash
-cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
+cd ~/.claude/skills/openclone && ./uninstall
 ```
 
 `~/.openclone/` 의 사용자 데이터(활성 클론 포인터, 직접 만든 클론, 수집한 지식)는 보존됩니다. 완전 제거하려면 추가로 `rm -rf ~/.openclone`.
@@ -117,7 +130,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 내장 클론과 사용자 클론은 **같은 폴더 구조**를 씁니다 — `clones/<name>/` 안에 `persona.md`와 `knowledge/`가 함께 있습니다. 루트만 다릅니다. 읽기 시점에 두 루트가 병합됩니다.
 
 ```text
-<plugin-root>/                          # ~/.claude/plugins/marketplaces/openclone
+<skill-root>/                           # ~/.claude/skills/openclone
 └── clones/<name>/
     ├── persona.md                      # 내장 페르소나 (항상 설치됨)
     └── knowledge/                      # 내장 지식 (sparse-excluded — 활성화 시에만 fetch)
@@ -158,7 +171,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 ## 작동 방식
 
-- `commands/openclone.md`는 단일 디스패처 커맨드 파일. `$ARGUMENTS`의 첫 토큰으로 서브명령(`<name>` / `<N>` / `stop` / `new` / `ingest` / `room` / `panel`)을 분기하고, 세부 로직은 `references/` 아래 워크플로 파일을 on-demand로 로드해 재사용합니다.
+- 저장소 루트의 `SKILL.md`가 단일 디스패처. Claude Code는 `~/.claude/skills/openclone/SKILL.md`를 자동으로 인식하고, `$ARGUMENTS`의 첫 토큰으로 서브명령(`<name>` / `<N>` / `stop` / `new` / `ingest` / `room` / `panel`)을 분기합니다. 세부 로직은 `references/` 아래 워크플로 파일을 on-demand로 로드해 재사용합니다.
 - `UserPromptSubmit` 훅(`hooks/inject-active-clone.sh`)이 매 메시지마다 `~/.openclone/room`과 `~/.openclone/active-clone`을 순서대로 확인합니다. 방이 열려 있으면 멤버 전원의 페르소나와 "가장 적절한 1명이 응답" 라우팅 규칙을 주입하고, 그렇지 않고 active-clone이 있으면 그 클론의 페르소나를 `primary_category` 렌즈와 함께 주입합니다. 둘 다 없으면 조용히 no-op.
 - `/openclone panel <category>`는 현재 활성 상태를 무시하고, frontmatter `categories`에 그 카테고리를 포함한 **모든** 클론(내장 + 사용자)에게 질문을 전달합니다(이름 충돌 시 사용자 버전이 내장을 가립니다).
 - 홈 패널·인터뷰·정제·패널·방 라우팅 관련 참조 워크플로우는 `references/` 아래에 있으며, 디스패처가 필요할 때 on-demand로 로드합니다.
@@ -182,7 +195,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 이슈를 열 때 아래 정보가 있으면 훨씬 빠르게 고쳐집니다.
 
-- Claude Code 버전, OS, openclone 버전(`~/.claude/plugins/marketplaces/openclone/.claude-plugin/plugin.json`의 `version`)
+- Claude Code 버전, OS, openclone 커밋 해시(`cd ~/.claude/skills/openclone && git rev-parse HEAD`)
 - 재현 절차 — 어떤 커맨드를 어떤 순서로 실행했고 무엇을 기대했는지
 - 실제 결과·에러 메시지(있다면 `~/.openclone/last-update.log`도 함께)
 - 해결 아이디어가 있다면 한 줄이라도 제안 — 없어도 괜찮습니다
@@ -281,7 +294,7 @@ node .github/scripts/validate-clones.ts
 
 1. 이슈를 먼저 열어 범위를 맞추는 것을 권장합니다(사소한 오타 수정 제외).
 2. 브랜치를 만들고(`feat/clone-<slug>` 같은 이름), 변경 사항을 커밋합니다. 메시지는 [Conventional Commits](https://www.conventionalcommits.org/) 권장 — 예: `feat(clones): add hyun`.
-3. PR을 올리면 [.github/workflows/validate.yml](.github/workflows/validate.yml)이 자동으로 5개 검사(플러그인 메타데이터·커맨드·클론 스키마·shellcheck·markdownlint)를 실행합니다.
+3. PR을 올리면 [.github/workflows/validate.yml](.github/workflows/validate.yml)이 자동으로 4개 검사(SKILL.md 메타데이터·클론 스키마·shellcheck·markdownlint)를 실행합니다.
 4. 리뷰 후 squash merge 됩니다.
 
 ### 더 깊이 들어가기
@@ -294,7 +307,7 @@ node .github/scripts/validate-clones.ts
 
 ## 상태
 
-v1.0.0 — 커맨드 구조 단일화. 기존 `/openclone:*` 13개가 `/openclone`의 서브명령으로 통합되었고, 단체 대화방(room) 모드가 추가됐습니다. 이슈·PR 환영.
+v2.0.0 — Standalone skill로 전환. 설치 경로가 `~/.claude/skills/openclone` 으로 이동했고, `/openclone` 이 네임스페이스 없이 직접 호출됩니다. 이슈·PR 환영.
 
 ## 라이선스
 

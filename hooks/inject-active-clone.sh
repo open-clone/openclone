@@ -19,8 +19,9 @@
 #   $HOME/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic>.md
 #
 # Persona lookup precedence (user wins on collision):
-#   1. $HOME/.openclone/clones/<name>/persona.md      (user clone)
-#   2. ${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md (built-in / shipped clone)
+#   1. $HOME/.openclone/clones/<name>/persona.md                (user clone)
+#   2. <install_dir>/clones/<name>/persona.md                   (built-in / shipped clone)
+# where install_dir is the skill root (typically ~/.claude/skills/openclone/).
 #
 # Knowledge: Claude is told to read from BOTH the user and built-in knowledge
 # directories for every active/room clone; user-ingested notes layer on top.
@@ -38,10 +39,10 @@ force_push_banner=""
 if [ -f "$HOME/.openclone/force-push-detected" ]; then
   force_push_banner=$(cat <<'BANNER'
 <openclone-upgrade-needed>
-공지 — openclone 자동 업데이트가 막혔습니다. 원격 저장소 main이 force-push 되어 기존 설치는 fast-forward로 따라갈 수 없습니다. 현재 플러그인은 이전 버전에 머물러 있으며, `Plugin not found in marketplace` 같은 에러나 누락된 커맨드의 원인일 수 있습니다.
+공지 — openclone 자동 업데이트가 막혔습니다. 원격 저장소 main이 force-push 되어 기존 설치는 fast-forward로 따라갈 수 없습니다. 현재 설치는 이전 버전에 머물러 있으며, 누락된 커맨드나 예상과 다른 동작의 원인일 수 있습니다.
 
 복구 방법 (이 안내를 사용자에게 전달해 주세요):
-  rm -rf ~/.claude/plugins/marketplaces/openclone
+  cd ~/.claude/skills/openclone && ./uninstall
   rm -f  ~/.openclone/no-auto-update
   # 그 다음 README의 설치 one-liner 재실행
 
@@ -76,16 +77,15 @@ emit_empty() {
   emit_json "$force_push_banner"
 }
 
-# Resolve plugin root. Prefer the env var Claude Code sets for plugin hooks;
-# fall back to deriving it from this script's own location.
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# Resolve the skill root from this script's own location.
+install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Returns 0 if the given clone name resolves to a persona.md (user or built-in);
 # on success prints "<origin>\t<persona_path>\t<user_knowledge_dir>\t<builtin_knowledge_dir>".
 resolve_clone() {
   local name="$1"
   local user_dir="$HOME/.openclone/clones/${name}"
-  local builtin_dir="${plugin_root}/clones/${name}"
+  local builtin_dir="${install_dir}/clones/${name}"
   if [ -f "${user_dir}/persona.md" ]; then
     printf 'user\t%s\t%s\t%s\n' "${user_dir}/persona.md" "${user_dir}/knowledge" "${builtin_dir}/knowledge"
     return 0
@@ -184,7 +184,7 @@ If this clone has a "## Category-specific framing" section, apply the block corr
 
 If the user asks something that requires factual recall about the world of this clone, check knowledge files under BOTH of these directories (user-ingested notes layer on top of shipped knowledge):
   - ${user_knowledge_dir}      (user-ingested; may not exist)
-  - ${builtin_knowledge_dir}   (shipped with the plugin; read-only; may not exist)
+  - ${builtin_knowledge_dir}   (shipped with the skill; read-only; may not exist)
 
 Knowledge files are named YYYY-MM-DD-<topic>.md. Storage is append-only — when the same topic is ingested again, a new file is created with the new date rather than overwriting. When multiple files cover the same topic or subject:
   - Weight the newest dates more heavily — recent entries reflect this persona more accurately than older ones.
@@ -196,7 +196,7 @@ Use the Read tool on specific files when relevant. Do not list the directories t
 
 If the answer is not in the persona, speaking style, or local knowledge files, and the question needs facts you do not have (current events, recent numbers, news about specific companies or people, verifiable claims), use WebSearch or WebFetch to look it up before answering. Still respond in the voice of this clone, weaving in what you found as if recalling it. Prefer short source-type mentions (like "from a recent announcement" or "according to their site") over pasting raw URLs. Do not fabricate facts just to stay in character; if even a search does not yield an answer, say so in the tone of the clone and move on.
 
-Note: this is a ${clone_origin} clone. Built-in clones are shipped with the plugin and should be treated as read-only — if the user asks to modify this clone, instruct them to first copy its folder to ~/.openclone/clones/ (the user version will then override the built-in on next activation).
+Note: this is a ${clone_origin} clone. Built-in clones are shipped with the skill and should be treated as read-only — if the user asks to modify this clone, instruct them to first copy its folder to ~/.openclone/clones/ (the user version will then override the built-in on next activation).
 
 --- clone definition ---
 $(cat "$persona_md")

@@ -7,7 +7,7 @@
 두 곳에서 수집:
 
 - `~/.openclone/clones/<name>/persona.md` (user)
-- `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` (built-in)
+- `${CLAUDE_SKILL_DIR}/clones/<name>/persona.md` (built-in)
 
 같은 `<name>`이 양쪽에 있으면 user가 이김 — built-in 사본은 skip.
 

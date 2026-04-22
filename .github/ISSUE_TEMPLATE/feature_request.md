@@ -26,13 +26,12 @@ assignees: ""
 
 이 제안이 건드릴 영역을 체크해 주세요(복수 선택 가능).
 
-- [ ] `commands/` — 슬래시 커맨드
+- [ ] `SKILL.md` — 단일 디스패처 (슬래시 커맨드 + 자연어 진입)
 - [ ] `hooks/` — UserPromptSubmit 훅
 - [ ] `references/` — 워크플로우 레퍼런스
-- [ ] `skills/openclone/` — 자연어 진입 스킬
-- [ ] `scripts/` — 인제스트 보조 스크립트
+- [ ] `scripts/` — 인제스트·auto-update·statusline 등 보조 스크립트
 - [ ] `clones/` — 내장 클론 구조/스키마
-- [ ] 플러그인 메타데이터 / 배포
+- [ ] `setup` / `uninstall` — 설치·제거 경로 / settings.json 등록
 - [ ] 문서
 
 ## 호환성 고려사항

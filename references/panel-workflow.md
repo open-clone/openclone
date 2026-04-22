@@ -13,7 +13,7 @@ How `/openclone panel <category> "<question>"` broadcasts a question to every cl
 
 2. **Locate clones.** Each clone is a folder containing a `persona.md`. Collect clone folders from BOTH:
    - `~/.openclone/clones/<name>/persona.md` (user clones)
-   - `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` (built-in clones shipped with the plugin)
+   - `${CLAUDE_SKILL_DIR}/clones/<name>/persona.md` (built-in clones shipped with the skill)
 
    If the same `<name>` folder exists in both roots, the user clone wins and the built-in is skipped.
 
@@ -28,7 +28,7 @@ How `/openclone panel <category> "<question>"` broadcasts a question to every cl
    - If the clone has a `## Category-specific framing` section with a `### As a <category>` block matching the current category, **apply that block's emphasis and extra guardrails** in addition to the universal ones.
    - Apply the "Always checks" axes from `categories.md` for this category — the clone should touch at least 2–3 of them when relevant, without robotically listing them all.
    - Keep each perspective to 3–8 sentences. Concise is better than comprehensive.
-   - If the clone has knowledge files under EITHER `~/.openclone/clones/<name>/knowledge/` (user) OR `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (built-in — note: lazy-fetched, so may not exist if the clone was never activated via `/openclone <name>`) that match the topic of the question, skim them and let the content inform the response. Knowledge files are named `YYYY-MM-DD-<topic>.md` — weight newer dates more heavily when several entries touch the same subject; older entries remain valid background. When both locations contain files on the same topic, prefer the user-ingested version. Do not dump or quote.
+   - If the clone has knowledge files under EITHER `~/.openclone/clones/<name>/knowledge/` (user) OR `${CLAUDE_SKILL_DIR}/clones/<name>/knowledge/` (built-in — note: lazy-fetched, so may not exist if the clone was never activated via `/openclone <name>`) that match the topic of the question, skim them and let the content inform the response. Knowledge files are named `YYYY-MM-DD-<topic>.md` — weight newer dates more heavily when several entries touch the same subject; older entries remain valid background. When both locations contain files on the same topic, prefer the user-ingested version. Do not dump or quote.
 
 5. **Format output.**
 

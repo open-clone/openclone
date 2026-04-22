@@ -40,8 +40,8 @@ fi
 # Touch first so concurrent session starts don't all race in.
 touch "$check_file"
 
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-cd "$plugin_root" 2>/dev/null || exit 0
+install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$install_dir" 2>/dev/null || exit 0
 
 # Must be a git checkout to update.
 [ -d ".git" ] || exit 0

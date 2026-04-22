@@ -1,10 +1,34 @@
 ---
-description: openclone의 단일 진입점 — 인자 없이 홈 패널, 이름/번호로 클론 활성화, `room`·`panel`·`new`·`ingest`·`stop` 서브명령 지원.
+name: openclone
+description: Create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, dev, founder, pm, designer, writer, marketing, hr) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "ask all VCs", "stop being <name>", or any mention of `/openclone`. Renders the home panel with no args; name/number activates a clone; sub-actions `stop`, `new`, `ingest`, `room`, `panel`.
 argument-hint: [name | N | stop | new | ingest | room | panel <category> "<q>"]
 allowed-tools: Bash, Read, Write, Glob, WebFetch
 ---
 
-openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아래 표대로 분기하세요. 어떤 분기에도 걸리지 않고 `$1`이 유효한 슬러그 형태(`^[a-z0-9][a-z0-9-]*$`)면 클론 이름으로 해석해 활성화합니다.
+openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했거나 자연어("alice로 전환", "새 클론 만들어" 등)로 의도를 밝힌 경우 모두 이 스킬이 처리합니다.
+
+## 두 출처의 클론
+
+- **빌트인 클론** — `${CLAUDE_SKILL_DIR}/clones/<name>/` (읽기 전용, 저장소와 함께 배포). `persona.md`는 항상 존재하고 `knowledge/`는 활성화 시점에 sparse-checkout으로 가져옵니다.
+- **유저 클론** — `~/.openclone/clones/<name>/` (쓰기 가능). 이름 충돌 시 유저 클론이 빌트인을 가립니다 (shadow).
+
+상태 파일 (모두 `~/.openclone/` 밑):
+- `active-clone` — 현재 활성 클론 이름 (없으면 = 활성 없음)
+- `room` — 방 멤버 한 줄씩 (없거나 비어 있으면 = 방 없음)
+- `menu-context` — 최근 홈 패널의 `숫자 → 이름` JSON 매핑
+
+## 모드 우선순위 (UserPromptSubmit 훅 기준)
+
+1. `~/.openclone/room`이 비어있지 않으면 **room 모드** — 모든 멤버 페르소나와 라우팅 규칙 주입, 턴당 가장 적절한 한두 명이 응답.
+2. `~/.openclone/active-clone`이 존재하면 **single-clone 모드** — 그 클론이 매 턴 응답.
+3. 둘 다 없으면 기본 Claude.
+
+## 호출 맥락 해석
+
+- **슬래시로 호출** (`/openclone <args>`): `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아래 분기표대로 실행.
+- **자연어로 호출**: 유저 메시지에서 의도를 뽑아 가장 적절한 서브 액션으로 라우팅. 가능하면 실제 `/openclone <sub>` 형태의 명령을 보여주고 그 분기를 실행해서 유저가 무엇이 일어나는지 볼 수 있게 합니다.
+
+**이 스킬을 쓰지 말아야 할 때**: 이미 활성 클론·방 안이라면 다음 메시지는 `UserPromptSubmit` 훅이 자동 처리합니다 — 매 턴 스킬을 재호출하지 마세요.
 
 ## 분기 규칙
 
@@ -24,7 +48,7 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 
 ## 홈 패널
 
-`${CLAUDE_PLUGIN_ROOT}/references/home-workflow.md` 를 로드해 그대로 따르세요.
+`${CLAUDE_SKILL_DIR}/references/home-workflow.md` 를 로드해 그대로 따르세요.
 
 렌더가 끝나면 이 턴은 종료. 유저는 다음 메시지에서 번호/이름을 선택하거나 다른 서브명령을 호출합니다.
 
@@ -45,7 +69,7 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 
 1. 클론 존재 확인. 우선순위:
    - `~/.openclone/clones/<name>/persona.md` → origin = user
-   - `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` → origin = built-in
+   - `${CLAUDE_SKILL_DIR}/clones/<name>/persona.md` → origin = built-in
 
    둘 다 없으면 한 줄 안내 후 중단:
    > `<name>` 클론을 찾을 수 없어요. `/openclone`로 목록을 확인하거나 `/openclone new <name>`으로 새로 만들어 주세요.
@@ -53,7 +77,7 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 2. built-in이면 지식 lazy-fetch (user clone은 skip):
 
    ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/scripts/fetch-clone-knowledge.sh" "<name>"
+   bash "${CLAUDE_SKILL_DIR}/scripts/fetch-clone-knowledge.sh" "<name>"
    ```
 
 3. active-clone 기록:
@@ -94,12 +118,12 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 입력 처리:
 - `$2`가 비어 있으면 `/openclone new <name>` 사용법 안내 후 중단.
 - `$2`를 슬러그 검증: `^[a-z0-9][a-z0-9-]*$`. 실패 시 소문자 슬러그로 다시 요청.
-- 이름 충돌 체크 (기존 `commands/new.md`와 동일):
+- 이름 충돌 체크:
   - `~/.openclone/clones/$2/persona.md` 이미 존재 → 취소/다른 이름/덮어쓰기 중 택1 요청.
-  - `${CLAUDE_PLUGIN_ROOT}/clones/$2/persona.md` 존재 → 사용자 클론이 내장을 가린다고 경고 후 진행/이름 변경/취소 택1 요청.
+  - `${CLAUDE_SKILL_DIR}/clones/$2/persona.md` 존재 → 사용자 클론이 내장을 가린다고 경고 후 진행/이름 변경/취소 택1 요청.
 
 실행:
-- `${CLAUDE_PLUGIN_ROOT}/references/interview-workflow.md` 를 로드해 정확히 따르세요.
+- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` 를 로드해 정확히 따르세요.
 - 카테고리는 최소 1개 필수 (vc, dev, founder, pm, designer, writer, marketing, hr 중).
 - 인터뷰 종료 시:
 
@@ -107,7 +131,7 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
   mkdir -p "$HOME/.openclone/clones/<name>/knowledge"
   ```
 
-  `~/.openclone/clones/<name>/persona.md`를 `${CLAUDE_PLUGIN_ROOT}/references/clone-schema.md` 형식대로 작성. 인터뷰 원문은 `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-interview.md`에 `source_type: interview`로 저장.
+  `~/.openclone/clones/<name>/persona.md`를 `${CLAUDE_SKILL_DIR}/references/clone-schema.md` 형식대로 작성. 인터뷰 원문은 `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-interview.md`에 `source_type: interview`로 저장.
 - 한 줄 확인:
   > **{display_name}** 생성 완료 — `~/.openclone/clones/{name}/`. `/openclone {name}`으로 활성화.
 
@@ -121,13 +145,13 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 - `~/.openclone/active-clone` 없거나 비었으면 "`/openclone <name>`으로 먼저 클론을 활성화해 주세요." 안내 후 중단.
 - active-clone 이름으로 persona 경로 탐색:
   - `~/.openclone/clones/<name>/persona.md` → user
-  - `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` → built-in
+  - `${CLAUDE_SKILL_DIR}/clones/<name>/persona.md` → built-in
   - 없음 → 안내 후 중단.
 - built-in이면 **fork-on-write** 먼저:
 
   ```bash
   mkdir -p "$HOME/.openclone/clones"
-  cp -R "${CLAUDE_PLUGIN_ROOT}/clones/<name>" "$HOME/.openclone/clones/<name>"
+  cp -R "${CLAUDE_SKILL_DIR}/clones/<name>" "$HOME/.openclone/clones/<name>"
   ```
 
   한 줄 안내:
@@ -137,11 +161,11 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 
 실행:
 - 소스 타입 판별:
-  - `https://www.youtube.com/` | `https://youtu.be/` → YouTube → `${CLAUDE_PLUGIN_ROOT}/scripts/fetch-youtube.sh <url>`
-  - `http://` | `https://` → URL → WebFetch (실패 시 `${CLAUDE_PLUGIN_ROOT}/scripts/fetch-url.sh <url>`)
+  - `https://www.youtube.com/` | `https://youtu.be/` → YouTube → `${CLAUDE_SKILL_DIR}/scripts/fetch-youtube.sh <url>`
+  - `http://` | `https://` → URL → WebFetch (실패 시 `${CLAUDE_SKILL_DIR}/scripts/fetch-url.sh <url>`)
   - 실제 파일 경로 (`.md|.txt|.pdf|.docx`) → Read (PDF/DOCX은 Read 지원 범위 안에서)
   - 그 외 → 인자 자체가 raw 텍스트
-- `${CLAUDE_PLUGIN_ROOT}/references/refine-workflow.md` 를 로드해 그대로 따름 — 날짜+토픽별 파일을 `~/.openclone/clones/<name>/knowledge/`에 append-only로 기록.
+- `${CLAUDE_SKILL_DIR}/references/refine-workflow.md` 를 로드해 그대로 따름 — 날짜+토픽별 파일을 `~/.openclone/clones/<name>/knowledge/`에 append-only로 기록.
 - 한두 줄 확인:
   > **{display_name}**에 추가됨: `~/.openclone/clones/{name}/knowledge/`. 토픽: `YYYY-MM-DD-<topic>`.
 
@@ -179,7 +203,7 @@ openclone의 단일 디스패처. `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아
 
 5. 확인: `방을 열었어요: alice, bob, charlie. 다음 메시지부터 가장 적절한 클론이 자동으로 응답.`
 
-세부 규칙은 `${CLAUDE_PLUGIN_ROOT}/references/room-workflow.md` 참조.
+세부 규칙은 `${CLAUDE_SKILL_DIR}/references/room-workflow.md` 참조.
 
 ### room add
 
@@ -213,7 +237,7 @@ rm -f ~/.openclone/room
 1. `$2` 가 `{vc, dev, founder, pm, designer, writer, marketing, hr}` 중 하나인지 확인. 아니면 다음 안내 후 중단:
    > 카테고리는 vc, dev, founder, pm, designer, writer, marketing, hr 중 하나. 예: `/openclone panel vc "내 SaaS 피봇 어때요?"`
 2. `$3` 이후를 합친 질문이 비어 있으면 사용법 안내 후 중단.
-3. `${CLAUDE_PLUGIN_ROOT}/references/panel-workflow.md` 와 `${CLAUDE_PLUGIN_ROOT}/references/categories.md` 를 로드. 패널 워크플로를 category = `$2`, question = 나머지 `$ARGUMENTS`로 정확히 실행.
+3. `${CLAUDE_SKILL_DIR}/references/panel-workflow.md` 와 `${CLAUDE_SKILL_DIR}/references/categories.md` 를 로드. 패널 워크플로를 category = `$2`, question = 나머지 `$ARGUMENTS`로 정확히 실행.
 
 ---
 
@@ -222,3 +246,14 @@ rm -f ~/.openclone/room
 - 커맨드 응답 안에서 클론을 **연기하지 않음**. 활성화·새 클론·ingest·room 등은 시스템 수준 확인만. 페르소나 주입은 다음 턴부터 훅이 담당.
 - 이모지 없음.
 - 질문/응답 언어는 유저가 사용한 언어를 그대로 따라갑니다 (한국어면 한국어, 영어면 영어).
+
+## 파일 레이아웃 참고
+
+- `${CLAUDE_SKILL_DIR}/references/clone-schema.md` — 클론 파일 포맷 (frontmatter + 섹션, 멀티 카테고리 규칙)
+- `${CLAUDE_SKILL_DIR}/references/categories.md` — 고정 카테고리 8종 + 카테고리별 "항상 점검" 축
+- `${CLAUDE_SKILL_DIR}/references/home-workflow.md` — 홈 패널 렌더 및 menu-context 기록
+- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` — `new` 인터뷰 진행·정리
+- `${CLAUDE_SKILL_DIR}/references/refine-workflow.md` — `ingest`가 원본 소스를 토픽 파일로 정제
+- `${CLAUDE_SKILL_DIR}/references/panel-workflow.md` — 카테고리 패널 다중 클론 출력
+- `${CLAUDE_SKILL_DIR}/references/room-workflow.md` — 방 안 턴별 라우팅
+- `${CLAUDE_SKILL_DIR}/assets/clone-template.md` — 수기 작성용 시작 템플릿

@@ -2,12 +2,12 @@
 
 ## 위협 모델과 범위
 
-openclone은 사용자의 로컬 머신에서만 동작하는 Claude Code 플러그인입니다. 모든 상태는 파일시스템(`${CLAUDE_PLUGIN_ROOT}/`와 `~/.openclone/`)에 저장되며, 서버 컴포넌트나 멀티유저 엔드포인트가 없습니다.
+openclone은 사용자의 로컬 머신에서만 동작하는 Claude Code **standalone skill**입니다. 모든 상태는 파일시스템(`~/.claude/skills/openclone/`와 `~/.openclone/`)에 저장되며, 서버 컴포넌트나 멀티유저 엔드포인트가 없습니다.
 
 - **범위 안**
   - `hooks/inject-active-clone.sh` 및 로컬 파일 읽기 경로에서의 코드 실행·정보 노출 취약점
   - `scripts/fetch-url.sh`, `scripts/fetch-youtube.sh`의 인제스트 경로에서의 입력 검증·커맨드 인젝션
-  - `.claude-plugin/` 매니페스트·슬래시 커맨드 frontmatter 파싱 관련 문제
+  - `SKILL.md` frontmatter 파싱 및 `setup`이 `~/.claude/settings.json`에 쓰는 훅·statusLine 등록 경로의 안전성
   - 내장 프리셋 클론의 악성 콘텐츠가 사용자 환경에 끼칠 수 있는 부작용
 - **범위 밖**
   - Claude Code 자체, Anthropic API, 외부 웹사이트의 취약점 — 해당 벤더로 직접 제보해 주세요.
@@ -25,7 +25,7 @@ openclone은 사용자의 로컬 머신에서만 동작하는 Claude Code 플러
 
 - 영향 범위 요약
 - 재현 단계 또는 PoC
-- 사용 중인 openclone 버전(`.claude-plugin/plugin.json`의 `version`)
+- 사용 중인 openclone 커밋 해시(`cd ~/.claude/skills/openclone && git rev-parse HEAD`)
 - 운영체제·셸·Claude Code 버전
 
 ## 응답 목표

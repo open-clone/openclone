@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lazy-fetch a clone's built-in knowledge via partial+sparse git.
 #
-# The plugin is cloned with --filter=blob:none --sparse in non-cone mode, where
+# The skill is cloned with --filter=blob:none --sparse in non-cone mode, where
 # the default pattern includes everything EXCEPT clones/*/knowledge/. This script
 # adds the specific clone's knowledge directory to the sparse-checkout, which
 # materializes just that clone's files (blobs auto-fetched from the promisor remote).
@@ -17,8 +17,8 @@ if [ -z "$slug" ]; then
   exit 1
 fi
 
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-cd "$plugin_root"
+install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$install_dir"
 
 # Not a git checkout (e.g., hand-copied layout for dev) — knowledge is either
 # already present or absent; nothing we can do. Silent success.

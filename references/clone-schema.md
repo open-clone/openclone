@@ -7,7 +7,7 @@ Every clone has a `persona.md` and an optional knowledge directory. **One clone 
 Built-in and user clones share the **same folder shape** — persona and knowledge live together under `clones/<name>/`. Only the root differs:
 
 ```text
-${CLAUDE_PLUGIN_ROOT}/clones/<name>/       # built-in, read-only
+${CLAUDE_SKILL_DIR}/clones/<name>/       # built-in, read-only
 ├── persona.md                             # always present after install
 └── knowledge/                             # sparse-excluded by default; fetched on first /openclone <name>
     └── YYYY-MM-DD-<topic>.md
@@ -24,14 +24,14 @@ Persona lookup order (user wins on collision):
 
 ```text
 ~/.openclone/clones/<name>/persona.md              # user
-${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md     # built-in
+${CLAUDE_SKILL_DIR}/clones/<name>/persona.md     # built-in
 ```
 
 Knowledge lookup is additive — both directories are read when present:
 
 ```text
 ~/.openclone/clones/<name>/knowledge/              # user
-${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/     # built-in (lazy-fetched)
+${CLAUDE_SKILL_DIR}/clones/<name>/knowledge/     # built-in (lazy-fetched)
 ```
 
 - `<name>` is a lowercase slug, `[a-z0-9-]+`, globally unique within each root.

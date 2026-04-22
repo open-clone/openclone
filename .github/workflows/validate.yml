@@ -15,11 +15,8 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Validate plugin and marketplace manifests
-        run: node .github/scripts/validate-plugin.ts
-
-      - name: Validate command frontmatter
-        run: node .github/scripts/validate-commands.ts
+      - name: Validate SKILL.md frontmatter
+        run: node .github/scripts/validate-skill.ts
 
       - name: Validate clone schema
         run: node .github/scripts/validate-clones.ts

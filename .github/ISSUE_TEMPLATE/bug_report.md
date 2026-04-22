@@ -26,7 +26,7 @@ assignees: ""
 
 ## 환경
 
-- openclone 버전 (`.claude-plugin/plugin.json`의 `version`):
+- openclone 커밋 해시 (`cd ~/.claude/skills/openclone && git rev-parse HEAD`):
 - Claude Code 버전:
 - 운영체제 / 셸:
 - 활성 클론(`~/.openclone/active-clone`):

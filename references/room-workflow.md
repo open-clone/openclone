@@ -16,11 +16,11 @@ Room mode has precedence over `~/.openclone/active-clone` in the hook (`hooks/in
 
 ## Roster management (dispatcher)
 
-These flows run from `commands/openclone.md`'s `## room` section. Rules common to every sub-sub-command:
+These flows run from the root `SKILL.md`'s `## room` section. Rules common to every sub-sub-command:
 
 - **Name validation** — each member name must match `^[a-z0-9][a-z0-9-]*$`. Reject anything else with a one-line warning and skip that entry.
-- **Existence check** — for each name, look up persona first under `~/.openclone/clones/<name>/persona.md` (user), then `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` (built-in). If neither exists, skip with a warning.
-- **Knowledge lazy-fetch** — when a built-in clone is added (either at `room start` or via `room add`), invoke `${CLAUDE_PLUGIN_ROOT}/scripts/fetch-clone-knowledge.sh <name>` so its `knowledge/` directory is materialized. User clones skip this.
+- **Existence check** — for each name, look up persona first under `~/.openclone/clones/<name>/persona.md` (user), then `${CLAUDE_SKILL_DIR}/clones/<name>/persona.md` (built-in). If neither exists, skip with a warning.
+- **Knowledge lazy-fetch** — when a built-in clone is added (either at `room start` or via `room add`), invoke `${CLAUDE_SKILL_DIR}/scripts/fetch-clone-knowledge.sh <name>` so its `knowledge/` directory is materialized. User clones skip this.
 - **Capacity** — cap the roster at **8 clones**. If the user supplies more, keep the first 8 and warn about the overflow.
 - **Dedupe** — if the same name appears twice in one invocation, keep the first and drop duplicates silently.
 - **Empty result** — if validation removes every candidate, do **not** write the roster file; tell the user why and stop.
@@ -113,7 +113,7 @@ Each member's knowledge lives at:
 
 ```text
 ~/.openclone/clones/<name>/knowledge/                  # user-ingested, wins on topic collision
-${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/         # built-in (lazy-fetched; may be absent)
+${CLAUDE_SKILL_DIR}/clones/<name>/knowledge/         # built-in (lazy-fetched; may be absent)
 ```
 
 Files are `YYYY-MM-DD-<topic>.md`, append-only. Use newer dates preferentially; treat older files as valid background. Do not dump or quote verbatim — let the knowledge inform the response in the clone's voice.

@@ -6,13 +6,12 @@
 
 <!-- 해당하는 것에 [x]를 표시해 주세요 (복수 선택 가능) -->
 
-- [ ] 디스패처 서브액션 추가/수정 (`commands/openclone.md`)
+- [ ] 디스패처 서브액션 추가/수정 (`SKILL.md`)
 - [ ] 새 레퍼런스 (`references/*.md`)
 - [ ] 새 내장 클론 (`clones/<name>/`)
 - [ ] 훅 (`hooks/*`)
-- [ ] 스킬 (`skills/openclone/SKILL.md`)
 - [ ] 스크립트 (`scripts/*.sh`)
-- [ ] 플러그인 메타데이터 (`.claude-plugin/*.json`)
+- [ ] 설치·제거 (`setup`, `uninstall`)
 - [ ] 문서 (README·CONTRIBUTING·docs·등)
 - [ ] CI (`.github/workflows/*`, `.github/scripts/*`)
 
@@ -22,12 +21,12 @@
 
 ## 체크리스트
 
-- [ ] 로컬에서 `/plugin marketplace add <abs-path>` 후 재설치하여 수동 스모크 테스트
-- [ ] 훅을 편집했다면 Claude Code 재시작 후 `/openclone <clone>`(및 room 건드렸다면 `/openclone room <a> <b>`)로 실제 메시지 한 번 보내 재현
+- [ ] 로컬에서 `./setup` 재실행 후 Claude Code 재시작하여 수동 스모크 테스트 (또는 dev-link 오버레이로 라이브 확인)
+- [ ] 훅 등록(setup이 settings.json에 쓰는 항목)을 바꿨다면 `./setup` 재실행 후 세션 재시작 필요
+- [ ] `/openclone <clone>`(및 room 건드렸다면 `/openclone room <a> <b>`)로 실제 메시지 한 번 보내 재현
 - [ ] 추가·수정한 텍스트에 이모지가 포함되지 않았음을 확인
 - [ ] 내장 클론(`clones/`)을 수정하지 않았음을 확인 (수정이 필요했다면 `~/.openclone/`에 포크)
 - [ ] 동작 변경이 있다면 `CHANGELOG.md`의 `[Unreleased]` 섹션에 기입
-- [ ] 동작/호환성이 바뀌었다면 `.claude-plugin/plugin.json`의 `version`을 상향
 - [ ] CI(`.github/workflows/validate.yml`) 그린
 - [ ] 관련 문서(README/CONTRIBUTING/docs/architecture.md)를 갱신
 

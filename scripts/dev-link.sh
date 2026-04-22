@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Overlay workspace files into the installed plugin via symlink so edits are
+# Overlay workspace files into the installed skill via symlink so edits are
 # picked up live without copying.
 #
-# Targets ~/.claude/plugins/marketplaces/openclone (the sparse install).
+# Targets ~/.claude/skills/openclone (the sparse install).
 # Only the paths you pass get overlaid — the rest of the install is untouched.
 #
 # Usage:
@@ -10,13 +10,13 @@
 #
 # Examples:
 #   scripts/dev-link.sh references/panel-workflow.md
-#   scripts/dev-link.sh commands/vc.md commands/dev.md
+#   scripts/dev-link.sh SKILL.md
 #   scripts/dev-link.sh references/
 
 set -euo pipefail
 
 workspace="$(cd "$(dirname "$0")/.." && pwd)"
-installed="$HOME/.claude/plugins/marketplaces/openclone"
+installed="$HOME/.claude/skills/openclone"
 
 if [ $# -eq 0 ]; then
   cat >&2 <<USAGE
@@ -24,14 +24,14 @@ Usage: $(basename "$0") <relative-path> [<relative-path> ...]
 
 Examples:
   $(basename "$0") references/panel-workflow.md
-  $(basename "$0") commands/vc.md commands/dev.md
+  $(basename "$0") SKILL.md
   $(basename "$0") references/
 USAGE
   exit 1
 fi
 
 if [ ! -d "$installed" ]; then
-  echo "error: installed plugin not found at $installed" >&2
+  echo "error: installed skill not found at $installed" >&2
   echo "install openclone first — see README." >&2
   exit 1
 fi
@@ -59,8 +59,8 @@ done
 cat <<NOTE
 
 Done. Edits in the workspace now flow directly to Claude Code.
-  - commands / references / personas: live on next slash command.
-  - hooks (hooks/*.sh, hooks.json): restart Claude Code.
+  - SKILL.md / references / personas: live on next slash command.
+  - hooks (hooks/*.sh): restart Claude Code.
 
 To prevent auto-update from running git pull against the installed path
 while symlinks are in place:

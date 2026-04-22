@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# openclone uninstall — remove plugin registration and delete this checkout.
+# openclone uninstall — remove skill registration and delete this checkout.
 #
-# Removes `openclone@openclone` from ~/.claude/settings.json `enabledPlugins`
-# and deletes ~/.claude/plugins/marketplaces/openclone. Leaves ~/.openclone
-# (user data: active-clone, user clones, user knowledge) untouched.
+# Removes openclone-managed hooks and statusline from ~/.claude/settings.json
+# (identified by `_openclone_managed: true`) and deletes
+# ~/.claude/skills/openclone. Leaves ~/.openclone (user data: active-clone,
+# user clones, user knowledge) untouched.
 
 set -eu
 
-expected_dir="$HOME/.claude/plugins/marketplaces/openclone"
+expected_dir="$HOME/.claude/skills/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$here" != "$expected_dir" ]; then
@@ -31,6 +32,43 @@ except Exception:
 if not isinstance(data, dict):
     sys.exit(0)
 
+MANAGED = "_openclone_managed"
+
+# Strip managed hook entries from any event, preserving user-authored hooks.
+hooks = data.get("hooks")
+if isinstance(hooks, dict):
+    for event_name in list(hooks.keys()):
+        entries = hooks.get(event_name)
+        if not isinstance(entries, list):
+            continue
+        new_entries = []
+        for group in entries:
+            if not isinstance(group, dict):
+                new_entries.append(group)
+                continue
+            inner = group.get("hooks")
+            if not isinstance(inner, list):
+                new_entries.append(group)
+                continue
+            cleaned = [h for h in inner if not (isinstance(h, dict) and h.get(MANAGED) is True)]
+            if cleaned:
+                group["hooks"] = cleaned
+                new_entries.append(group)
+            # else: drop the whole group (was only ours)
+        if new_entries:
+            hooks[event_name] = new_entries
+        else:
+            del hooks[event_name]
+    if not hooks:
+        del data["hooks"]
+
+# Only remove statusLine if we were the one who set it (managed marker present).
+statusline = data.get("statusLine")
+if isinstance(statusline, dict) and statusline.get(MANAGED) is True:
+    del data["statusLine"]
+
+# v1 legacy cleanup: strip plugin-era keys so users migrating from the old
+# plugin install end up with a clean settings.json. Safe no-op on fresh v2.
 enabled = data.get("enabledPlugins")
 if isinstance(enabled, dict) and "openclone@openclone" in enabled:
     del enabled["openclone@openclone"]
@@ -42,11 +80,6 @@ if isinstance(marketplaces, dict) and "openclone" in marketplaces:
     del marketplaces["openclone"]
     if not marketplaces:
         del data["extraKnownMarketplaces"]
-
-# Only remove statusLine if we were the one who set it (managed marker present).
-statusline = data.get("statusLine")
-if isinstance(statusline, dict) and statusline.get("_openclone_managed") is True:
-    del data["statusLine"]
 
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
@@ -63,8 +96,8 @@ fi
 cat <<'MSG'
 openclone 제거 완료.
 
-Claude Code 등록이 ~/.claude/settings.json 에서 제거되었습니다.
-플러그인 디렉터리가 삭제되었습니다 (~/.claude/plugins/marketplaces/openclone).
+Claude Code 훅 및 상태줄 등록이 ~/.claude/settings.json 에서 제거되었습니다.
+스킬 디렉터리가 삭제되었습니다 (~/.claude/skills/openclone).
 
 사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, 사용자 클론, 사용자 지식).
 사용자 데이터까지 삭제하려면: rm -rf ~/.openclone

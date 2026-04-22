@@ -1,15 +1,14 @@
-// Validate commands/*.md frontmatter.
-// Required keys on every command: description, allowed-tools.
-// argument-hint is optional (only commands that take arguments need it).
-import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
+// Validate the root SKILL.md frontmatter for a standalone Claude Code skill.
+// Required: name, description, allowed-tools. argument-hint is optional.
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve, relative, join } from "node:path";
+import { dirname, resolve, relative } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
-const COMMANDS_DIR = resolve(ROOT, "commands");
+const SKILL_PATH = resolve(ROOT, "SKILL.md");
 
-const REQUIRED_KEYS = ["description", "allowed-tools"] as const;
+const REQUIRED_KEYS = ["name", "description", "allowed-tools"] as const;
 
 function fail(msgs: string[]): never {
   for (const m of msgs) console.error(`[FAIL] ${m}`);
@@ -44,25 +43,16 @@ function parseFrontmatter(text: string, path: string): Record<string, string> {
   return out;
 }
 
-if (!existsSync(COMMANDS_DIR) || !statSync(COMMANDS_DIR).isDirectory()) {
-  fail(["commands/ directory missing"]);
-}
+if (!existsSync(SKILL_PATH)) fail(["SKILL.md missing at repo root"]);
 
-const files = readdirSync(COMMANDS_DIR)
-  .filter((f) => f.endsWith(".md"))
-  .sort()
-  .map((f) => join(COMMANDS_DIR, f));
-
-if (files.length === 0) fail(["commands/ is empty"]);
-
+const fm = parseFrontmatter(readFileSync(SKILL_PATH, "utf8"), SKILL_PATH);
 const problems: string[] = [];
-for (const path of files) {
-  const fm = parseFrontmatter(readFileSync(path, "utf8"), path);
-  for (const key of REQUIRED_KEYS) {
-    if (!fm[key]) problems.push(`${relative(ROOT, path)}: missing or empty '${key}'`);
-  }
+for (const key of REQUIRED_KEYS) {
+  if (!fm[key]) problems.push(`SKILL.md: missing or empty '${key}'`);
+}
+if (fm.name && fm.name !== "openclone") {
+  problems.push(`SKILL.md: name must be 'openclone' (got '${fm.name}')`);
 }
 
 if (problems.length > 0) fail(problems);
-
-console.log(`[OK] ${files.length} command file(s) valid`);
+console.log("[OK] SKILL.md frontmatter valid");
