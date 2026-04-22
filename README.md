@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-8A2BE2)](https://docs.claude.com/en/docs/claude-code)
 [![Status](https://img.shields.io/badge/Status-v0.2-brightgreen)](CHANGELOG.md)
-[![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)](#)
+![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)
 
 > **Claude Code 안에서 AI 페르소나 클론과 대화하는 스킬.**
 
@@ -55,14 +55,14 @@ git clone --filter=blob:none --sparse --depth=1 \
 cd ~/.claude/skills/openclone && git pull --ff-only
 ```
 
-**자동 업데이트 끄기·켜기**
+**자동 업데이트 끄기·켜기** — 파일 플래그로 토글합니다.
 
 ```bash
 touch ~/.openclone/no-auto-update    # 끄기
 rm ~/.openclone/no-auto-update       # 다시 켜기
 ```
 
-**제거**
+**제거** — 설치 디렉터리의 `./uninstall`을 실행합니다.
 
 ```bash
 cd ~/.claude/skills/openclone && ./uninstall
