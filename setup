@@ -79,7 +79,10 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-python3 - "$settings_file" <<'PY'
+# Capture stdout into a single marker line so bash can branch the closing
+# message on whether this is a fresh activation. Anything user-facing
+# (e.g. statusline notice) goes to stderr so it streams through unchanged.
+was_enabled_marker=$(python3 - "$settings_file" <<'PY'
 import json, os, sys
 
 path = sys.argv[1]
@@ -96,6 +99,8 @@ if os.path.exists(path):
 enabled = data.get("enabledPlugins")
 if not isinstance(enabled, dict):
     enabled = {}
+
+enabled_before = enabled.get("openclone@openclone") is True
 
 enabled["openclone@openclone"] = True
 data["enabledPlugins"] = enabled
@@ -127,25 +132,48 @@ elif isinstance(existing, dict):
     print(
         "참고: 이미 다른 statusLine이 설정되어 있어 openclone statusline은 주입하지 않았습니다.\n"
         "      활성 클론/대화방 상태를 상태줄에 보고 싶다면 settings.json의 statusLine을\n"
-        '      {"type":"command","command":"bash ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh"} 로 교체하세요.'
+        '      {"type":"command","command":"bash ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh"} 로 교체하세요.',
+        file=sys.stderr,
     )
 
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
+
+print(f"OPENCLONE_WAS_ENABLED={1 if enabled_before else 0}")
 PY
+)
+was_enabled="${was_enabled_marker##*=}"
 
 mkdir -p "$HOME/.openclone"
 
-cat <<'MSG'
-openclone 설치 완료.
+printf 'openclone 설치 완료.\n\n'
 
-활성화 방법:
-  • 실행 중인 Claude Code 세션에서: /reload-plugins 실행
-    (플러그인을 핫로드, 재시작 불필요)
-  • 처음 설치이거나 /reload-plugins가 enabledPlugins를 인식하지 못하면:
-    Claude Code를 한 번 재시작하세요.
+if [ "$was_enabled" = "0" ]; then
+  cat <<'MSG_RESTART'
+==============================================================
+  다음 단계: Claude Code를 완전히 종료한 뒤 다시 실행하세요.
+==============================================================
 
+  주의: /reload-plugins 만으로는 처음 활성화된 플러그인이 잡히지 않습니다.
+        (재시작하지 않으면 `/openclone` 입력 시 "Unknown command"가 뜹니다.)
+
+  재시작 후 첫 메시지로 /openclone 을 쳐서 홈 패널이 뜨는지 확인하세요.
+
+MSG_RESTART
+else
+  cat <<'MSG_RELOAD'
+다음 단계:
+  • 실행 중인 Claude Code 세션에서 /reload-plugins 실행
+    (이미 활성화돼 있던 플러그인이라 핫리로드로 충분합니다)
+  • hooks/hooks.json 을 수정한 적이 있다면 한 번 재시작이 필요합니다
+
+확인: /openclone 으로 홈 패널이 뜨면 OK.
+
+MSG_RELOAD
+fi
+
+cat <<'MSG_COMMON'
 사용해 보세요:
   /openclone                    — 홈 패널 (카테고리별 클론 목록, 번호/이름으로 선택)
   /openclone <name | N>         — 해당 클론 활성화 (built-in은 최초 사용 시 지식 lazy-fetch)
@@ -161,4 +189,4 @@ openclone 설치 완료.
   다시 켜기: rm ~/.openclone/no-auto-update
 
 제거: 이 디렉터리에서 ./uninstall 실행.
-MSG
+MSG_COMMON

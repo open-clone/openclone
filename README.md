@@ -32,10 +32,10 @@ Claude Code 세션에 아래 문단을 그대로 붙여넣으세요:
 ```text
 Install openclone: run
   git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/plugins/marketplaces/openclone && cd ~/.claude/plugins/marketplaces/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
-then run /reload-plugins to activate. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, dev, founder, pm, designer, writer, marketing, hr). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the plugin loaded by running /openclone and show me the output.
+After ./setup finishes, tell me to fully quit and relaunch Claude Code — a brand-new plugin needs a real restart, /reload-plugins alone does NOT pick up plugins that were just enabled. Do NOT run /reload-plugins in place of a restart, and do NOT call /openclone in this session (it will fail with "Unknown command" until restart). Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, dev, founder, pm, designer, writer, marketing, hr). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. After I confirm I have restarted, ask me to run /openclone and show you the output.
 ```
 
-Claude Code가 직접 클론·`./setup`·`/reload-plugins`를 실행하고, 앞으로의 세션에서 openclone을 자연스럽게 인식하도록 `~/.claude/CLAUDE.md`에 메모를 추가합니다.
+Claude Code가 직접 클론·`./setup`을 실행하고, 사용자에게 Claude Code 풀 재시작을 안내한 뒤(이때 `/reload-plugins`는 새로 활성화된 플러그인을 잡지 못합니다), 앞으로의 세션에서 openclone을 자연스럽게 인식하도록 `~/.claude/CLAUDE.md`에 메모를 추가합니다.
 
 ### 옵션 B — 터미널에서 직접
 
@@ -48,7 +48,7 @@ git clone --filter=blob:none --sparse --depth=1 \
   && ./setup
 ```
 
-설치 후 Claude Code 세션에서 `/reload-plugins`를 실행하거나 (안 집히면) 한 번 재시작하세요.
+설치 직후에는 Claude Code를 한 번 완전히 종료했다 다시 실행하세요. `/reload-plugins`는 **이미 활성화돼 있던** 플러그인의 파일 변경만 핫리로드하며, 첫 설치(혹은 다시 enable되는 경우)에는 풀 재시작이 필요합니다 — 안 그러면 `/openclone`이 `Unknown command`로 뜹니다. 이후 클론·커맨드 파일 수정만 했을 때는 `/reload-plugins`로 충분합니다.
 
 ### 공통 동작
 
