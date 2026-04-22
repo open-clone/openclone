@@ -21,7 +21,7 @@ For development on a machine where openclone is installed the normal way, editin
 Every read path merges two locations with **user-wins-on-collision** precedence for persona, and **additive layering** for knowledge. Built-in and user layouts are **structurally identical** — only the root differs:
 
 | Purpose | Built-in (read-only, shipped) | User (writable) |
-|---|---|---|
+| --- | --- | --- |
 | Persona | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` | `~/.openclone/clones/<name>/persona.md` |
 | Knowledge | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` | `~/.openclone/clones/<name>/knowledge/` |
 | Active pointer | — | `~/.openclone/active-clone` (just a clone name) |
@@ -43,6 +43,7 @@ The hook is the only mechanism that makes the active clone "alive." `/openclone:
 ### Auto-update via SessionStart hook
 
 `scripts/session-update.sh` is registered in `hooks/hooks.json` as a `SessionStart` hook. On every session start it **immediately forks to background and exits 0**, so the session never blocks. The background branch:
+
 1. Skips if `~/.openclone/no-auto-update` exists (user opt-out)
 2. Throttles via `~/.openclone/last-update-check` mtime (once per hour)
 3. Runs `git pull --ff-only` in `${CLAUDE_PLUGIN_ROOT}` with `GIT_TERMINAL_PROMPT=0` (never hangs on auth)

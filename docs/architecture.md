@@ -14,7 +14,7 @@ openclone은 Claude Code **플러그인**입니다. 빌드 시스템은 없고, 
 
 ## 데이터 흐름 (활성 클론으로 대화할 때)
 
-```
+```text
 사용자가 메시지 입력
         │
         ▼
@@ -46,7 +46,7 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 두 루트가 **읽을 때 병합**됩니다. 내장과 사용자 레이아웃은 **구조가 동일**하고(둘 다 `clones/<name>/{persona.md, knowledge/}`), 내장 쪽만 sparse-checkout non-cone 모드(`/*` + `!/clones/*/knowledge/`)로 각 클론의 `knowledge/` 서브폴더를 기본 제외하여 lazy-fetch 합니다.
 
 | 목적 | 내장 (read-only, 배포) | 사용자 (writable) |
-|---|---|---|
+| --- | --- | --- |
 | 페르소나 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` | `~/.openclone/clones/<name>/persona.md` |
 | 지식 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (sparse-excluded; `/openclone:use` 시 fetch) | `~/.openclone/clones/<name>/knowledge/` |
 | 활성 포인터 | — | `~/.openclone/active-clone` (텍스트 파일, 내용은 클론 이름 한 줄) |
@@ -71,7 +71,7 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 
 파일 [hooks/inject-active-clone.sh](../hooks/inject-active-clone.sh)의 주석과 [references/clone-schema.md](../references/clone-schema.md)의 "Injection format" 섹션이 공식 사양입니다.
 
-**훅 편집 시 주의**
+### 훅 편집 시 주의
 
 - heredoc 본문에 `'`(apostrophe)가 들어가면 bash 파서가 혼란을 일으킵니다. 축약형(`clone's`) 대신 "this clone"으로 풀거나 곡선 따옴표를 사용하세요.
 - `python3` 경로와 `sed/awk` 폴백 양쪽 모두에서 유효한 JSON을 내놓는지 점검해야 합니다. macOS 기본 환경은 python3 경로만 지나므로, 폴백은 별도 테스트가 필요합니다.
@@ -109,7 +109,7 @@ Claude가 실행할 프롬프트 본문.
 현재 레퍼런스:
 
 | 파일 | 역할 |
-|---|---|
+| --- | --- |
 | [clone-schema.md](../references/clone-schema.md) | `persona.md` 프론트매터·본문 섹션·`knowledge/` 파일명 규약의 **진실 공급원** |
 | [categories.md](../references/categories.md) | v1 고정 8개 카테고리 정의와 각 카테고리의 렌즈 |
 | [interview-workflow.md](../references/interview-workflow.md) | `/openclone:new`의 인터뷰 진행 방식 |
@@ -170,7 +170,7 @@ fi
 
 파일명 규약(`references/clone-schema.md`):
 
-```
+```text
 clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md
 ```
 

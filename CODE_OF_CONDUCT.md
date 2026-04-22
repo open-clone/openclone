@@ -79,6 +79,6 @@
 
 커뮤니티 영향 가이드라인은 [Mozilla의 행동 규범 집행 사다리](https://github.com/mozilla/diversity)에서 영감을 받았습니다.
 
-본 행동 규범에 대한 자주 묻는 질문은 https://www.contributor-covenant.org/faq 를, 번역본은 https://www.contributor-covenant.org/translations 를 참고하세요.
+본 행동 규범에 대한 자주 묻는 질문은 <https://www.contributor-covenant.org/faq> 를, 번역본은 <https://www.contributor-covenant.org/translations> 를 참고하세요.
 
 [homepage]: https://www.contributor-covenant.org

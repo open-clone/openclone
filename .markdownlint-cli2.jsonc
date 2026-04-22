@@ -1,0 +1,7 @@
+{
+  "ignores": [
+    "clones/*/knowledge/**",
+    ".context/**",
+    "node_modules/**"
+  ]
+}

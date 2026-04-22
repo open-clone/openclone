@@ -25,7 +25,7 @@ Openclone lets a user create AI persona "clones" — each a folder containing a 
 Direct slash commands are the main interface:
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `/openclone:new <name>` | Create a clone via interactive interview (≥1 category required, multi-category allowed). See `references/interview-workflow.md`. |
 | `/openclone:use <name>` | Activate a clone — subsequent messages answered as this clone, using its `primary_category` framing. |
 | `/openclone:stop` | Deactivate the active clone. |
@@ -39,7 +39,7 @@ If the user asks for one of these in natural language, offer to run the correspo
 
 Each clone is one folder. Two roots are merged at read time:
 
-```
+```text
 ${CLAUDE_PLUGIN_ROOT}/clones/          # built-in, shipped with the plugin (read-only)
 └── <name>/
     ├── persona.md                     # curated preset persona
@@ -79,6 +79,7 @@ A `UserPromptSubmit` hook (`hooks/inject-active-clone.sh`) reads `~/.openclone/a
 The hook also tells Claude where to find the clone's knowledge files (both the user and built-in `knowledge/` dirs for that clone) and how to weight recency.
 
 The hook is no-op when:
+
 - The active-clone file does not exist
 - It is empty
 - It points to a non-existent clone folder in both roots
