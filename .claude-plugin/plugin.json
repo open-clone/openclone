@@ -1,6 +1,6 @@
 {
   "name": "openclone",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Create AI clones with categorized personas and converse with them inside Claude Code. Select a clone and every following message is answered in that clone's voice; call /openclone:<category> for multi-perspective panels.",
   "author": {
     "name": "Taurin"

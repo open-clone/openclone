@@ -48,6 +48,18 @@ if not isinstance(enabled, dict):
 enabled["openclone@openclone"] = True
 data["enabledPlugins"] = enabled
 
+marketplaces = data.get("extraKnownMarketplaces")
+if not isinstance(marketplaces, dict):
+    marketplaces = {}
+
+marketplaces["openclone"] = {
+    "source": {
+        "source": "local",
+        "path": "~/.claude/plugins/marketplaces/openclone",
+    }
+}
+data["extraKnownMarketplaces"] = marketplaces
+
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")

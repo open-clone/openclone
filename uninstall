@@ -37,6 +37,12 @@ if isinstance(enabled, dict) and "openclone@openclone" in enabled:
     if not enabled:
         del data["enabledPlugins"]
 
+marketplaces = data.get("extraKnownMarketplaces")
+if isinstance(marketplaces, dict) and "openclone" in marketplaces:
+    del marketplaces["openclone"]
+    if not marketplaces:
+        del data["extraKnownMarketplaces"]
+
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
