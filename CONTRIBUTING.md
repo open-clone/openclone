@@ -53,11 +53,55 @@ docs/                   사람용 개발자 문서
 
 ### 새 내장 클론 추가
 
-1. `clones/<name>/persona.md` 생성 — frontmatter 스펙은 [references/clone-schema.md](references/clone-schema.md)를 그대로 따릅니다. 필수 키: `name`·`display_name`·`tagline`·`categories`·`created`·`voice_traits`.
-2. 본문 섹션 순서: `## Persona` → `## Speaking style` → `## Guidelines` → `## Background`. 필요 시 `## Category-specific framing` 추가.
-3. 내장 지식을 함께 싣는다면 `clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` 형식으로 클론 폴더 안에 함께 둡니다. 각 클론의 `knowledge/` 서브폴더는 설치 시 sparse-excluded(`!/clones/*/knowledge/`)이고 `/openclone:use <name>` 최초 호출에만 fetch되므로 내용이 많아도 install 크기에 영향 없습니다.
-4. `categories` 값은 고정 8개(`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`) 중에서만 고릅니다.
-5. `persona.md`에 **import 푸터나 "Knowledge index" 섹션을 넣지 마세요**. 신규 클론은 페르소나 본문만 포함합니다.
+처음 기여하는 분은 [README의 튜토리얼](README.md#새-클론-기여하기-튜토리얼)을 먼저 따라가세요 — 복붙 가능한 예제와 6단계 워크플로우가 있습니다. 이 섹션은 두 번째·세 번째 클론을 만들 때 쓰는 **체크리스트 + 흔한 실수 사전**으로 포지셔닝돼 있습니다. 스키마 전체는 [references/clone-schema.md](references/clone-schema.md)가 단일 진실입니다.
+
+#### 스키마 한눈에 보기
+
+| 항목 | 필수 | 값 규칙 | 검증 위치 |
+| --- | --- | --- | --- |
+| `name` | 필수 | 폴더명과 동일한 슬러그 (`[a-z0-9-]+`) | `validate-clones.ts:14–21` |
+| `display_name` | 필수 | 목록·패널에 표시되는 이름 | 같은 곳 |
+| `tagline` | 필수 | 한 줄 소개(<80자) | 같은 곳 |
+| `categories` | 필수 | 고정 8개 enum 중 1개 이상(리스트) | `validate-clones.ts:23`, `42–58` |
+| `primary_category` | 선택 | `categories` 안에 있는 값 | `validate-clones.ts:60–63`, `121–126` |
+| `created` | 필수 | ISO 날짜(`YYYY-MM-DD`) | `validate-clones.ts:14–21` |
+| `voice_traits` | 필수 | 3–5개의 짧은 톤 태그 | 같은 곳 |
+| `## Persona` | 필수 | 3–8문장 내러티브 | `validate-clones.ts:24`, `128–132` |
+| `## Speaking style` | 필수 | 톤 bullet 리스트 | 같은 곳 |
+| `## Guidelines` | 필수 | `**Always:**` + `**Never:**` | 같은 곳 |
+| `## Background` | 필수 | 짧은 bullet 리스트 | 같은 곳 |
+| `## Category-specific framing` | 선택 | `### As a <category>` 서브섹션들 | — (lint 없음) |
+
+고정 카테고리 8개: `vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`. 이 외의 값은 CI가 잡습니다.
+
+#### 카테고리 선택 가이드
+
+- **단일 카테고리** — 클론의 관점·전문성이 하나로 뚜렷할 때. 예: 순수 엔지니어 → `[dev]`.
+- **멀티 카테고리** — 한 사람이 두 역할을 실제로 경험했고, 패널마다 조명 각도가 달라져야 할 때. 예: 창업 후 투자자로 전환 → `[founder, vc]`. 이 경우 `## Category-specific framing`에 `### As a founder` / `### As a vc` 블록을 덧붙이면 패널 커맨드가 해당 블록을 집어 올립니다.
+- **`primary_category`** — 멀티 카테고리 클론을 `/openclone:use`로 활성화했을 때 **기본 렌즈**가 됩니다. 생략하면 `categories[0]`가 기본입니다. `primary_category` 값은 반드시 `categories` 안에 있어야 합니다(아니면 CI 실패).
+
+#### 지식 함께 싣기
+
+내장 지식을 배포에 포함하고 싶다면 `clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` 형식으로 둡니다. 각 클론의 `knowledge/` 서브폴더는 설치 시 sparse-excluded(`!/clones/*/knowledge/`)이고 `/openclone:use <name>` 최초 호출 때만 fetch되므로, 내용이 많아도 설치 크기에는 영향이 없습니다. 파일 frontmatter·본문 규칙은 [references/clone-schema.md](references/clone-schema.md#knowledge-directory)를 따릅니다.
+
+#### 흔한 실수 (CI가 잡는 것들)
+
+- **`categories`를 문자열로 씀** — `categories: vc`(X), `categories: [vc]`(O). 단일 카테고리라도 리스트로.
+- **`primary_category`가 `categories`에 없음** — `categories: [vc]`인데 `primary_category: founder`. CI가 `primary_category '<값>' not in categories` 로 실패시킵니다.
+- **카테고리 오타·대문자** — `VC`·`engineer`·`Founder` 모두 실패. 8개 enum은 **소문자 정확 일치**.
+- **본문 섹션 헤딩 누락·오타** — `## Persona`, `## Speaking style`, `## Guidelines`, `## Background` **모두** 필요. 하나라도 빠지면 실패. 레벨(`##` vs `###`)도 정확해야 합니다.
+- **frontmatter 구분선 누락** — 파일 첫 줄이 `---`여야 하고, frontmatter 끝도 `---`로 닫아야 합니다.
+- **`persona.md`에 import 푸터 / "Knowledge index" 섹션 추가** — `clones/douglas/persona.md`에는 이전 제품 DB에서 이관된 유산으로 이 섹션이 남아 있지만, **신규 클론은 복제하지 마세요**. 클론의 페르소나 본문만 포함합니다.
+
+#### 로컬 검증
+
+PR 전에 CI와 동일한 검사를 한 줄로 돌릴 수 있습니다.
+
+```bash
+node .github/scripts/validate-clones.ts
+```
+
+Node 버전 이슈, 다른 검증 스크립트, shellcheck·markdownlint 실행법은 아래 [CI 로컬 재현](#ci-로컬-재현) 섹션을 참고하세요.
 
 ### 새 카테고리 추가 (v1은 고정)
 
