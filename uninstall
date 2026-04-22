@@ -43,6 +43,11 @@ if isinstance(marketplaces, dict) and "openclone" in marketplaces:
     if not marketplaces:
         del data["extraKnownMarketplaces"]
 
+# Only remove statusLine if we were the one who set it (managed marker present).
+statusline = data.get("statusLine")
+if isinstance(statusline, dict) and statusline.get("_openclone_managed") is True:
+    del data["statusLine"]
+
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")

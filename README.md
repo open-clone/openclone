@@ -1,7 +1,7 @@
 # openclone
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](.claude-plugin/plugin.json)
 
 카테고리별 페르소나를 가진 AI 클론을 만들고, Claude Code 안에서 그 클론과 직접 대화합니다.
 
@@ -9,13 +9,17 @@
 
 ## 무엇을 하는가
 
+- **단일 진입점 `/openclone`** — `/openclone`만 치면 홈 패널이 뜹니다. 카테고리별로 그룹핑된 클론 목록에서 번호나 이름으로 바로 선택.
 - **기본 내장 클론을 바로 사용** — 플러그인에 큐레이션된 프리셋 클론이 함께 배포됩니다(예: `douglas` / 권도균). 설치 직후 활성화하거나 패널 브로드캐스트로 질문할 수 있습니다.
-- **나만의 클론 만들기** — 카테고리(`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`) 하나 이상을 선택해 생성합니다. 하나의 클론은 여러 카테고리에 속할 수 있지만, 파일은 하나입니다.
-- **대화할 클론 선택** — `/openclone:use <name>` 이후 보내는 모든 메시지는 그 클론의 목소리로 응답됩니다. 별도 명령이 필요 없습니다.
-- **카테고리 전체에 질문** — `/openclone:vc "질문"`은 `vc`를 포함한 모든 클론(내장 + 사용자)에게 동시에 질문하고, 각 관점을 나란히 돌려줍니다.
-- **지식 주입** — URL, YouTube 자막, 문서를 넣으면 `~/.openclone/` 아래에 일반 마크다운으로 저장됩니다. 내장 클론에 주입하면 사용자 네임스페이스로 자동 포크됩니다.
+- **나만의 클론 만들기** — 카테고리(`vc`, `dev`, `founder`, `pm`, `designer`, `writer`, `marketing`, `hr`) 하나 이상을 선택해 생성합니다. 하나의 클론은 여러 카테고리에 속할 수 있지만 파일은 하나입니다.
+- **클론 한 명과 대화** — `/openclone <name>` 이후 보내는 모든 메시지는 그 클론의 목소리로 응답됩니다.
+- **단체 대화방(room)** — `/openclone room <A> <B> <C>`로 여러 클론을 한 방에 모아두고 자연스럽게 대화하면, 질문의 성격에 따라 **가장 적절한 1명**(필요시 뚜렷이 다른 2명)이 자동 응답.
+- **카테고리 패널** — `/openclone panel vc "질문"`은 `vc`를 포함한 모든 클론(내장 + 사용자)에게 동시에 질문하고, 각 관점을 나란히 돌려줍니다.
+- **지식 주입** — URL·YouTube 자막·문서를 넣으면 `~/.openclone/` 아래에 일반 마크다운으로 저장됩니다. 내장 클론에 주입하면 사용자 네임스페이스로 자동 포크됩니다.
 
 모든 데이터는 로컬 파일시스템에 있습니다. 서버도, 계정도, SaaS도 없습니다.
+
+> **v1.0 breaking change.** `/openclone:list`, `/openclone:use`, `/openclone:stop`, `/openclone:new`, `/openclone:ingest`, 카테고리별 `/openclone:vc` … 등 기존 13개 커맨드는 모두 제거됐습니다. 전부 `/openclone <sub>` 하나로 통합되어요 — 예: `/openclone`(홈), `/openclone douglas`(활성화), `/openclone stop`(종료), `/openclone panel vc "…"`(패널). 자세한 사용법은 [사용법](#사용법) 섹션 참고.
 
 ## 설치
 
@@ -28,7 +32,7 @@ Claude Code 세션에 아래 문단을 그대로 붙여넣으세요:
 ```text
 Install openclone: run
   git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/plugins/marketplaces/openclone && cd ~/.claude/plugins/marketplaces/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
-then run /reload-plugins to activate. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is and listing the commands: /openclone:list, /openclone:use <name>, /openclone:stop, /openclone:new, /openclone:ingest, /openclone:vc, /openclone:dev, /openclone:founder, /openclone:pm, /openclone:designer, /openclone:writer, /openclone:marketing, /openclone:hr — with a one-line note that knowledge for a built-in clone is lazy-fetched on first /openclone:use. Finally, confirm the plugin loaded by running /openclone:list and show me the output.
+then run /reload-plugins to activate. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, dev, founder, pm, designer, writer, marketing, hr). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the plugin loaded by running /openclone and show me the output.
 ```
 
 Claude Code가 직접 클론·`./setup`·`/reload-plugins`를 실행하고, 앞으로의 세션에서 openclone을 자연스럽게 인식하도록 `~/.claude/CLAUDE.md`에 메모를 추가합니다.
@@ -49,7 +53,7 @@ git clone --filter=blob:none --sparse --depth=1 \
 ### 공통 동작
 
 - Partial + sparse 클론이라 첫 설치는 가볍습니다 (수 MB, 지식 제외).
-- 각 클론의 지식은 `/openclone:use <name>` 으로 활성화할 때 **필요한 것만** 내려받습니다.
+- 각 클론의 지식은 `/openclone <name>` 으로 활성화할 때 **필요한 것만** 내려받습니다.
 
 ### 이미 설치됐는데 실패·깨짐 / 재설치
 
@@ -91,14 +95,22 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 ## 사용법
 
+모든 기능이 `/openclone` 하나에 서브명령으로 모여 있습니다.
+
 ```text
-/openclone:new hayun                    # 클론 생성 — 카테고리 1개 이상 선택 후 인터뷰 진행
-/openclone:use hayun                    # 클론 활성화 — 이후 대화는 이 클론과 나눔
-/openclone:stop                         # 비활성화
-/openclone:list                         # 모든 클론과 카테고리 목록
-/openclone:ingest https://blog/post     # 활성 클론에 지식 추가
-/openclone:vc "지금 투자를 받을 타이밍인가요?"  # 패널: vc 카테고리를 포함한 모든 클론이 응답
+/openclone                                       # 홈 패널 — 카테고리별 클론 목록 + 번호
+/openclone 1                                     # 홈 패널의 1번 클론 활성화
+/openclone douglas                               # 이름으로 활성화 (이후 대화는 이 클론과 나눔)
+/openclone stop                                  # 활성 클론 · 방 모두 종료
+/openclone new hayun                             # 클론 생성 — 카테고리 1개 이상 선택 후 인터뷰
+/openclone ingest https://blog/post              # 활성 클론에 지식 추가
+/openclone room douglas alice bob                # 단체 대화방 — 가장 적합한 1명이 자동 응답
+/openclone room add charlie                      # 방에 멤버 추가
+/openclone room leave                            # 방 종료 (활성 클론은 유지)
+/openclone panel vc "지금 투자를 받을 타이밍인가요?"   # 카테고리 패널
 ```
+
+홈 패널이 떠 있는 동안 클론을 고르는 가장 빠른 방법은 `/openclone <번호>`. 클론 이름을 외우고 있으면 `/openclone <이름>`도 똑같이 동작합니다.
 
 ## 데이터 레이아웃
 
@@ -112,17 +124,20 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
         └── YYYY-MM-DD-<topic>.md
 
 ~/.openclone/                           # 로컬 사용자 상태 (쓰기 가능)
-├── active-clone                        # 현재 활성 클론 이름
+├── active-clone                        # 현재 활성 클론 이름 (단일)
+├── room                                # 단체 방의 멤버 (줄마다 한 명)
+├── menu-context                        # 가장 최근 홈 패널의 번호↔이름 매핑 (JSON)
 └── clones/<name>/
     ├── persona.md                      # 사용자가 만든 페르소나
     └── knowledge/
-        └── YYYY-MM-DD-<topic>.md       # /openclone:ingest가 append
+        └── YYYY-MM-DD-<topic>.md       # /openclone ingest가 append
 ```
 
 **우선순위.**
 
-- *페르소나*: 이름이 겹치면 **사용자 클론이 이김** — `/openclone:list`·`/openclone:use`·패널 커맨드 모두에서 내장 클론을 덮어씁니다.
-- *지식*: **누적형** — 훅은 활성 클론의 두 knowledge 디렉터리를 모두 읽고, 같은 토픽이 여러 파일에 있을 경우 최신 날짜에 더 높은 가중치를 두도록 Claude에 지시합니다.
+- *페르소나*: 이름이 겹치면 **사용자 클론이 이김** — 홈 패널·use·패널 커맨드 모두에서 내장 클론을 덮어씁니다.
+- *지식*: **누적형** — 훅은 활성 클론(또는 방 멤버 전원)의 두 knowledge 디렉터리를 모두 읽고, 같은 토픽이 여러 파일에 있을 경우 최신 날짜에 더 높은 가중치를 두도록 Claude에 지시합니다.
+- *모드*: room이 열려 있으면 room이 우선. room이 닫혀 있고 active-clone이 있으면 단일 클론 모드. 둘 다 없으면 기본 Claude.
 
 `persona.md` frontmatter에는 `categories: [founder, vc]`(리스트)가 포함됩니다. 필요하면 `## Category-specific framing` 섹션으로 카테고리별 강조를 덧붙일 수 있습니다. 순수 마크다운이므로 복사·수정·버전 관리·공유가 자유롭습니다.
 
@@ -143,11 +158,11 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 ## 작동 방식
 
-- 각 `/openclone:*` 커맨드는 `commands/` 아래의 순수 마크다운 커맨드 파일입니다.
-- `UserPromptSubmit` 훅(`hooks/inject-active-clone.sh`)이 매 메시지마다 `~/.openclone/active-clone`(클론 이름만 기록됨)을 읽습니다. 설정돼 있으면 클론 파일을 해석해(사용자 → 내장 순) 해당 페르소나를 additional context로 주입하여, Claude가 그 클론으로 응답하고 `primary_category` 렌즈를 기본 관점으로 삼습니다. 비활성 상태라면 조용히 아무 일도 하지 않습니다.
-- 패널 커맨드(`/openclone:vc`, `/openclone:dev`, …)는 활성 클론을 무시하고, frontmatter `categories`에 해당 카테고리를 포함한 **모든** 클론(내장 + 사용자)에게 질문을 전달합니다(이름 충돌 시 사용자 버전이 내장을 가립니다).
-- 인터뷰·정제·패널 관련 참조 워크플로우는 `references/` 아래에 있으며, Claude가 필요할 때 on-demand로 로드합니다.
-- 내장 클론의 `persona.md`는 설치 시 항상 받지만, 지식은 `clones/<name>/knowledge/` 서브폴더에 있고 기본 sparse-checkout에서 제외됩니다(non-cone 패턴 `/*` + `!/clones/*/knowledge/`). `/openclone:use <name>` 이 최초 호출될 때 `scripts/fetch-clone-knowledge.sh`가 `git sparse-checkout add clones/<name>/knowledge/`로 해당 클론 분만 당겨옵니다 (partial clone이라 blob도 on-demand).
+- `commands/openclone.md`는 단일 디스패처 커맨드 파일. `$ARGUMENTS`의 첫 토큰으로 서브명령(`<name>` / `<N>` / `stop` / `new` / `ingest` / `room` / `panel`)을 분기하고, 세부 로직은 `references/` 아래 워크플로 파일을 on-demand로 로드해 재사용합니다.
+- `UserPromptSubmit` 훅(`hooks/inject-active-clone.sh`)이 매 메시지마다 `~/.openclone/room`과 `~/.openclone/active-clone`을 순서대로 확인합니다. 방이 열려 있으면 멤버 전원의 페르소나와 "가장 적절한 1명이 응답" 라우팅 규칙을 주입하고, 그렇지 않고 active-clone이 있으면 그 클론의 페르소나를 `primary_category` 렌즈와 함께 주입합니다. 둘 다 없으면 조용히 no-op.
+- `/openclone panel <category>`는 현재 활성 상태를 무시하고, frontmatter `categories`에 그 카테고리를 포함한 **모든** 클론(내장 + 사용자)에게 질문을 전달합니다(이름 충돌 시 사용자 버전이 내장을 가립니다).
+- 홈 패널·인터뷰·정제·패널·방 라우팅 관련 참조 워크플로우는 `references/` 아래에 있으며, 디스패처가 필요할 때 on-demand로 로드합니다.
+- 내장 클론의 `persona.md`는 설치 시 항상 받지만, 지식은 `clones/<name>/knowledge/` 서브폴더에 있고 기본 sparse-checkout에서 제외됩니다(non-cone 패턴 `/*` + `!/clones/*/knowledge/`). `/openclone <name>`이 최초 호출될 때 `scripts/fetch-clone-knowledge.sh`가 `git sparse-checkout add clones/<name>/knowledge/`로 해당 클론 분만 당겨옵니다 (partial clone이라 blob도 on-demand).
 - 세션 시작마다 `SessionStart` 훅(`scripts/session-update.sh`)이 백그라운드로 `git pull --ff-only`를 시도합니다 (1시간당 1회). 세션은 절대 블록되지 않고, 실패는 조용히 로그에 남깁니다.
 
 ## 로드맵 (잠정)
@@ -239,7 +254,7 @@ voice_traits:                      # 3–5개의 짧은 톤 태그
 vc · dev · founder · pm · designer · writer · marketing · hr
 ```
 
-클론이 여러 카테고리에 속하면 각 `/openclone:<category>` 패널 커맨드에 모두 호출됩니다. 패널마다 강조점이 달라야 한다면 `## Category-specific framing`을, 기본 렌즈를 지정하고 싶다면 `primary_category: <값>`(반드시 `categories` 안에 있는 값)을 frontmatter에 추가합니다.
+클론이 여러 카테고리에 속하면 각 `/openclone panel <category>` 호출에 모두 참여합니다. 패널마다 강조점이 달라야 한다면 `## Category-specific framing`을, 기본 렌즈를 지정하고 싶다면 `primary_category: <값>`(반드시 `categories` 안에 있는 값)을 frontmatter에 추가합니다.
 
 #### 4. (선택) 지식 추가
 
@@ -279,7 +294,7 @@ node .github/scripts/validate-clones.ts
 
 ## 상태
 
-v0.0.1 — 초기 공개 버전입니다. 거친 부분이 많으니 이슈와 PR 환영합니다.
+v1.0.0 — 커맨드 구조 단일화. 기존 `/openclone:*` 13개가 `/openclone`의 서브명령으로 통합되었고, 단체 대화방(room) 모드가 추가됐습니다. 이슈·PR 환영.
 
 ## 라이선스
 

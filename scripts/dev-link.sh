@@ -47,6 +47,11 @@ for rel in "$@"; do
     continue
   fi
   mkdir -p "$(dirname "$dst")"
+  # If dst is an existing real directory (not a symlink), remove it so the
+  # symlink replaces it instead of being created inside it.
+  if [ -d "$dst" ] && [ ! -L "$dst" ]; then
+    rm -rf "$dst"
+  fi
   ln -sfn "$src" "$dst"
   echo "linked: $dst -> $src"
 done

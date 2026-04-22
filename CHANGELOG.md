@@ -6,6 +6,16 @@
 
 ## [Unreleased]
 
+### Changed (breaking)
+
+- **단일 `/openclone` 디스패처로 통합.** 기존 13개 커맨드(`/openclone:list`, `/openclone:use`, `/openclone:stop`, `/openclone:new`, `/openclone:ingest`, `/openclone:vc`, `/openclone:dev`, `/openclone:founder`, `/openclone:pm`, `/openclone:designer`, `/openclone:writer`, `/openclone:marketing`, `/openclone:hr`)을 모두 제거하고 `/openclone <sub>` 하나로 흡수했습니다. 매핑: 홈 패널=`/openclone`, 활성화=`/openclone <name>` 또는 `/openclone <N>`, 종료=`/openclone stop`, 신규=`/openclone new`, 지식=`/openclone ingest`, 패널=`/openclone panel <category>`.
+- 홈 패널 UX 도입 — 인자 없이 `/openclone`을 호출하면 카테고리별로 그룹핑된 클론 목록이 번호와 함께 나오고, `/openclone <번호>`로 선택 가능. 마지막 홈 패널의 번호→이름 매핑은 `~/.openclone/menu-context`에 저장됩니다.
+
+### Added
+
+- **단체 대화방(room) 모드.** `/openclone room <a> <b> <c> ...`로 최대 8명까지 넣은 방을 열면, 이후 일반 메시지는 훅이 알아서 가장 잘 맞는 클론 1명(관점이 뚜렷이 갈릴 때만 최대 2명)이 `## <display_name> — _<tagline>_` 포맷으로 응답합니다. `/openclone room add <name>` / `/openclone room remove <name>` / `/openclone room leave`로 멤버 관리. 상태 파일: `~/.openclone/room` (한 줄에 클론 한 명). Room 모드는 `active-clone`보다 우선하며, `/openclone stop`이 둘 다 정리합니다.
+- **상태줄(statusline).** Claude Code 상태줄에 활성 클론(`openclone · <name>`) 또는 열린 방(`openclone · room: a, b, c`; 4명 이상이면 `a, b, c +N`)이 자동 표시됩니다. `setup`이 `~/.claude/settings.json`에 statusLine을 자동 주입(사용자가 본인 statusLine을 이미 가지고 있으면 건드리지 않음), `uninstall`은 자신이 설치한 경우에만 제거합니다.
+
 ### Fixed
 
 - 신규 설치 시 Claude Code가 `openclone@openclone` 플러그인 로드에 실패하던 문제. `setup`이 `enabledPlugins`만 등록하고 `extraKnownMarketplaces`는 등록하지 않아 "Plugin openclone not found in marketplace openclone" 에러로 커맨드·스킬이 뜨지 않았습니다. `setup`이 이제 마켓플레이스 경로도 함께 기록하고, `uninstall`도 같이 정리합니다.

@@ -112,6 +112,24 @@ marketplaces["openclone"] = {
 }
 data["extraKnownMarketplaces"] = marketplaces
 
+# Statusline — only inject if the user has no statusLine yet, or if we were
+# already the one who set it (detected by our managed marker). Never overwrite
+# a third-party/user statusline silently.
+OWN_STATUSLINE = {
+    "type": "command",
+    "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh",
+    "_openclone_managed": True,
+}
+existing = data.get("statusLine")
+if existing is None or (isinstance(existing, dict) and existing.get("_openclone_managed") is True):
+    data["statusLine"] = OWN_STATUSLINE
+elif isinstance(existing, dict):
+    print(
+        "참고: 이미 다른 statusLine이 설정되어 있어 openclone statusline은 주입하지 않았습니다.\n"
+        "      활성 클론/대화방 상태를 상태줄에 보고 싶다면 settings.json의 statusLine을\n"
+        '      {"type":"command","command":"bash ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh"} 로 교체하세요.'
+    )
+
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
@@ -129,9 +147,14 @@ openclone 설치 완료.
     Claude Code를 한 번 재시작하세요.
 
 사용해 보세요:
-  /openclone:list               — 내장 클론 목록 보기
-  /openclone:use <name>         — 클론 활성화 (최초 사용 시 지식을 lazy-fetch)
-  /openclone:<category> "..."   — 패널 질문 (vc, dev, founder, pm, designer, writer, marketing, hr)
+  /openclone                    — 홈 패널 (카테고리별 클론 목록, 번호/이름으로 선택)
+  /openclone <name | N>         — 해당 클론 활성화 (built-in은 최초 사용 시 지식 lazy-fetch)
+  /openclone room <A> <B> ...   — 단체 대화방 열기 (가장 적절한 클론이 자동 응답)
+  /openclone panel vc "..."     — 카테고리 패널 (vc, dev, founder, pm, designer, writer, marketing, hr)
+  /openclone stop               — 활성 클론과 방 모두 종료
+
+상태줄: 활성 클론 또는 방이 열려 있을 때 Claude Code 상태줄에 `openclone · <이름>` 또는 `openclone · room: a, b, c` 가 표시됩니다.
+  (이미 settings.json에 본인 statusLine이 있으면 덮어쓰지 않고 건너뜁니다.)
 
 자동 업데이트: 켜짐. 세션 시작 시 1시간당 1회 백그라운드 실행.
   끄기: touch ~/.openclone/no-auto-update
