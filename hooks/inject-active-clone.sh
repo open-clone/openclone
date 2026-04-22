@@ -27,9 +27,49 @@
 
 set -u
 
-emit_empty() {
-  printf '{}\n'
+# Force-push banner: emitted whenever session-update.sh has detected that the
+# local install cannot fast-forward to origin/main. Shown regardless of whether
+# a clone is active, so stuck installs always surface the recovery notice.
+force_push_banner=""
+if [ -f "$HOME/.openclone/force-push-detected" ]; then
+  force_push_banner=$(cat <<'BANNER'
+<openclone-upgrade-needed>
+공지 — openclone 자동 업데이트가 막혔습니다. 원격 저장소 main이 force-push 되어 기존 설치는 fast-forward로 따라갈 수 없습니다. 현재 플러그인은 이전 버전에 머물러 있으며, `Plugin not found in marketplace` 같은 에러나 누락된 커맨드의 원인일 수 있습니다.
+
+복구 방법 (이 안내를 사용자에게 전달해 주세요):
+  rm -rf ~/.claude/plugins/marketplaces/openclone
+  rm -f  ~/.openclone/no-auto-update
+  # 그 다음 README의 설치 one-liner 재실행
+
+사용자 데이터(`~/.openclone/` 아래 active-clone, 사용자 클론, 수집한 지식)는 보존됩니다. 복구가 끝나면 이 알림은 자동으로 사라집니다.
+</openclone-upgrade-needed>
+
+BANNER
+)
+fi
+
+emit_json() {
+  # $1 = additionalContext string (may be empty)
+  local payload="${1-}"
+  if [ -z "$payload" ]; then
+    printf '{}\n'
+    exit 0
+  fi
+  local esc
+  if command -v python3 >/dev/null 2>&1; then
+    esc=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+  else
+    esc=$(printf '%s' "$payload" \
+      | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+      | awk 'BEGIN{ORS=""} {gsub(/\t/,"\\t"); gsub(/\r/,"\\r"); print; print "\\n"}')
+    esc="\"${esc%\\n}\""
+  fi
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}\n' "$esc"
   exit 0
+}
+
+emit_empty() {
+  emit_json "$force_push_banner"
 }
 
 active_file="$HOME/.openclone/active-clone"
@@ -90,17 +130,4 @@ $(cat "$persona_md")
 EOF
 )
 
-# JSON-escape the context. Prefer python3 (universally available on macOS / modern Linux)
-# then fall back to a simple sed pipeline.
-if command -v python3 >/dev/null 2>&1; then
-  escaped=$(printf '%s' "$context" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
-else
-  escaped=$(printf '%s' "$context" \
-    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
-    | awk 'BEGIN{ORS=""} {gsub(/\t/,"\\t"); gsub(/\r/,"\\r"); print; print "\\n"}')
-  escaped="\"${escaped%\\n}\""
-fi
-
-cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":${escaped}}}
-EOF
+emit_json "${force_push_banner}${context}"

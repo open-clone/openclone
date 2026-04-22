@@ -47,11 +47,35 @@ cd "$plugin_root" 2>/dev/null || exit 0
 [ -d ".git" ] || exit 0
 
 old_head=$(git rev-parse HEAD 2>/dev/null || true)
+force_push_marker="$state_dir/force-push-detected"
 
 {
-  printf '[%s] openclone session-update: git pull --ff-only\n' "$(date '+%Y-%m-%d %H:%M:%S')"
-  GIT_TERMINAL_PROMPT=0 git pull --ff-only --quiet 2>&1
-  printf '[%s] done (exit %d)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$?"
+  printf '[%s] openclone session-update: fetch + ff-check\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+
+  # Force refspec so fetch succeeds even when origin/main was rewritten.
+  if ! GIT_TERMINAL_PROMPT=0 git fetch origin "+refs/heads/main:refs/remotes/origin/main" --quiet 2>&1; then
+    printf '[%s] fetch failed (offline?), skipping\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    exit 0
+  fi
+
+  if git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+    GIT_TERMINAL_PROMPT=0 git merge --ff-only origin/main --quiet 2>&1
+    printf '[%s] ff merge done (exit %d)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$?"
+    # We caught up to origin/main — any prior force-push marker is obsolete.
+    rm -f "$force_push_marker" 2>/dev/null || true
+  else
+    # Force-push or divergent history. Do NOT auto-reset — user may have local
+    # edits (persona tuning, new clone folders, README forks). Record a marker;
+    # the UserPromptSubmit hook surfaces it as a banner next time.
+    remote_head=$(git rev-parse origin/main 2>/dev/null || echo unknown)
+    printf '[%s] non-fast-forward detected (local=%s origin/main=%s); writing marker\n' \
+      "$(date '+%Y-%m-%d %H:%M:%S')" "${old_head:0:10}" "${remote_head:0:10}"
+    {
+      printf 'local_head=%s\n' "$old_head"
+      printf 'origin_head=%s\n' "$remote_head"
+      printf 'detected_at=%s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    } > "$force_push_marker" 2>/dev/null || true
+  fi
 } > "$log_file" 2>&1
 
 new_head=$(git rev-parse HEAD 2>/dev/null || true)
