@@ -7,11 +7,13 @@
 ## [Unreleased]
 
 ### Fixed
+
 - 신규 설치 시 Claude Code가 `openclone@openclone` 플러그인 로드에 실패하던 문제. `setup`이 `enabledPlugins`만 등록하고 `extraKnownMarketplaces`는 등록하지 않아 "Plugin openclone not found in marketplace openclone" 에러로 커맨드·스킬이 뜨지 않았습니다. `setup`이 이제 마켓플레이스 경로도 함께 기록하고, `uninstall`도 같이 정리합니다.
 
 ## [0.0.1] — 2026-04-22
 
 ### Added
+
 - 초기 공개 버전.
 - Claude Code 플러그인 포맷 — `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`.
 - 슬래시 커맨드: `/openclone:list`, `/openclone:use`, `/openclone:stop`, `/openclone:new`, `/openclone:ingest` + 카테고리 패널 8종 (`/openclone:vc`, `/openclone:dev`, `/openclone:founder`, `/openclone:pm`, `/openclone:designer`, `/openclone:writer`, `/openclone:marketing`, `/openclone:hr`).

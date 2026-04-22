@@ -23,7 +23,7 @@ Steps:
 
 5. Render a compact list, one line per clone. Group by origin — built-in first, user second — with a simple subheading before each group:
 
-   ```
+   ```text
    Built-in:
      - douglas       권도균 — 프라이머 대표                 [founder*, vc]   (knowledge: 0)
 

@@ -6,7 +6,7 @@ Loaded by `/openclone:ingest`.
 
 ## Target path
 
-```
+```text
 ~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md
 ```
 
@@ -33,6 +33,7 @@ Given raw material for a clone, produce one or more refined topic files such tha
    Path: `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md`
 
    Format:
+
    ```markdown
    ---
    topic: <short noun phrase, human-readable>

@@ -6,7 +6,7 @@ Every clone has a `persona.md` and an optional knowledge directory. **One clone 
 
 Built-in and user clones share the **same folder shape** — persona and knowledge live together under `clones/<name>/`. Only the root differs:
 
-```
+```text
 ${CLAUDE_PLUGIN_ROOT}/clones/<name>/       # built-in, read-only
 ├── persona.md                             # always present after install
 └── knowledge/                             # sparse-excluded by default; fetched on first /openclone:use
@@ -22,14 +22,14 @@ The built-in side uses non-cone sparse-checkout to exclude every `clones/*/knowl
 
 Persona lookup order (user wins on collision):
 
-```
+```text
 ~/.openclone/clones/<name>/persona.md              # user
 ${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md     # built-in
 ```
 
 Knowledge lookup is additive — both directories are read when present:
 
-```
+```text
 ~/.openclone/clones/<name>/knowledge/              # user
 ${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/     # built-in (lazy-fetched)
 ```
@@ -131,7 +131,7 @@ If a clone has only one category, this section is unnecessary.
 
 Flat, append-only, dated topic files — the directory always sits at `clones/<name>/knowledge/` relative to whichever root (built-in or user):
 
-```
+```text
 clones/<name>/knowledge/
 ├── 2026-04-21-투자철학.md
 ├── 2026-04-21-시장분석.md

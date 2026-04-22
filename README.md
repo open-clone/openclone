@@ -25,7 +25,7 @@
 
 Claude Code 세션에 아래 문단을 그대로 붙여넣으세요:
 
-```
+```text
 Install openclone: run
   git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/plugins/marketplaces/openclone && cd ~/.claude/plugins/marketplaces/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
 then run /reload-plugins to activate. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is and listing the commands: /openclone:list, /openclone:use <name>, /openclone:stop, /openclone:new, /openclone:ingest, /openclone:vc, /openclone:dev, /openclone:founder, /openclone:pm, /openclone:designer, /openclone:writer, /openclone:marketing, /openclone:hr — with a one-line note that knowledge for a built-in clone is lazy-fetched on first /openclone:use. Finally, confirm the plugin loaded by running /openclone:list and show me the output.
@@ -77,7 +77,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 ## 사용법
 
-```
+```text
 /openclone:new hayun                    # 클론 생성 — 카테고리 1개 이상 선택 후 인터뷰 진행
 /openclone:use hayun                    # 클론 활성화 — 이후 대화는 이 클론과 나눔
 /openclone:stop                         # 비활성화
@@ -90,7 +90,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 내장 클론과 사용자 클론은 **같은 폴더 구조**를 씁니다 — `clones/<name>/` 안에 `persona.md`와 `knowledge/`가 함께 있습니다. 루트만 다릅니다. 읽기 시점에 두 루트가 병합됩니다.
 
-```
+```text
 <plugin-root>/                          # ~/.claude/plugins/marketplaces/openclone
 └── clones/<name>/
     ├── persona.md                      # 내장 페르소나 (항상 설치됨)
@@ -106,6 +106,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 ```
 
 **우선순위.**
+
 - *페르소나*: 이름이 겹치면 **사용자 클론이 이김** — `/openclone:list`·`/openclone:use`·패널 커맨드 모두에서 내장 클론을 덮어씁니다.
 - *지식*: **누적형** — 훅은 활성 클론의 두 knowledge 디렉터리를 모두 읽고, 같은 토픽이 여러 파일에 있을 경우 최신 날짜에 더 높은 가중치를 두도록 Claude에 지시합니다.
 
@@ -116,7 +117,7 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 ## 카테고리 (v1 고정 목록)
 
 | 코드 | 렌즈 |
-|---|---|
+| --- | --- |
 | `vc` | 투자자 — 시장, 팀, 트랙션, 엑싯, 리스크 |
 | `dev` | 엔지니어 — 설계, 성능, 유지보수성, 보안 |
 | `founder` | 창업가 — 비즈니스 모델, 팀, 실행, 펀딩 |
@@ -146,7 +147,121 @@ cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
 
 ## 기여하기
 
-버그 리포트·기능 제안·PR 모두 환영합니다. 로컬 개발 루프와 커맨드·훅·클론 추가 방법은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고해 주세요. 커뮤니티 행동 규범은 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), 보안 이슈 제보는 [SECURITY.md](SECURITY.md)를 확인해 주세요.
+버그 리포트·기능 제안·PR 모두 환영합니다. 가장 흔한 기여 — **새 클론 추가** — 는 아래 튜토리얼만 따라 해도 첫 PR까지 갈 수 있습니다. 커맨드·훅·카테고리 추가처럼 더 깊은 변경은 [CONTRIBUTING.md](CONTRIBUTING.md)에 정리돼 있습니다.
+
+### 버그 리포트·기능 제안
+
+이슈를 열 때 아래 정보가 있으면 훨씬 빠르게 고쳐집니다.
+
+- Claude Code 버전, OS, openclone 버전(`~/.claude/plugins/marketplaces/openclone/.claude-plugin/plugin.json`의 `version`)
+- 재현 절차 — 어떤 커맨드를 어떤 순서로 실행했고 무엇을 기대했는지
+- 실제 결과·에러 메시지(있다면 `~/.openclone/last-update.log`도 함께)
+- 해결 아이디어가 있다면 한 줄이라도 제안 — 없어도 괜찮습니다
+
+### 새 클론 기여하기 (튜토리얼)
+
+내장 클론은 `clones/<slug>/` 폴더 하나로 끝납니다. 아래 6단계를 따라가면 CI까지 통과하는 PR을 열 수 있습니다. 스펙 전체는 [references/clone-schema.md](references/clone-schema.md), 검증 규칙은 [.github/scripts/validate-clones.ts](.github/scripts/validate-clones.ts)에 있습니다.
+
+#### 1. 폴더 만들기
+
+`clones/<slug>/` 경로에 폴더를 만듭니다. `<slug>`는 소문자·영숫자·하이픈만 허용(`[a-z0-9-]+`)하며, 폴더 이름과 `persona.md`의 `name` 필드가 반드시 같아야 합니다.
+
+```bash
+mkdir -p clones/hyun
+```
+
+#### 2. persona.md 작성
+
+아래는 그대로 복사해도 CI 검증(`validate-clones.ts`)을 통과하는 최소 예제입니다. 필수 frontmatter 키 6개(`name`, `display_name`, `tagline`, `categories`, `created`, `voice_traits`) + 본문 섹션 4개(`## Persona` → `## Speaking style` → `## Guidelines` → `## Background`)가 **순서대로** 들어가야 합니다.
+
+```markdown
+---
+name: hyun                         # 폴더 이름과 동일한 슬러그(소문자, 영숫자·하이픈)
+display_name: 김현                  # 목록과 패널에 표시될 이름
+tagline: 백엔드 엔지니어·시스템 디자인    # 한 줄 소개 (80자 이하)
+categories: [dev]                  # 고정 8개 중 1개 이상 (리스트 형식)
+created: 2026-04-22                # ISO 날짜
+voice_traits:                      # 3–5개의 짧은 톤 태그
+  - concrete
+  - trade-off-first
+  - skeptical
+---
+
+## Persona
+
+10년차 백엔드 엔지니어. 성능·신뢰성·유지보수성 중 하나는 반드시
+포기해야 하는 순간이 온다고 믿는 사람. 문제를 풀기 전에 무엇이
+진짜 제약인지부터 묻는다.
+
+## Speaking style
+
+- 결론 먼저, 근거는 뒤에 한두 줄
+- "이게 왜 문제인가?"를 먼저 묻고 해결책으로 간다
+- 모호한 용어는 구체 수치나 예로 바꿔서 되묻는다
+
+## Guidelines
+
+**Always:**
+- 트레이드오프를 먼저 드러낸다
+- 작고 검증 가능한 단계로 쪼갠다
+
+**Never:**
+- 측정 없이 "성능이 좋다"고 말하지 않는다
+- 유행하는 기술 스택을 이유로 추천하지 않는다
+
+## Background
+
+- 10년차 백엔드, 최근 5년은 분산 시스템
+- 트래픽 기반 스타트업에서 SRE 리드 경험
+```
+
+여러 카테고리에 걸친 클론(예: `founder`이면서 `vc`)을 만들고 싶다면 `## Category-specific framing` 섹션과 `primary_category` 키를 더합니다. 실전 예시는 [clones/douglas/persona.md](clones/douglas/persona.md)를 참고하세요.
+
+#### 3. 카테고리 선택
+
+`categories`는 아래 고정 8개 중에서만 고를 수 있습니다(위 카테고리 표 참고).
+
+```text
+vc · dev · founder · pm · designer · writer · marketing · hr
+```
+
+클론이 여러 카테고리에 속하면 각 `/openclone:<category>` 패널 커맨드에 모두 호출됩니다. 패널마다 강조점이 달라야 한다면 `## Category-specific framing`을, 기본 렌즈를 지정하고 싶다면 `primary_category: <값>`(반드시 `categories` 안에 있는 값)을 frontmatter에 추가합니다.
+
+#### 4. (선택) 지식 추가
+
+클론이 이미 가진 배경지식을 함께 배포하고 싶다면 `clones/<slug>/knowledge/` 아래에 파일을 둡니다. 파일명은 **날짜 접두사 + 토픽 슬러그**: `YYYY-MM-DD-<topic>.md`. 같은 토픽을 나중에 다시 주입해도 **덮어쓰지 않고** 새 날짜 파일로 쌓입니다(append-only). frontmatter와 본문 규칙은 [references/clone-schema.md](references/clone-schema.md#knowledge-directory)를 따릅니다.
+
+```text
+clones/hyun/knowledge/
+└── 2026-04-22-분산시스템-원칙.md
+```
+
+#### 5. 로컬 검증
+
+PR 전에 CI와 동일한 검사를 돌려 실수를 잡습니다. Node 24+면 플래그 없이 바로, 22.6–23.5면 `--experimental-strip-types`가 필요합니다.
+
+```bash
+node .github/scripts/validate-clones.ts
+# Node 22.6–23.5:
+# NODE_OPTIONS="--experimental-strip-types" node .github/scripts/validate-clones.ts
+```
+
+통과하면 `[OK] N clone persona file(s) valid`가 출력됩니다.
+
+#### 6. PR 열기
+
+1. 이슈를 먼저 열어 범위를 맞추는 것을 권장합니다(사소한 오타 수정 제외).
+2. 브랜치를 만들고(`feat/clone-<slug>` 같은 이름), 변경 사항을 커밋합니다. 메시지는 [Conventional Commits](https://www.conventionalcommits.org/) 권장 — 예: `feat(clones): add hyun`.
+3. PR을 올리면 [.github/workflows/validate.yml](.github/workflows/validate.yml)이 자동으로 5개 검사(플러그인 메타데이터·커맨드·클론 스키마·shellcheck·markdownlint)를 실행합니다.
+4. 리뷰 후 squash merge 됩니다.
+
+### 더 깊이 들어가기
+
+- 로컬 개발 루프와 커맨드·훅·카테고리 추가: [CONTRIBUTING.md](CONTRIBUTING.md)
+- 클론 스키마 전체 스펙: [references/clone-schema.md](references/clone-schema.md)
+- 카테고리별 렌즈·톤 가이드: [references/categories.md](references/categories.md)
+- 커뮤니티 행동 규범: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- 보안 이슈 제보: [SECURITY.md](SECURITY.md)
 
 ## 상태
 

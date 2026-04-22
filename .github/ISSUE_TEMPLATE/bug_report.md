@@ -35,7 +35,7 @@ assignees: ""
 
 `hooks/inject-active-clone.sh`가 방출한 `additionalContext` JSON 샘플이나 관련 로그가 있으면 첨부해 주세요. 민감 정보는 가리고 공유해 주세요.
 
-```
+```text
 ```
 
 ## 스크린샷 / 추가 정보
