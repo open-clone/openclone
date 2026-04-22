@@ -46,6 +46,18 @@ git clone --filter=blob:none --sparse --depth=1 \
 
 설치 후 Claude Code 세션을 재시작하면 `/openclone`이 바로 동작합니다.
 
+### 플랫폼 지원
+
+| 환경 | 상태 | 비고 |
+| --- | --- | --- |
+| macOS | ✅ 정식 지원 | 주요 개발·검증 환경 |
+| Linux | ✅ 정식 지원 | |
+| Windows (WSL2) | ✅ 동작 | 리눅스로 취급됨. 권장 |
+| Windows (Git Bash) | ⚠️ 미지원 | 훅 실행이 환경 의존적. `session-update.sh`의 백그라운드 detach와 `dev-link.sh`의 `ln -sfn`이 특히 취약 |
+| Windows (cmd / PowerShell 네이티브) | ❌ 미지원 | 훅·스크립트가 전부 bash 기반. 현재 구조로는 불가능 |
+
+`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 `setup`/`uninstall`이 자동으로 따라갑니다.
+
 <details>
 <summary>업데이트·제거·자동 업데이트 끄기</summary>
 

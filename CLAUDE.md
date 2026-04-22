@@ -86,3 +86,7 @@ The same script also runs a one-shot migration for pre-v0.3 installs that used c
 - `scripts/session-update.sh` re-execs itself with `__bg` as the first arg to detach. Do not remove the `"${1:-}" != "__bg"` gate — it is what prevents the foreground hook from blocking on `git pull`.
 - `scripts/fetch-clone-knowledge.sh` is a no-op when the repo is not a git checkout (e.g., dev machine that symlinked files in). Knowledge is then expected to already exist on disk.
 - Standalone skill commands are **not** namespaced — `/openclone` works directly. Plugin commands would have been `/openclone:openclone`. Do not add `.claude-plugin/plugin.json` back; it would re-promote the skill to a plugin and reintroduce the namespace prefix.
+
+## Roadmap
+
+- **Windows native support** — the skill is bash-only today (hooks, `setup`, `uninstall`, `scripts/*.sh`). WSL2 works; Git Bash is brittle (`nohup`/`disown` detach in `session-update.sh`, `ln -sfn` in `dev-link.sh`, Claude Code routing `.sh` hooks through bash); cmd.exe/PowerShell is impossible. Proper fix is to port `hooks/inject-active-clone.sh`, `scripts/session-update.sh`, `scripts/statusline.sh`, `scripts/fetch-clone-knowledge.sh`, and the `setup`/`uninstall` settings.json editors to Node.js (Claude Code is already Node). Keep bash around for macOS/Linux dev-only scripts (`dev-link.sh`, `fetch-url.sh`, `fetch-youtube.sh`) or port them too if Windows parity is desired there. Until then, README `플랫폼 지원` table is the source of truth for what works where.
