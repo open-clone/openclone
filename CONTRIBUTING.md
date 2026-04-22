@@ -18,6 +18,24 @@ openclone은 빌드 시스템도, 패키지 매니저도 없습니다. 저장소
 
 배포는 "main 브랜치에 커밋 → 사용자가 `/plugin marketplace update openclone`"이 전부입니다.
 
+### 워크스페이스에서 작업할 때 (dev-link 오버레이)
+
+설치 경로(`~/.claude/plugins/marketplaces/openclone/`) 밖에 별도 체크아웃을 두고 작업하는 경우(예: conductor 워크스페이스, 일반 git 클론), 매번 수정 파일을 설치본으로 복사하지 않도록 **심볼릭 링크 오버레이**를 씁니다.
+
+```bash
+# 지금 편집 중인 파일만 설치본으로 연결 (복사 없이 라이브 반영)
+./scripts/dev-link.sh references/panel-workflow.md
+./scripts/dev-link.sh commands/vc.md commands/dev.md
+./scripts/dev-link.sh references/   # 디렉터리 단위도 가능
+
+# 원복 (저장소에 트래킹된 파일이면 git checkout으로 shipped 버전 복구)
+./scripts/dev-unlink.sh references/panel-workflow.md
+```
+
+- 전달한 경로만 오버레이됩니다. 나머지 설치본의 sparse 상태(약 480KB)는 그대로 유지됩니다.
+- 심볼릭 링크된 상태에서 `SessionStart` 훅의 자동 `git pull`이 설치 경로에 개입하지 않도록 `touch ~/.openclone/no-auto-update`를 한 번 실행해 두면 안전합니다. 배포 검증할 때는 `rm ~/.openclone/no-auto-update`로 다시 켭니다.
+- 훅(`hooks/*.sh`, `hooks.json`)은 링크해도 Claude Code 재시작이 필요합니다.
+
 ## 디렉터리 지도
 
 ```text

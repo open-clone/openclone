@@ -32,36 +32,59 @@ How a `/openclone:<category>` command broadcasts a question to every clone that 
 
 5. **Format output.**
 
-   ```markdown
-   # Panel: <category> — <short restatement of the question>
+   Render in the language of the question (Korean or English) using this shape:
 
-   ## <display_name_1>
-   _<tagline_1>_
+   ```markdown
+   # <category> 패널
+
+   > <question>
+
+   **참여:** <display_name_1>, <display_name_2>, …
+
+   ---
+
+   ## <display_name_1> — _<tagline_1>_
 
    <perspective 1>
 
-   ## <display_name_2>
-   _<tagline_2>_
+   ---
+
+   ## <display_name_2> _(현재 활성)_ — _<tagline_2>_
 
    <perspective 2>
 
    …
 
+   ---
+
    ## 공통점 / 갈리는 지점
 
-   **Shared:**
+   **합의:**
    - 2–4 bullets where the clones agreed
 
-   **Split:**
+   **갈라지는 지점:**
    - 2–4 bullets where they disagreed, with who took which side
    ```
 
-   If only one clone belongs to the category, skip the "공통점 / 갈리는 지점" section.
+   **Active-clone badge.** Read `~/.openclone/active-clone` (a single line with a clone `name`). If that file exists and its name matches one of the clones selected for this panel, append `_(현재 활성)_` (Korean) or `_(currently active)_` (English) between that clone's `display_name` and the em-dash in its section header, and also mark the same name in the `참여:` / `Panelists:` roster line (e.g. `권도균 (현재 활성), …`). If the file is missing, empty, or its name is not in the panel's clone set, render no badge anywhere. The active-clone file must not influence anything else — perspective content stays fully independent.
+
+   **Language adaptation.** All fixed labels match the question language:
+
+   | Element | Korean | English |
+   | --- | --- | --- |
+   | H1 | `# <category> 패널` | `# <category> panel` |
+   | Roster line | `**참여:** …` | `**Panelists:** …` |
+   | Summary H2 | `## 공통점 / 갈리는 지점` | `## Shared / Split` |
+   | Agreement label | `**합의:**` | `**Shared:**` |
+   | Divergence label | `**갈라지는 지점:**` | `**Split:**` |
+   | Badge | `_(현재 활성)_` | `_(currently active)_` |
+
+   If only one clone belongs to the category, skip the summary section (heading + both bullet blocks) and the `---` immediately before it.
 
 ## Rules
 
-- Do **not** consult `~/.openclone/active-clone` here — panels are an explicit one-shot override. After the command finishes, the active clone (if any) resumes from the next user message.
-- Match the language of the question. If the user asked in Korean, every section header (except "Panel:") and clone perspective is in Korean.
+- Do not weight or alter perspective content based on `~/.openclone/active-clone` — panels are an explicit one-shot override and every clone in the category gets an equal seat. The only permitted use of that file is to render the "(현재 활성)" / "(currently active)" badge described in step 5. After the command finishes, the active clone (if any) resumes from the next user message.
+- Match the language of the question. If the user asked in Korean, every header, label, badge, and clone perspective is in Korean; if English, all of them are English.
 - Do not invent clones. Only use clones that actually have files on disk and include the category in their frontmatter list.
 - Do not flatten differences to avoid disagreement — if two clones genuinely disagree, let them.
 - A clone that belongs to multiple categories may appear in multiple panels; in each panel the corresponding `### As a <category>` framing is applied.

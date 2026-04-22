@@ -14,6 +14,8 @@ See `README.md` for the user-facing install line. Version is hand-bumped in `.cl
 
 For development on a machine where openclone is installed the normal way, editing files under `~/.claude/plugins/marketplaces/openclone/` is picked up live for commands, clones, and references. Hook and `hooks.json` changes require a Claude Code restart.
 
+When iterating from a separate checkout (e.g. a conductor workspace) rather than the installed path, use the dev-link overlay — `scripts/dev-link.sh <path>` symlinks a single file or directory from the workspace into the installed plugin, so edits flow live without a copy step and only the paths you explicitly link are overlaid (the sparse install stays sparse). Example: `scripts/dev-link.sh references/panel-workflow.md`. Undo with `scripts/dev-unlink.sh <same path>` (restores the shipped file from git if the path is tracked). While symlinks are in place, `touch ~/.openclone/no-auto-update` to stop the `SessionStart` hook's `git pull` from touching the install.
+
 ## Architecture
 
 ### Two-location data model (the core concept)
