@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 클론 응답에 인라인 출처 표기 추가. 훅이 주입하는 지침에 "knowledge 파일·WebSearch 결과에서 사실을 인용할 때 `\[[1](url)\]` 형식 markdown 링크로 출처 표기" 규칙을 넣었습니다. target 우선순위: frontmatter `source_url` → knowledge 파일 절대 경로 → WebSearch 결과 URL. 페르소나 voice·의견·상식은 비인용. 기존의 "source-type 언급 선호" 지침은 제거. room/active-clone 두 모드 모두 적용.
+
 ### Changed (breaking)
 
 - **단일 `/openclone` 디스패처로 통합.** 기존 13개 커맨드(`/openclone:list`, `/openclone:use`, `/openclone:stop`, `/openclone:new`, `/openclone:ingest`, `/openclone:vc`, `/openclone:dev`, `/openclone:founder`, `/openclone:pm`, `/openclone:designer`, `/openclone:writer`, `/openclone:marketing`, `/openclone:hr`)을 모두 제거하고 `/openclone <sub>` 하나로 흡수했습니다. 매핑: 홈 패널=`/openclone`, 활성화=`/openclone <name>` 또는 `/openclone <N>`, 종료=`/openclone stop`, 신규=`/openclone new`, 지식=`/openclone ingest`, 패널=`/openclone panel <category>`.
