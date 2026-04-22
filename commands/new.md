@@ -30,6 +30,7 @@ Load `${CLAUDE_PLUGIN_ROOT}/references/interview-workflow.md` and follow it exac
 When the interview ends:
 
 1. Create the clone folder:
+
    ```bash
    mkdir -p "$HOME/.openclone/clones/<name>/knowledge"
    ```

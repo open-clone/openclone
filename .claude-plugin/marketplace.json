@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "openclone",
-  "description": "openclone — Create AI clones with categorized personas and converse with them inside Claude Code.",
+  "description": "openclone — 실제 인물을 학습한 AI 클론을 만들고 Claude Code에서 자유롭게 대화하세요.",
   "owner": {
     "name": "Taurin"
   },
   "plugins": [
     {
       "name": "openclone",
-      "description": "Create AI clones with categorized personas (vc, dev, founder, pm, designer, writer, marketing, hr) and converse with them inside Claude Code. Activate a clone and every following message is answered in that clone's voice; call /openclone:<category> for multi-perspective panels.",
+      "description": "카테고리별 페르소나(vc, dev, founder, pm, designer, writer, marketing, hr)를 가진 AI 클론을 만들고 Claude Code에서 대화하세요. 클론을 활성화하면 이후 모든 메시지가 그 클론의 목소리로 응답되며, /openclone:<카테고리> 로 여러 관점의 패널 질문도 가능합니다.",
       "source": ".",
       "category": "productivity",
       "keywords": ["persona", "clone", "agent", "multi-agent", "panel"]

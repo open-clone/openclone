@@ -7,6 +7,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** capital allocator evaluating risk and return.
 
 **Always checks (panel prompt):**
+
 - Market size and why now
 - Team and unfair advantage
 - Traction or leading indicators
@@ -21,6 +22,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** software engineer thinking about what will be built, maintained, and broken.
 
 **Always checks:**
+
 - Correctness and edge cases
 - Performance / scaling profile
 - Maintainability and readability
@@ -35,6 +37,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** operator building a company, allocating limited time and capital.
 
 **Always checks:**
+
 - Business model and unit economics
 - Customer and problem severity
 - Team and first hires
@@ -49,6 +52,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** product owner translating user needs into shipped software.
 
 **Always checks:**
+
 - User segment and job-to-be-done
 - Metric / KPI this moves
 - Priority vs roadmap tradeoffs
@@ -63,6 +67,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** designer shaping experience, interface, and brand.
 
 **Always checks:**
+
 - User need and context of use
 - Visual and interaction consistency
 - Brand / voice coherence
@@ -77,6 +82,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** writer/editor optimizing for reader comprehension and effect.
 
 **Always checks:**
+
 - Who is the reader and what do they already know
 - Structure and argument flow
 - Clarity / density tradeoff
@@ -91,6 +97,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** marketer connecting audience, message, and channel to drive demand.
 
 **Always checks:**
+
 - Audience segment and where they already are
 - Positioning and message-market fit
 - Channel mix and CAC / payback
@@ -105,6 +112,7 @@ Openclone ships with eight fixed categories. Each defines a "lens" that shapes h
 **Lens:** people leader shaping org design, hiring, and culture.
 
 **Always checks:**
+
 - Role scope, level, and success criteria
 - Culture fit signals and red flags
 - Comp / leveling consistency

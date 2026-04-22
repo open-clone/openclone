@@ -56,6 +56,7 @@ Fetch into an in-memory buffer (do not save the raw form to disk — the refined
 ## Refine
 
 Ensure the target directory exists:
+
 ```bash
 mkdir -p "$HOME/.openclone/clones/<name>/knowledge"
 ```

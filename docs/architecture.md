@@ -46,7 +46,7 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 두 루트가 **읽을 때 병합**됩니다. 내장과 사용자 레이아웃은 **구조가 동일**하고(둘 다 `clones/<name>/{persona.md, knowledge/}`), 내장 쪽만 sparse-checkout non-cone 모드(`/*` + `!/clones/*/knowledge/`)로 각 클론의 `knowledge/` 서브폴더를 기본 제외하여 lazy-fetch 합니다.
 
 | 목적 | 내장 (read-only, 배포) | 사용자 (writable) |
-|---|---|---|
+| --- | --- | --- |
 | 페르소나 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/persona.md` | `~/.openclone/clones/<name>/persona.md` |
 | 지식 | `${CLAUDE_PLUGIN_ROOT}/clones/<name>/knowledge/` (sparse-excluded; `/openclone:use` 시 fetch) | `~/.openclone/clones/<name>/knowledge/` |
 | 활성 포인터 | — | `~/.openclone/active-clone` (텍스트 파일, 내용은 클론 이름 한 줄) |
@@ -109,7 +109,7 @@ Claude가 실행할 프롬프트 본문.
 현재 레퍼런스:
 
 | 파일 | 역할 |
-|---|---|
+| --- | --- |
 | [clone-schema.md](../references/clone-schema.md) | `persona.md` 프론트매터·본문 섹션·`knowledge/` 파일명 규약의 **진실 공급원** |
 | [categories.md](../references/categories.md) | v1 고정 8개 카테고리 정의와 각 카테고리의 렌즈 |
 | [interview-workflow.md](../references/interview-workflow.md) | `/openclone:new`의 인터뷰 진행 방식 |

@@ -19,6 +19,7 @@ Save this file as ~/.openclone/clones/<slug>/persona.md
 ## Persona
 
 REPLACE WITH 3–8 SENTENCES:
+
 - Who they are and what shapes their thinking
 - What they care about most
 - Their distinctive angle
@@ -32,10 +33,12 @@ REPLACE WITH 3–8 SENTENCES:
 ## Guidelines
 
 **Always:**
+
 - REPLACE with principle
 - REPLACE with principle
 
 **Never:**
+
 - REPLACE with topic/phrasing to avoid
 - REPLACE with topic/phrasing to avoid
 

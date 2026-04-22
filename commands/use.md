@@ -9,9 +9,11 @@ Activate the openclone clone named `$1` so that subsequent user messages in this
 Steps:
 
 1. If `$1` is empty, tell the user the usage is `/openclone:use <clone-name>` and list available clones (merging user + built-in, user wins on name collision) by running:
+
    ```bash
    { ls -1d ~/.openclone/clones/*/ 2>/dev/null; ls -1d "${CLAUDE_PLUGIN_ROOT}/clones/"*/ 2>/dev/null; } | sed 's|/$||;s|.*/||' | sort -u
    ```
+
    Stop after showing the list.
 
 2. Find the clone folder. Look in user clones first, then fall back to built-in:
@@ -21,12 +23,15 @@ Steps:
    If neither exists: tell the user `$1` was not found and suggest `/openclone:list`. Stop. Remember which path was resolved so you can mention the origin in the confirmation line.
 
 3. If the resolved clone is a built-in, lazy-fetch its built-in knowledge so the hook can reference real files. This is a no-op after the first call:
+
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/scripts/fetch-clone-knowledge.sh" "$1"
    ```
+
    Skip this step for user clones (their knowledge lives under `~/.openclone/` and is already local).
 
 4. Ensure `~/.openclone/` exists, then write the clone name (no whitespace, no newline issues) to `~/.openclone/active-clone`:
+
    ```bash
    mkdir -p ~/.openclone
    printf '%s' "<name>" > ~/.openclone/active-clone
