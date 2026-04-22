@@ -1,12 +1,31 @@
 # openclone
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-8A2BE2)](https://docs.claude.com/en/docs/claude-code)
+[![Status](https://img.shields.io/badge/Status-v2.0-brightgreen)](#상태)
+[![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)](#크레딧)
 
-카테고리별 페르소나를 가진 AI 클론을 만들고, Claude Code 안에서 그 클론과 직접 대화합니다.
+> **Claude Code 안에서 AI 페르소나 클론을 만들고, 대화하고, 패널로 묻는다.**
+>
+> 카테고리별 페르소나를 가진 AI 클론을 만들고, Claude Code 안에서 그 클론과 직접 대화합니다.
 
 <!-- 데모 GIF 추가 예정 -->
 
-## 무엇을 하는가
+## 목차
+
+- [할 수 있는 일](#할-수-있는-일)
+- [설치](#설치)
+- [사용법](#사용법)
+- [데이터 레이아웃](#데이터-레이아웃)
+- [카테고리 (v1 고정 목록)](#카테고리-v1-고정-목록)
+- [작동 방식](#작동-방식)
+- [로드맵 (잠정)](#로드맵-잠정)
+- [기여하기](#기여하기)
+- [상태](#상태)
+- [크레딧](#크레딧)
+- [라이선스](#라이선스)
+
+## 할 수 있는 일
 
 - **단일 진입점 `/openclone`** — `/openclone`만 치면 홈 패널이 뜹니다. 카테고리별로 그룹핑된 클론 목록에서 번호나 이름으로 바로 선택.
 - **기본 내장 클론을 바로 사용** — 스킬에 큐레이션된 프리셋 클론이 함께 배포됩니다(예: `douglas` / 권도균). 설치 직후 활성화하거나 패널 브로드캐스트로 질문할 수 있습니다.
@@ -19,6 +38,8 @@
 모든 데이터는 로컬 파일시스템에 있습니다. 서버도, 계정도, SaaS도 없습니다.
 
 > **v2.0 breaking change.** openclone은 Claude Code **플러그인**에서 **Standalone skill**로 전환됐습니다. 설치 경로가 `~/.claude/plugins/marketplaces/openclone` → `~/.claude/skills/openclone` 으로 바뀌었고, 슬래시 커맨드는 `/openclone:openclone`이 아니라 `/openclone`으로 직접 호출됩니다. 이전 버전을 쓰고 있었다면 [재설치 안내](#이전-v1-플러그인-설치를-사용-중이라면) 참고.
+
+---
 
 ## 설치
 
@@ -106,6 +127,8 @@ cd ~/.claude/skills/openclone && ./uninstall
 
 `~/.openclone/` 의 사용자 데이터(활성 클론 포인터, 직접 만든 클론, 수집한 지식)는 보존됩니다. 완전 제거하려면 추가로 `rm -rf ~/.openclone`.
 
+---
+
 ## 사용법
 
 모든 기능이 `/openclone` 하나에 서브명령으로 모여 있습니다.
@@ -124,6 +147,8 @@ cd ~/.claude/skills/openclone && ./uninstall
 ```
 
 홈 패널이 떠 있는 동안 클론을 고르는 가장 빠른 방법은 `/openclone <번호>`. 클론 이름을 외우고 있으면 `/openclone <이름>`도 똑같이 동작합니다.
+
+---
 
 ## 데이터 레이아웃
 
@@ -186,6 +211,8 @@ cd ~/.claude/skills/openclone && ./uninstall
 - 패널 응답 포맷 개선 — 비교 표, 합의/반대 지점 요약
 
 구체적 우선순위와 디자인은 이슈/Discussions에서 논의합니다. PR 환영.
+
+---
 
 ## 기여하기
 
@@ -308,6 +335,12 @@ node .github/scripts/validate-clones.ts
 ## 상태
 
 v2.0.0 — Standalone skill로 전환. 설치 경로가 `~/.claude/skills/openclone` 으로 이동했고, `/openclone` 이 네임스페이스 없이 직접 호출됩니다. 이슈·PR 환영.
+
+---
+
+## 크레딧
+
+[팀어텐션 (Team Attention)](https://www.team-attention.com/)의 후원을 받아 제작됐어요.
 
 ## 라이선스
 
