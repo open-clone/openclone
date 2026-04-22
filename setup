@@ -54,8 +54,8 @@ if not isinstance(marketplaces, dict):
 
 marketplaces["openclone"] = {
     "source": {
-        "source": "local",
-        "path": "~/.claude/plugins/marketplaces/openclone",
+        "source": "directory",
+        "path": os.path.expanduser("~/.claude/plugins/marketplaces/openclone"),
     }
 }
 data["extraKnownMarketplaces"] = marketplaces
