@@ -13,9 +13,9 @@ expected_dir="$HOME/.claude/plugins/marketplaces/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$here" != "$expected_dir" ]; then
-  printf 'error: setup must be run from %s\n' "$expected_dir" >&2
-  printf '       current location: %s\n' "$here" >&2
-  printf '\nRe-run the README install command to clone into the correct path.\n' >&2
+  printf '오류: setup은 %s 에서 실행해야 합니다\n' "$expected_dir" >&2
+  printf '     현재 위치: %s\n' "$here" >&2
+  printf '\nREADME의 설치 명령어를 다시 실행해 올바른 경로로 clone 해주세요.\n' >&2
   exit 1
 fi
 
@@ -23,7 +23,7 @@ settings_file="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
 
 if ! command -v python3 >/dev/null 2>&1; then
-  printf 'error: python3 is required for setup (used to safely edit settings.json)\n' >&2
+  printf '오류: setup에는 python3가 필요합니다 (settings.json 안전 편집용)\n' >&2
   exit 1
 fi
 
@@ -56,22 +56,22 @@ PY
 mkdir -p "$HOME/.openclone"
 
 cat <<'MSG'
-openclone installed.
+openclone 설치 완료.
 
-Activate:
-  • In a running Claude Code session: run /reload-plugins
-    (hot-loads the plugin, no restart)
-  • First time / if /reload-plugins does not pick up enabledPlugins:
-    restart Claude Code once.
+활성화 방법:
+  • 실행 중인 Claude Code 세션에서: /reload-plugins 실행
+    (플러그인을 핫로드, 재시작 불필요)
+  • 처음 설치이거나 /reload-plugins가 enabledPlugins를 인식하지 못하면:
+    Claude Code를 한 번 재시작하세요.
 
-Then try:
-  /openclone:list               — see built-in clones
-  /openclone:use <name>         — activate a clone (first use lazy-fetches its knowledge)
-  /openclone:<category> "..."   — panel query (vc, dev, founder, pm, designer, writer, marketing, hr)
+사용해 보세요:
+  /openclone:list               — 내장 클론 목록 보기
+  /openclone:use <name>         — 클론 활성화 (최초 사용 시 지식을 lazy-fetch)
+  /openclone:<category> "..."   — 패널 질문 (vc, dev, founder, pm, designer, writer, marketing, hr)
 
-Auto-update: enabled. Runs in the background once per hour on session start.
-  Disable with: touch ~/.openclone/no-auto-update
-  Re-enable:    rm ~/.openclone/no-auto-update
+자동 업데이트: 켜짐. 세션 시작 시 1시간당 1회 백그라운드 실행.
+  끄기: touch ~/.openclone/no-auto-update
+  다시 켜기: rm ~/.openclone/no-auto-update
 
-Uninstall: run ./uninstall from this directory.
+제거: 이 디렉터리에서 ./uninstall 실행.
 MSG

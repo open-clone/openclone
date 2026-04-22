@@ -11,8 +11,8 @@ expected_dir="$HOME/.claude/plugins/marketplaces/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$here" != "$expected_dir" ]; then
-  printf 'warning: uninstall invoked from %s (expected %s)\n' "$here" "$expected_dir" >&2
-  printf '         continuing with settings cleanup; manual rm -rf may be needed.\n' >&2
+  printf '경고: uninstall이 %s 에서 실행되었습니다 (예상 위치: %s)\n' "$here" "$expected_dir" >&2
+  printf '      설정 정리는 계속 진행합니다. 수동 rm -rf가 필요할 수 있습니다.\n' >&2
 fi
 
 settings_file="$HOME/.claude/settings.json"
@@ -50,11 +50,11 @@ if [ "$here" = "$expected_dir" ]; then
 fi
 
 cat <<'MSG'
-openclone uninstalled.
+openclone 제거 완료.
 
-Claude Code registration removed from ~/.claude/settings.json.
-Plugin directory removed (~/.claude/plugins/marketplaces/openclone).
+Claude Code 등록이 ~/.claude/settings.json 에서 제거되었습니다.
+플러그인 디렉터리가 삭제되었습니다 (~/.claude/plugins/marketplaces/openclone).
 
-User data preserved at ~/.openclone/ (active-clone pointer, user clones, user knowledge).
-To remove user data too: rm -rf ~/.openclone
+사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, 사용자 클론, 사용자 지식).
+사용자 데이터까지 삭제하려면: rm -rf ~/.openclone
 MSG

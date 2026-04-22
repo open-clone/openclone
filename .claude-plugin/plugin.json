@@ -1,7 +1,7 @@
 {
   "name": "openclone",
   "version": "0.0.1",
-  "description": "Create AI clones with categorized personas and converse with them inside Claude Code. Select a clone and every following message is answered in that clone's voice; call /openclone:<category> for multi-perspective panels.",
+  "description": "실제 인물을 학습한 AI 클론을 만들고 Claude Code에서 대화하세요. 클론을 활성화하면 이후 모든 메시지가 그 클론의 목소리로 응답되며, /openclone:<카테고리> 로 여러 관점의 패널 질문도 가능합니다.",
   "author": {
     "name": "Taurin"
   },
