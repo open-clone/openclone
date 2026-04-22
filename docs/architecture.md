@@ -70,20 +70,20 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 
 Room 분기
 
-3. `~/.openclone/room`이 존재하고 비어 있지 않으면 각 줄을 클론 이름으로 읽어 `resolve_clone`에 넘겨 persona 경로 + 양쪽 knowledge 디렉터리를 확보. 존재하지 않는 이름은 조용히 skip.
-4. 유효한 멤버가 최소 1명이면 `<openclone-room>` 블록으로 방출 — 라우팅 규칙(기본 1명·최대 2명·절대 0명 아님), 포맷 규칙, 각 멤버의 persona 전문을 heredoc으로 조합해 JSON 이스케이프 후 출력하고 종료.
-5. 멤버가 전부 깨졌으면 active-clone 분기로 fall-through.
+1. `~/.openclone/room`이 존재하고 비어 있지 않으면 각 줄을 클론 이름으로 읽어 `resolve_clone`에 넘겨 persona 경로 + 양쪽 knowledge 디렉터리를 확보. 존재하지 않는 이름은 조용히 skip.
+2. 유효한 멤버가 최소 1명이면 `<openclone-room>` 블록으로 방출 — 라우팅 규칙(기본 1명·최대 2명·절대 0명 아님), 포맷 규칙, 각 멤버의 persona 전문을 heredoc으로 조합해 JSON 이스케이프 후 출력하고 종료.
+3. 멤버가 전부 깨졌으면 active-clone 분기로 fall-through.
 
 Active-clone 분기
 
-6. `~/.openclone/active-clone` 파일이 없거나 비어 있으면 → `{}`만 출력 후 종료.
-7. 이름을 읽어 `resolve_clone`으로 user(우선) → built-in 순으로 persona 경로 확보. 둘 다 없으면 빈 JSON.
-8. `persona.md` 내용 + 최신성·카테고리 프레이밍·Web 조회 지침을 heredoc으로 조합.
+1. `~/.openclone/active-clone` 파일이 없거나 비어 있으면 → `{}`만 출력 후 종료.
+2. 이름을 읽어 `resolve_clone`으로 user(우선) → built-in 순으로 persona 경로 확보. 둘 다 없으면 빈 JSON.
+3. `persona.md` 내용 + 최신성·카테고리 프레이밍·Web 조회 지침을 heredoc으로 조합.
 
 공통 후처리
 
-9. JSON 문자열 이스케이프 — `python3`이 있으면 `json.dumps`, 없으면 `sed`/`awk` 폴백(macOS는 python3 경로 사용).
-10. `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}` 형태로 stdout에 방출.
+1. JSON 문자열 이스케이프 — `python3`이 있으면 `json.dumps`, 없으면 `sed`/`awk` 폴백(macOS는 python3 경로 사용).
+2. `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}` 형태로 stdout에 방출.
 
 파일 [hooks/inject-active-clone.sh](../hooks/inject-active-clone.sh)의 주석, [references/clone-schema.md](../references/clone-schema.md)의 "Injection format" 섹션, [references/room-workflow.md](../references/room-workflow.md)의 "Runtime routing" 섹션이 공식 사양입니다.
 
@@ -97,7 +97,7 @@ Active-clone 분기
 
 v1.0부터 슬래시 커맨드는 **단 하나**입니다 — `commands/openclone.md`. 프론트매터(`description`·`allowed-tools`·`argument-hint`) + 프롬프트 본문으로 구성되며, 본문이 `$ARGUMENTS`의 첫 토큰을 읽어 서브액션으로 분기합니다.
 
-```
+```text
 $1 값                   → 동작                    → 로드할 레퍼런스
 ───────────────────────────────────────────────────────────────────
 (없음)                  → 홈 패널                 → references/home-workflow.md
