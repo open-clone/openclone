@@ -50,7 +50,7 @@ Claude Code 세션에 아래 문단을 붙여넣으세요.
 
 ```text
 Install openclone: run
-  git clone --filter=blob:none --sparse --depth=1 https://github.com/taurin-inc/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
+  git clone --filter=blob:none --sparse --depth=1 https://github.com/open-clone/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
 then restart Claude Code (or start a new session) so the skill's hooks are picked up. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, tech, founder, expert, influencer, politician, celebrity). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the skill loaded by running /openclone and show me the output.
 ```
 
@@ -60,7 +60,7 @@ Claude Code가 설치를 대신 수행하고, `~/.claude/CLAUDE.md`에 사용법
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/taurin-inc/openclone.git \
+  https://github.com/open-clone/openclone.git \
   ~/.claude/skills/openclone \
   && cd ~/.claude/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -77,7 +77,7 @@ git clone --filter=blob:none --sparse --depth=1 \
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/taurin-inc/openclone.git \
+  https://github.com/open-clone/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
@@ -188,7 +188,7 @@ openclone에 기본 클론으로 배포되는 인물 페르소나는 **공개된
 - 표기 정정 (`display_name`, `tagline`, 소속 등)
 - 페르소나 전체 제거
 
-**문의 경로** — 공개 요청은 [옵트인 이슈 템플릿](https://github.com/taurin-inc/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`로 부탁드립니다.
+**문의 경로** — 공개 요청은 [옵트인 이슈 템플릿](https://github.com/open-clone/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`로 부탁드립니다.
 
 **응답 목표** — 접수 후 7일 이내 초기 응답. 제거 요청은 본인 확인 즉시 저장소에 반영하며, 사용자 로컬에는 다음 자동 업데이트 때 전달됩니다.
 

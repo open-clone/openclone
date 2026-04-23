@@ -203,7 +203,7 @@ if [ "$first_install" = "1" ]; then
 
 ────────────────────────────────────────────────────────────
 openclone가 마음에 드셨다면 GitHub에서 스타를 눌러주세요.
-  https://github.com/taurin-inc/openclone
+  https://github.com/open-clone/openclone
 
 스타 하나가 다음 기능 개발에 큰 힘이 됩니다. 감사합니다.
 ────────────────────────────────────────────────────────────

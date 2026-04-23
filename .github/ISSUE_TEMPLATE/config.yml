@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 보안 취약점 제보
-    url: https://github.com/taurin-inc/openclone/security/advisories/new
+    url: https://github.com/open-clone/openclone/security/advisories/new
     about: 취약점은 공개 이슈가 아니라 GitHub Security Advisory 또는 hayun@rapidstudio.dev 로 보내주세요. SECURITY.md 참고.
   - name: 질문 / 아이디어 논의
-    url: https://github.com/taurin-inc/openclone/discussions
+    url: https://github.com/open-clone/openclone/discussions
     about: 버그·기능 제안이 아니라 열린 질문이나 아이디어 논의라면 Discussions를 이용해 주세요.
