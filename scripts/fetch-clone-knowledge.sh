@@ -17,6 +17,15 @@ if [ -z "$slug" ]; then
   exit 1
 fi
 
+# Reject anything that isn't a valid slug. The caller in SKILL.md validates
+# already, but this script may be invoked directly — and the value becomes
+# part of a filesystem path below, so defense in depth is warranted.
+if [ "${#slug}" -gt 64 ] \
+   || ! printf '%s' "$slug" | grep -Eq '^[a-z0-9][a-z0-9-]*$'; then
+  echo "fetch-clone-knowledge: invalid slug: $slug" >&2
+  exit 1
+fi
+
 install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$install_dir"
 

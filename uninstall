@@ -8,7 +8,9 @@
 
 set -eu
 
-expected_dir="$HOME/.claude/skills/openclone"
+# Honor Claude Code's CLAUDE_CONFIG_DIR override (falls back to ~/.claude).
+claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+expected_dir="$claude_config_dir/skills/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$here" != "$expected_dir" ]; then
@@ -16,7 +18,7 @@ if [ "$here" != "$expected_dir" ]; then
   printf '      설정 정리는 계속 진행합니다. 수동 rm -rf가 필요할 수 있습니다.\n' >&2
 fi
 
-settings_file="$HOME/.claude/settings.json"
+settings_file="$claude_config_dir/settings.json"
 
 if [ -f "$settings_file" ] && command -v python3 >/dev/null 2>&1; then
   python3 - "$settings_file" <<'PY'
@@ -93,11 +95,11 @@ if [ "$here" = "$expected_dir" ]; then
   rm -rf "$expected_dir"
 fi
 
-cat <<'MSG'
+cat <<MSG
 openclone 제거 완료.
 
-Claude Code 훅 및 상태줄 등록이 ~/.claude/settings.json 에서 제거되었습니다.
-스킬 디렉터리가 삭제되었습니다 (~/.claude/skills/openclone).
+Claude Code 훅 및 상태줄 등록이 ${settings_file} 에서 제거되었습니다.
+스킬 디렉터리가 삭제되었습니다 (${expected_dir}).
 
 사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, 사용자 클론, 사용자 지식).
 사용자 데이터까지 삭제하려면: rm -rf ~/.openclone

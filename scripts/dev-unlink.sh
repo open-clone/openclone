@@ -7,7 +7,8 @@
 
 set -euo pipefail
 
-installed="$HOME/.claude/skills/openclone"
+claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+installed="$claude_config_dir/skills/openclone"
 
 if [ $# -eq 0 ]; then
   cat >&2 <<USAGE
@@ -25,6 +26,12 @@ for rel in "$@"; do
   rel="${rel#./}"
   rel="${rel#/}"
   rel="${rel%/}"
+  case "$rel" in
+    ""|..|../*|*/../*|*/..)
+      echo "refuse: $rel (path traversal not allowed)" >&2
+      continue
+      ;;
+  esac
   dst="$installed/$rel"
   if [ -L "$dst" ]; then
     rm "$dst"

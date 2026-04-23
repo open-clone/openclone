@@ -11,11 +11,15 @@
 
 set -eu
 
-expected_dir="$HOME/.claude/skills/openclone"
+# Honor Claude Code's CLAUDE_CONFIG_DIR override (falls back to ~/.claude).
+# All subsequent paths are computed from this so users who relocate their
+# config dir are not locked out of install/uninstall.
+claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+expected_dir="$claude_config_dir/skills/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # v1 plugin install detection — hard stop so the old install is cleaned first.
-legacy_dir="$HOME/.claude/plugins/marketplaces/openclone"
+legacy_dir="$claude_config_dir/plugins/marketplaces/openclone"
 if [ -d "$legacy_dir" ]; then
   printf '오류: 이전 플러그인 버전이 감지되었습니다: %s\n' "$legacy_dir" >&2
   printf '      먼저 다음을 실행해 주세요:\n' >&2
@@ -55,8 +59,8 @@ if [ -d "$here/.git" ]; then
   fi
 fi
 
-settings_file="$HOME/.claude/settings.json"
-mkdir -p "$HOME/.claude"
+settings_file="$claude_config_dir/settings.json"
+mkdir -p "$claude_config_dir"
 
 if ! command -v python3 >/dev/null 2>&1; then
   printf '오류: setup에는 python3가 필요합니다 (settings.json 안전 편집용)\n' >&2
@@ -149,10 +153,11 @@ existing = data.get("statusLine")
 if existing is None or (isinstance(existing, dict) and existing.get(MANAGED) is True):
     data["statusLine"] = OWN_STATUSLINE
 elif isinstance(existing, dict):
+    statusline_cmd = "bash " + os.path.join(install_dir, "scripts/statusline.sh")
     print(
         "참고: 이미 다른 statusLine이 설정되어 있어 openclone statusline은 주입하지 않았습니다.\n"
         "      활성 클론/대화방 상태를 상태줄에 보고 싶다면 settings.json의 statusLine을\n"
-        '      {"type":"command","command":"bash ~/.claude/skills/openclone/scripts/statusline.sh"} 로 교체하세요.'
+        '      {"type":"command","command":"' + statusline_cmd + '"} 로 교체하세요.'
     )
 
 with open(path, "w") as f:
@@ -162,11 +167,17 @@ PY
 
 mkdir -p "$HOME/.openclone"
 
-cat <<'MSG'
+star_marker="$HOME/.openclone/.star-prompted"
+first_install=0
+if [ ! -f "$star_marker" ]; then
+  first_install=1
+fi
+
+cat <<MSG
 openclone 설치 완료.
 
 활성화 방법:
-  • Claude Code는 ~/.claude/skills/openclone/SKILL.md 을 자동 인식합니다.
+  • Claude Code는 ${expected_dir}/SKILL.md 을 자동 인식합니다.
   • 새 세션부터 /openclone 이 바로 사용 가능합니다.
   • 실행 중인 세션이 있으면 한 번 재시작하세요 (훅/statusline 적용을 위해).
 
@@ -177,7 +188,7 @@ openclone 설치 완료.
   /openclone panel vc "..."     — 카테고리 패널 (vc, tech, founder, expert, influencer, politician, celebrity)
   /openclone stop               — 활성 클론과 방 모두 종료
 
-상태줄: 활성 클론 또는 방이 열려 있을 때 Claude Code 상태줄에 `openclone · <이름>` 또는 `openclone · room: a, b, c` 가 표시됩니다.
+상태줄: 활성 클론 또는 방이 열려 있을 때 Claude Code 상태줄에 \`openclone · <이름>\` 또는 \`openclone · room: a, b, c\` 가 표시됩니다.
   (이미 settings.json에 본인 statusLine이 있으면 덮어쓰지 않고 건너뜁니다.)
 
 자동 업데이트: 켜짐. 세션 시작 시 1시간당 1회 백그라운드 실행.
@@ -186,3 +197,16 @@ openclone 설치 완료.
 
 제거: 이 디렉터리에서 ./uninstall 실행.
 MSG
+
+if [ "$first_install" = "1" ]; then
+  cat <<'STAR_MSG'
+
+────────────────────────────────────────────────────────────
+openclone가 마음에 드셨다면 GitHub에서 스타를 눌러주세요.
+  https://github.com/taurin-inc/openclone
+
+스타 하나가 다음 기능 개발에 큰 힘이 됩니다. 감사합니다.
+────────────────────────────────────────────────────────────
+STAR_MSG
+  touch "$star_marker" 2>/dev/null || true
+fi

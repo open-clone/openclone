@@ -19,12 +19,29 @@ install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 room_file="$HOME/.openclone/room"
 active_file="$HOME/.openclone/active-clone"
 
+# Defensive slug validation — state files are read from disk, so treat their
+# contents as untrusted and reject anything that isn't a valid clone slug.
+is_valid_slug() {
+  local s="${1-}"
+  [ -n "$s" ] || return 1
+  [ "${#s}" -le 64 ] || return 1
+  case "$s" in
+    [a-z0-9]*) ;;
+    *) return 1 ;;
+  esac
+  case "$s" in
+    *[!a-z0-9-]*) return 1 ;;
+  esac
+  return 0
+}
+
 C_NAME=$'\033[1;35m'
 C_ROLE=$'\033[2m'
 C_OFF=$'\033[0m'
 
 resolve_persona_file() {
   local slug="$1" f
+  is_valid_slug "$slug" || return 1
   f="$HOME/.openclone/clones/$slug/persona.md"
   [ -f "$f" ] && { printf '%s\n' "$f"; return 0; }
   f="$install_dir/clones/$slug/persona.md"
@@ -136,7 +153,7 @@ render_room() {
   while IFS= read -r raw || [ -n "$raw" ]; do
     local s
     s=$(printf '%s' "$raw" | tr -d '[:space:]')
-    [ -n "$s" ] && slugs+=("$s")
+    is_valid_slug "$s" && slugs+=("$s")
   done < "$room_file"
 
   local count=${#slugs[@]}
@@ -167,7 +184,7 @@ fi
 
 if [ -f "$active_file" ] && [ -s "$active_file" ]; then
   slug=$(tr -d '[:space:]' < "$active_file" 2>/dev/null || true)
-  if [ -n "$slug" ]; then
+  if is_valid_slug "$slug"; then
     render_active_clone "$slug"
     exit 0
   fi

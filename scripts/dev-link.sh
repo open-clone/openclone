@@ -16,7 +16,8 @@
 set -euo pipefail
 
 workspace="$(cd "$(dirname "$0")/.." && pwd)"
-installed="$HOME/.claude/skills/openclone"
+claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+installed="$claude_config_dir/skills/openclone"
 
 if [ $# -eq 0 ]; then
   cat >&2 <<USAGE
@@ -40,6 +41,14 @@ for rel in "$@"; do
   rel="${rel#./}"
   rel="${rel#/}"
   rel="${rel%/}"
+  # Reject path traversal — `rm -rf "$dst"` below is irreversible, so never
+  # let `rel` escape the installed skill directory.
+  case "$rel" in
+    ""|..|../*|*/../*|*/..)
+      echo "refuse: $rel (path traversal not allowed)" >&2
+      continue
+      ;;
+  esac
   src="$workspace/$rel"
   dst="$installed/$rel"
   if [ ! -e "$src" ]; then

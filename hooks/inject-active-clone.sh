@@ -32,21 +32,43 @@
 
 set -u
 
+# Honor CLAUDE_CONFIG_DIR (Claude Code's override of ~/.claude). Falls back to
+# the default. Only used for user-facing messages; actual skill paths resolve
+# from BASH_SOURCE below.
+claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+
+# Defensive slug validation. Clone names come from state files on disk; treat
+# them as untrusted and require the same format `/openclone new` enforces.
+# Rejects path traversal (`..`), absolute paths, and any shell/glob metachar.
+is_valid_slug() {
+  local s="${1-}"
+  [ -n "$s" ] || return 1
+  [ "${#s}" -le 64 ] || return 1
+  case "$s" in
+    [a-z0-9]*) ;;
+    *) return 1 ;;
+  esac
+  case "$s" in
+    *[!a-z0-9-]*) return 1 ;;
+  esac
+  return 0
+}
+
 # Force-push banner: emitted whenever session-update.sh has detected that the
 # local install cannot fast-forward to origin/main. Shown regardless of whether
 # a clone is active, so stuck installs always surface the recovery notice.
 force_push_banner=""
 if [ -f "$HOME/.openclone/force-push-detected" ]; then
-  force_push_banner=$(cat <<'BANNER'
+  force_push_banner=$(cat <<BANNER
 <openclone-upgrade-needed>
 공지 — openclone 자동 업데이트가 막혔습니다. 원격 저장소 main이 force-push 되어 기존 설치는 fast-forward로 따라갈 수 없습니다. 현재 설치는 이전 버전에 머물러 있으며, 누락된 커맨드나 예상과 다른 동작의 원인일 수 있습니다.
 
 복구 방법 (이 안내를 사용자에게 전달해 주세요):
-  cd ~/.claude/skills/openclone && ./uninstall
+  cd ${claude_config_dir}/skills/openclone && ./uninstall
   rm -f  ~/.openclone/no-auto-update
   # 그 다음 README의 설치 one-liner 재실행
 
-사용자 데이터(`~/.openclone/` 아래 active-clone, 사용자 클론, 수집한 지식)는 보존됩니다. 복구가 끝나면 이 알림은 자동으로 사라집니다.
+사용자 데이터(\`~/.openclone/\` 아래 active-clone, 사용자 클론, 수집한 지식)는 보존됩니다. 복구가 끝나면 이 알림은 자동으로 사라집니다.
 </openclone-upgrade-needed>
 
 BANNER
@@ -84,6 +106,7 @@ install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # on success prints "<origin>\t<persona_path>\t<user_knowledge_dir>\t<builtin_knowledge_dir>".
 resolve_clone() {
   local name="$1"
+  is_valid_slug "$name" || return 1
   local user_dir="$HOME/.openclone/clones/${name}"
   local builtin_dir="${install_dir}/clones/${name}"
   if [ -f "${user_dir}/persona.md" ]; then
@@ -164,6 +187,7 @@ active_file="$HOME/.openclone/active-clone"
 
 clone_name=$(tr -d '[:space:]' < "$active_file" 2>/dev/null || true)
 [ -n "$clone_name" ] || emit_empty
+is_valid_slug "$clone_name" || emit_empty
 
 if info=$(resolve_clone "$clone_name"); then
   clone_origin=$(printf '%s' "$info" | cut -f1)

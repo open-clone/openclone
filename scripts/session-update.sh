@@ -98,7 +98,11 @@ if [ "$is_cone" = "true" ] && [ -f ".git/info/sparse-checkout" ]; then
       if [ -f "$HOME/.openclone/active-clone" ]; then
         active=$(tr -d '[:space:]' < "$HOME/.openclone/active-clone" 2>/dev/null || true)
       fi
-      if [ -n "$active" ] && git ls-tree -d --name-only HEAD "clones/$active/knowledge" >/dev/null 2>&1; then
+      # Slug validation before using `active` as a path segment.
+      if [ -n "$active" ] \
+         && [ "${#active}" -le 64 ] \
+         && printf '%s' "$active" | grep -Eq '^[a-z0-9][a-z0-9-]*$' \
+         && git ls-tree -d --name-only HEAD "clones/$active/knowledge" >/dev/null 2>&1; then
         GIT_TERMINAL_PROMPT=0 git sparse-checkout add "clones/$active/knowledge" >/dev/null 2>&1 || true
         GIT_TERMINAL_PROMPT=0 git checkout -- "clones/$active/knowledge" >/dev/null 2>&1 || true
         printf '[%s] openclone: re-materialized clones/%s/knowledge\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$active"

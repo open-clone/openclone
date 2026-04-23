@@ -19,6 +19,25 @@
 
 모든 데이터는 내 컴퓨터에 마크다운으로 저장됩니다. 서버도, 계정도, SaaS도 없습니다.
 
+## 기본 클론
+
+현재 저장소에 기본 포함된 프리셋 클론 목록입니다. **Official** 컬럼의 ✅ 표시는 본인이 직접 확인하고 공식적으로 수락한 클론입니다. 그 외 항목은 공개된 인터뷰·발언·글을 바탕으로 구성되었으며, 본인의 수정·제거 요청은 아래 [옵트인](#옵트인-실존-인물-클론) 섹션을 참고하세요.
+
+| Official | 이름 | 카테고리 | 소개 |
+| :---: | --- | --- | --- |
+|  | [장동욱 (Brian)](clones/brian/persona.md) | `vc` | 카카오벤처스 이사. 당근·한국신용데이터·퀸잇 등 60+ 초기팀 투자 |
+|  | [노정석 (Chester Roh)](clones/chester/persona.md) | `founder`, `vc` | 아시아 최초 구글 인수 창업자. 6연속 창업·엔젤투자·컴퍼니빌더 25년 |
+|  | [김철우](clones/chulwukim/persona.md) | `vc`, `founder` | 더벤처스 대표. 셀잇→카카오 매각, 번개장터 PEF 엑싯 경험 창업자 출신 VC |
+|  | [권도균](clones/douglas/persona.md) | `founder`, `vc` | 프라이머 대표. 16년간 300여개사 투자한 국내 1위 액셀러레이터 |
+| ✅ | [조여준 (Ethan Cho)](clones/ethan/persona.md) | `vc` | 더벤처스 CIO. 구글·퀄컴벤처스·KB인베스트먼트 출신, 두나무·토스 초기 검증 |
+| ✅ | [정구봉](clones/gbjeong/persona.md) | `tech`, `founder` | 팀어텐션 대표. 자타공인 Claude Code 전문가, AI 에이전트·자동화 엔지니어 |
+|  | [김동현 (이드)](clones/iid/persona.md) | `expert` | 티오더 HR Director. 토스·야놀자·클래스101 거친 실행형 HR 파트너 |
+|  | [신재명 (Jay Shin)](clones/jayshin/persona.md) | `founder` | 딜라이트룸 창업자. 글로벌 1억 다운로드 알라미, 340억 매출 웰니스 앱 |
+|  | [이동욱 (향로)](clones/jojoldu/persona.md) | `tech` | 인프랩 CTO. 기록하는 개발자, "기억보단 기록을" · "개발바닥" |
+|  | [조쉬](clones/josh/persona.md) | `founder`, `expert` | AI 솔로프리너. 빌더 조쉬 · 조쉬의 뉴스레터 · 《나는 솔로프리너다》 저자 |
+| ✅ | [이경훈](clones/kyunghun/persona.md) | `founder`, `vc` | 채널코퍼레이션 부대표·CAIO. 글로벌브레인 한국 대표 출신 AI·일본 시장 전문가 |
+|  | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | 김용훈그로스연구소 대표. 160+ 스타트업의 그로스 마케팅, M&A·IPO 경험 CMO |
+
 ## 설치
 
 ### 옵션 A — Claude Code에 맡기기 (권장)
@@ -45,6 +64,18 @@ git clone --filter=blob:none --sparse --depth=1 \
 ```
 
 설치 후 Claude Code 세션을 재시작하면 `/openclone`이 바로 동작합니다.
+
+### 플랫폼 지원
+
+| 환경 | 상태 | 비고 |
+| --- | --- | --- |
+| macOS | ✅ 정식 지원 | 주요 개발·검증 환경 |
+| Linux | ✅ 정식 지원 | |
+| Windows (WSL2) | ✅ 동작 | 리눅스로 취급됨. 권장 |
+| Windows (Git Bash) | ⚠️ 미지원 | 훅 실행이 환경 의존적. `session-update.sh`의 백그라운드 detach와 `dev-link.sh`의 `ln -sfn`이 특히 취약 |
+| Windows (cmd / PowerShell 네이티브) | ❌ 미지원 | 훅·스크립트가 전부 bash 기반. 현재 구조로는 불가능 |
+
+`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 `setup`/`uninstall`이 자동으로 따라갑니다.
 
 <details>
 <summary>업데이트·제거·자동 업데이트 끄기</summary>

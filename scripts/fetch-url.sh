@@ -16,10 +16,29 @@ if [ -z "$url" ]; then
   exit 1
 fi
 
+# Only http(s). Reject file://, ftp://, gopher://, etc. — prompt-injection in
+# the user's transcript could otherwise steer an ingest at a local path or
+# internal service. curl's --proto is secondary defense against redirects.
+case "$url" in
+  http://*|https://*) ;;
+  *)
+    echo "fetch-url: only http(s) URLs are allowed: $url" >&2
+    exit 1
+    ;;
+esac
+
 tmp=$(mktemp -t openclone-fetch.XXXXXX)
 trap 'rm -f "$tmp"' EXIT
 
-if ! curl -fsSL -A "Mozilla/5.0 openclone" --max-time 30 "$url" -o "$tmp"; then
+# --max-filesize caps the body at 25 MB; --proto pins allowed schemes even
+# through redirects; --max-time keeps the hook responsive.
+if ! curl -fsSL \
+      --proto '=http,https' \
+      --proto-redir '=http,https' \
+      --max-filesize 25M \
+      --max-time 30 \
+      -A "Mozilla/5.0 openclone" \
+      "$url" -o "$tmp"; then
   echo "fetch-url: curl failed for $url" >&2
   exit 1
 fi
