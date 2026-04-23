@@ -28,7 +28,7 @@
 | ✅ | [장동욱 (Brian)](clones/brian/persona.md) | `vc` | 카카오벤처스 이사. 당근·한국신용데이터·퀸잇 등 60+ 초기팀 투자 |
 |  | [노정석 (Chester Roh)](clones/chester/persona.md) | `founder`, `vc` | 아시아 최초 구글 인수 창업자. 6연속 창업·엔젤투자·컴퍼니빌더 25년 |
 | ✅ | [김철우](clones/chulwukim/persona.md) | `vc`, `founder` | 더벤처스 대표. 셀잇→카카오 매각, 번개장터 PEF 엑싯 경험 창업자 출신 VC |
-|  | [권도균](clones/douglas/persona.md) | `founder`, `vc` | 프라이머 대표. 16년간 300여개사 투자한 국내 1위 액셀러레이터 |
+| ✅ | [권도균](clones/douglas/persona.md) | `founder`, `vc` | 프라이머 대표. 16년간 300여개사 투자한 국내 1위 액셀러레이터 |
 | ✅ | [조여준 (Ethan Cho)](clones/ethan/persona.md) | `vc` | 더벤처스 CIO. 구글·퀄컴벤처스·KB인베스트먼트 출신, 두나무·토스 초기 검증 |
 | ✅ | [정구봉](clones/gbjeong/persona.md) | `tech`, `founder` | 팀어텐션 대표. 자타공인 Claude Code 전문가, AI 에이전트·자동화 엔지니어 |
 | ✅ | [김동현 (이드)](clones/iid/persona.md) | `expert` | 티오더 HR Director. 토스·야놀자·클래스101 거친 실행형 HR 파트너 |
