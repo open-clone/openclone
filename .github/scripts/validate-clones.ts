@@ -142,4 +142,40 @@ for (const path of personaFiles) {
 
 if (problems.length > 0) fail(problems);
 
-console.log(`[OK] ${personaFiles.length} clone persona file(s) valid`);
+// Cross-file consistency: adding a category requires edits in seven places
+// (see CLAUDE.md "Categories are a fixed v1 list"). This check confirms each
+// downstream file at least *mentions* every token in FIXED_CATEGORIES, so a
+// half-added PR fails CI loudly. Match is a whole-word substring — enough to
+// catch "forgot to add category X to file Y" without being fragile to
+// formatting changes inside each file.
+const CROSS_CHECK_FILES = [
+  "references/categories.md",
+  "references/home-workflow.md",
+  "references/interview-workflow.md",
+  "SKILL.md",
+  "README.md",
+  "scripts/statusline.sh",
+];
+
+const crossProblems: string[] = [];
+for (const rel of CROSS_CHECK_FILES) {
+  const fp = resolve(ROOT, rel);
+  if (!existsSync(fp)) {
+    crossProblems.push(`${rel}: file missing (expected for category cross-check)`);
+    continue;
+  }
+  const content = readFileSync(fp, "utf8");
+  for (const cat of FIXED_CATEGORIES) {
+    const re = new RegExp(`\\b${cat}\\b`);
+    if (!re.test(content)) {
+      crossProblems.push(`${rel}: does not mention category '${cat}'`);
+    }
+  }
+}
+
+if (crossProblems.length > 0) fail(crossProblems);
+
+console.log(
+  `[OK] ${personaFiles.length} clone persona file(s) valid; ` +
+    `${FIXED_CATEGORIES.size} categories referenced across ${CROSS_CHECK_FILES.length} files`,
+);

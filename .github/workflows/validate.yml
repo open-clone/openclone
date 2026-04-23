@@ -21,6 +21,9 @@ jobs:
       - name: Validate clone schema
         run: node .github/scripts/validate-clones.ts
 
+      - name: Hook smoke test (JSON output across key states)
+        run: bash .github/scripts/smoke-hook.sh
+
       - name: Shellcheck hooks and scripts
         uses: ludeeus/action-shellcheck@master
         with:
