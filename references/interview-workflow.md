@@ -4,6 +4,8 @@ How Claude conducts a clone-creation interview and consolidates the transcript i
 
 ## Overall shape
 
+0. **Preflight — Chrome MCP required** (always runs first; aborts if unavailable)
+0b. **Stage 0 — Person discovery** (runs when the target is a publicly identifiable person; may skip Stages 1–5 entirely)
 1. Category selection (at least one required; multiple allowed)
 2. Core identity block (5–7 questions)
 3. Category-specific deep dive (6–10 questions per chosen category — trim if many)
@@ -12,6 +14,64 @@ How Claude conducts a clone-creation interview and consolidates the transcript i
 6. Consolidation into `~/.openclone/clones/<name>/persona.md` (folder-per-clone layout)
 
 The user can stop at any time by saying "done", "끝", "저장해" or similar. Consolidate with whatever has been captured.
+
+## Preflight — Chrome MCP required
+
+Both the auto-discovery path (Stage 0) and the hand-authored interview path produce better clones when Chrome MCP is available, because LinkedIn, Threads, X, Instagram, Facebook, and most personal sites hide content behind login walls or render the body via JS. Plain WebFetch sees partial/broken HTML — partial data is worse than no data.
+
+Before any stage runs:
+
+1. Verify the `claude-in-chrome` MCP tools are loaded. If their schemas are not already in context, load them now:
+   ```text
+   ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__find,mcp__claude-in-chrome__read_console_messages
+   ```
+2. If the ToolSearch result does NOT include these tool schemas (Chrome extension disconnected or not installed), **abort** with this message and do nothing else — do not propose `curl`/WebFetch workarounds:
+   > `/openclone new`는 Chrome MCP(claude-in-chrome)가 필요해요. Chrome extension이 연결돼 있어야 LinkedIn·Threads·X·Instagram·YouTube 같은 소스를 제대로 수집할 수 있어요. extension을 켠 뒤 다시 시도해 주세요. (순수 텍스트로 직접 페르소나를 쓰고 싶다면 `${CLAUDE_SKILL_DIR}/assets/clone-template.md`를 복사해 `~/.openclone/clones/<name>/persona.md`로 두세요.)
+3. If the user explicitly asks to bypass the gate for a one-off hand-authored persona (e.g. "그냥 내가 직접 써서 저장할게"), don't auto-bypass — tell them to copy the template manually (same sentence as above).
+
+## Stage 0 — Person discovery (auto-harvest)
+
+**When this stage runs:** the user supplied a real-person target — either a full name, a social handle, or one or more URLs (LinkedIn, YouTube channel, X profile, personal site). This is the common case for named clones like `douglas` / 권도균. If the user only has a vague concept ("어떤 VC 스타일 페르소나를 새로 만들고 싶어") and no real-person reference, **skip Stage 0 entirely** and proceed to Stage 1 — the hand-authored interview.
+
+**Goal:** produce a draft `persona.md` + first dated knowledge entries automatically, then ask the user *one* confirm-or-correct question, instead of grinding through 15+ interview turns.
+
+### Steps
+
+1. **Resolve identity and find canonical links.**
+   - If the user gave URLs directly, use them. Otherwise, use `WebSearch` to locate: LinkedIn profile, X (Twitter) profile, Threads, Instagram, YouTube channel, personal site/blog, and a Wikipedia/news page if they are public.
+   - Confirm the identity before scraping — if ambiguous (multiple people with the same name), ask the user one disambiguating question ("둘 중 누구인가요?" with 2–3 candidate links) before continuing.
+   - Always use the full URL as displayed; never follow shortlinks without first verifying the real destination.
+
+2. **Scrape profile surfaces with Chrome MCP.**
+   - Open each canonical URL with `mcp__claude-in-chrome__navigate`, then `read_page` or `get_page_text` to harvest bio, headline, about section, recent posts, pinned tweets, etc.
+   - For LinkedIn/Threads/X/Instagram posts: scroll and collect **up to 30 recent items** with timestamps. Preserve the real post URL for each item — that becomes the `source_url` in the knowledge frontmatter.
+   - If a surface is behind auth, the page body will show a login wall — don't pretend you scraped it; mark that source as "requires login, skipped" in the confirm message.
+   - Respect the two-minute rule of thumb: if a single page takes more than ~2 minutes of scrolling/clicking, stop and record what you have.
+
+3. **Extract YouTube content with yt-dlp.**
+   - If there is a channel/playlist URL, use `${CLAUDE_SKILL_DIR}/scripts/fetch-youtube.sh <url>` for individual videos. For a channel, ask the user which 3–6 recent videos matter most (channel dumps are too noisy to harvest whole).
+   - yt-dlp missing on PATH → don't fail the whole flow; log "yt-dlp not installed, skipped YouTube" and continue with the non-YouTube sources.
+
+4. **Draft `persona.md` from the harvested material.**
+   - Follow `clone-schema.md` exactly: frontmatter + Persona + Speaking style + Guidelines + Background, with optional Category-specific framing if the person genuinely plays multiple roles.
+   - **Infer `categories` from the evidence**, not by asking. LinkedIn headline says "Founder & CEO" → `founder`. VC fund bio → `vc`. Repeated tech talks → `tech`. If evidence points to two categories, include both and mark `primary_category`. Never output a category outside the fixed list (vc, tech, founder, expert, influencer, politician, celebrity).
+   - Include a `## Links` section with every canonical URL you found — this is how `/openclone update` later re-finds the same sources.
+   - Voice traits, speaking style, and guardrails come from analyzing the person's actual posts (tone, recurring phrases, topics they avoid). Do not fabricate voice traits without post evidence.
+
+5. **Write dated knowledge files.**
+   - For each harvested post / article / transcript, produce one file at `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md` following `refine-workflow.md`. Use the **post's own publication date** in both the filename and a `published_at` frontmatter field; use today's date in `fetched`.
+   - Group by topic, not by source. Skip noise (UI chrome, ads, repost boilerplate).
+
+6. **Confirm with the user in one pass.**
+   - Show: `display_name`, `tagline`, `categories`, `primary_category`, source list (LinkedIn X, YouTube 6, etc.), count of knowledge files written.
+   - Ask exactly one question: "이대로 저장할까요? 바꾸고 싶은 부분 알려주세요."
+   - If the user says 저장해/OK, finalize. If they want changes, apply them and re-confirm.
+   - If the user wants depth on a dimension the harvest missed (e.g. "말투는 직접 예시를 주고 싶어"), drop into just the relevant stage from 2–5, not the whole interview.
+
+### When Stage 0 fails or is insufficient
+
+- No public presence found, or every surface is login-walled → tell the user plainly and offer Stage 1 (hand-authored interview) as the fallback.
+- Partial data only (e.g. LinkedIn bio but no posts) → draft what you can, mark missing sections, and ask targeted follow-ups instead of running the full interview.
 
 ## Interviewer rules (apply every question)
 

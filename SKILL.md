@@ -1,8 +1,8 @@
 ---
 name: openclone
-description: Create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, tech, founder, expert, influencer, politician, celebrity) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "ask all VCs", "stop being <name>", or any mention of `/openclone`. Renders the home panel with no args; name/number activates a clone; sub-actions `stop`, `new`, `ingest`, `room`, `panel`.
-argument-hint: [name | N | stop | new | ingest | room | panel <category> "<q>"]
-allowed-tools: Bash, Read, Write, Glob, WebFetch
+description: Create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, tech, founder, expert, influencer, politician, celebrity) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "update <name> with latest info", "<name> 클론 최신 정보로 업데이트", "ask all VCs", "stop being <name>", or any mention of `/openclone`. Renders the home panel with no args; name/number activates a clone; sub-actions `stop`, `new`, `ingest`, `update`, `room`, `panel`.
+argument-hint: [name | N | stop | new | ingest | update | room | panel <category> "<q>"]
+allowed-tools: Bash, Read, Write, Glob, WebFetch, WebSearch
 ---
 
 openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했거나 자연어("alice로 전환", "새 클론 만들어" 등)로 의도를 밝힌 경우 모두 이 스킬이 처리합니다.
@@ -39,6 +39,7 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
 | `stop` | 아래 **stop** 섹션 |
 | `new` | 아래 **new** 섹션 |
 | `ingest` | 아래 **ingest** 섹션 |
+| `update` | 아래 **update** 섹션 |
 | `room` | 아래 **room** 섹션 |
 | `panel` | 아래 **panel** 섹션 |
 | `^[a-z0-9][a-z0-9-]*$` | 아래 **use** 섹션 (클론 이름으로 해석) |
@@ -123,7 +124,7 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
   - `${CLAUDE_SKILL_DIR}/clones/$2/persona.md` 존재 → 사용자 클론이 내장을 가린다고 경고 후 진행/이름 변경/취소 택1 요청.
 
 실행:
-- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` 를 로드해 정확히 따르세요.
+- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` 를 로드해 정확히 따르세요. 이 워크플로는 먼저 **Chrome MCP preflight**를 돌리고, 타겟이 실제 인물이면 **Stage 0 자동 발굴**(소셜 링크 검색 → Chrome MCP로 LinkedIn/Threads/X/Instagram 스크랩 → YouTube는 `scripts/fetch-youtube.sh`로 자막 추출)로 페르소나·첫 지식 파일을 자동 작성합니다. 자동 발굴이 성공하면 문답 스테이지 1–5는 스킵, 유저에게 한 번만 확인받습니다. 실패하거나 공개 프레즌스가 없으면 기존 문답 모드로 fallback.
 - 카테고리는 최소 1개 필수 (vc, tech, founder, expert, influencer, politician, celebrity 중).
 - 인터뷰 종료 시:
 
@@ -168,6 +169,29 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
 - `${CLAUDE_SKILL_DIR}/references/refine-workflow.md` 를 로드해 그대로 따름 — 날짜+토픽별 파일을 `~/.openclone/clones/<name>/knowledge/`에 append-only로 기록.
 - 한두 줄 확인:
   > **{display_name}**에 추가됨: `~/.openclone/clones/{name}/knowledge/`. 토픽: `YYYY-MM-DD-<topic>`.
+
+---
+
+## update
+
+입력 처리:
+- 대상 결정:
+  - `$2`가 슬러그(`^[a-z0-9][a-z0-9-]*$`)면 그 이름으로.
+  - `$2`가 비어 있으면 `~/.openclone/active-clone` 읽기. 비었으면 안내 후 중단:
+    > 먼저 `/openclone <name>`으로 클론을 활성화하거나 `/openclone update <name>`으로 이름을 지정해 주세요.
+- persona 경로 탐색 (user → built-in). 없으면 안내 후 중단.
+- built-in이면 **fork-on-write** 먼저 (ingest와 동일):
+
+  ```bash
+  mkdir -p "$HOME/.openclone/clones"
+  cp -R "${CLAUDE_SKILL_DIR}/clones/<name>" "$HOME/.openclone/clones/<name>"
+  ```
+
+  한 줄 안내 후 진행.
+
+실행:
+- `${CLAUDE_SKILL_DIR}/references/update-workflow.md` 를 로드해 그대로 따르세요. 이 워크플로는 먼저 **Chrome MCP preflight**를 돌리고, 사용자 사본의 knowledge/ 최신 파일 날짜를 cutoff로 잡은 뒤 persona.md `## Links`의 각 URL을 Chrome MCP / `scripts/fetch-youtube.sh`로 수집, cutoff 이후 게시물만 `refine-workflow.md`로 dated 파일에 append 합니다.
+- 자연어 호출("douglas 최신 정보로 업데이트해줘", "update kyunghun with the latest")도 같은 분기로 라우팅 — 유저에게는 `/openclone update <name>`을 보여주고 실행.
 
 ---
 
@@ -254,6 +278,7 @@ rm -f ~/.openclone/room
 - `${CLAUDE_SKILL_DIR}/references/home-workflow.md` — 홈 패널 렌더 및 menu-context 기록
 - `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` — `new` 인터뷰 진행·정리
 - `${CLAUDE_SKILL_DIR}/references/refine-workflow.md` — `ingest`가 원본 소스를 토픽 파일로 정제
+- `${CLAUDE_SKILL_DIR}/references/update-workflow.md` — `update`가 마지막 지식 일자 이후 소셜/유튜브 자료를 자동 수집
 - `${CLAUDE_SKILL_DIR}/references/panel-workflow.md` — 카테고리 패널 다중 클론 출력
 - `${CLAUDE_SKILL_DIR}/references/room-workflow.md` — 방 안 턴별 라우팅
 - `${CLAUDE_SKILL_DIR}/assets/clone-template.md` — 수기 작성용 시작 템플릿

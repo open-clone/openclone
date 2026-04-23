@@ -142,19 +142,20 @@ clones/<name>/knowledge/
 
 `YYYY-MM-DD-<topic-slug>.md`
 
-- `YYYY-MM-DD` is the ingestion date (not the source's publication date).
+- `YYYY-MM-DD` is the source's **publication date** when known (a post timestamp, article publish date, video upload date). Falls back to the ingestion date for pasted text, live interviews, or sources without a publish date.
 - `<topic-slug>` is a short noun-phrase slug; lowercase, hyphens, Korean/Latin allowed.
-- Same topic ingested on different days produces **separate** files — content is never merged or overwritten. The hook instructs Claude to weight newer files more heavily while still treating older entries as valid background.
+- Same topic from different dates produces **separate** files — content is never merged or overwritten. The hook instructs Claude to weight newer files more heavily while still treating older entries as valid background. `/openclone update` uses the most recent filename/`published_at` date as its cutoff when deciding what new material to harvest.
 
 ### Frontmatter
 
 ```yaml
 ---
 topic: 투자철학                      # short noun phrase
-source_type: url                     # url | youtube | file | text | interview
+source_type: url                     # url | youtube | file | text | interview | social
 source_url: https://...              # if applicable
 source_path: /path/to/file.pdf       # if applicable
-fetched: 2026-04-21                  # ingestion date, matches filename prefix
+fetched: 2026-04-21                  # ingestion date (always today)
+published_at: 2026-04-20             # optional; source's own publish date — used by /openclone update
 ---
 ```
 

@@ -2,7 +2,19 @@
 
 How Claude turns ingested material (scraped URL, YouTube transcript, pasted text, document) into dated topic files under the clone's `knowledge/` directory.
 
-Loaded by `/openclone ingest`.
+Loaded by `/openclone ingest` and called by `/openclone new` (Stage 0) and `/openclone update` after they harvest raw material.
+
+## Preflight — Chrome MCP required (ingest only)
+
+When this workflow is loaded by `/openclone ingest` directly — i.e. the user named a single URL/path/text to refine — require `claude-in-chrome` MCP to be connected. `new`/`update` do their own preflight before harvesting, so when they call into this workflow the gate has already passed.
+
+1. Verify `claude-in-chrome` tool schemas are loaded; load them if not:
+   ```text
+   ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text
+   ```
+2. If the result does NOT contain these schemas, abort with:
+   > `/openclone ingest`는 Chrome MCP가 필요해요. LinkedIn·Threads·X 같은 소스를 제대로 가져오려면 claude-in-chrome extension이 연결돼 있어야 해요. extension을 켠 뒤 다시 시도해 주세요. (로컬 파일이나 직접 붙여넣은 텍스트만 처리하고 싶더라도 gate는 유지 — 소스 타입을 일관되게 다루기 위함.)
+3. Don't propose `curl` / WebFetch workarounds. For a pure one-off hand-authored knowledge entry, tell the user to drop a file at `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` directly.
 
 ## Target path
 
@@ -10,9 +22,9 @@ Loaded by `/openclone ingest`.
 ~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md
 ```
 
-- `YYYY-MM-DD` is today (the ingestion date).
+- `YYYY-MM-DD` is the source's **publication date** when it is known (a post timestamp, article publish date, video upload date). When no publish date is available (pasted text, generic URL dump, live interview), fall back to **today** (the ingestion date). The `fetched` frontmatter field is always today regardless.
 - `<topic-slug>` is a lowercase noun-phrase slug, hyphen-separated; Korean or Latin.
-- **Append-only.** Never overwrite or merge into an existing file. If today already has a file with the same `<topic-slug>` (rare — only when multiple sources are ingested the same day on the same topic), append `-2`, `-3`, etc. to disambiguate.
+- **Append-only.** Never overwrite or merge into an existing file. If the resolved `YYYY-MM-DD` already has a file with the same `<topic-slug>` (rare — multiple sources same date same topic), append `-2`, `-3`, etc. to disambiguate.
 
 ## Goal
 
@@ -37,10 +49,11 @@ Given raw material for a clone, produce one or more refined topic files such tha
    ```markdown
    ---
    topic: <short noun phrase, human-readable>
-   source_type: url | youtube | file | text | interview
+   source_type: url | youtube | file | text | interview | social
    source_url: <URL, if applicable>
    source_path: <path, if applicable>
-   fetched: YYYY-MM-DD
+   fetched: YYYY-MM-DD           # today, when ingestion happened
+   published_at: YYYY-MM-DD      # optional; source's own publish date if known — used by /openclone update to decide newness
    ---
 
    <1–3 paragraphs of condensed content in the clone's voice, written in FIRST PERSON as the clone>
