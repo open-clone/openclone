@@ -40,7 +40,11 @@
 
 ## 설치
 
-### 옵션 A — Claude Code에 맡기기 (권장)
+openclone은 **Claude Code**를 1급 호스트로 지원하며, **Codex CLI**에 대한 실험적 설치도 제공합니다. 사용 중인 호스트의 섹션을 따라가세요.
+
+### Claude Code (권장)
+
+#### 옵션 A — Claude Code에 맡기기
 
 Claude Code 세션에 아래 문단을 붙여넣으세요.
 
@@ -52,7 +56,7 @@ then restart Claude Code (or start a new session) so the skill's hooks are picke
 
 Claude Code가 설치를 대신 수행하고, `~/.claude/CLAUDE.md`에 사용법 메모를 추가해 앞으로 자연스럽게 인식하도록 만듭니다.
 
-### 옵션 B — 터미널에서 직접
+#### 옵션 B — 터미널에서 직접
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
@@ -65,6 +69,36 @@ git clone --filter=blob:none --sparse --depth=1 \
 
 설치 후 Claude Code 세션을 재시작하면 `/openclone`이 바로 동작합니다.
 
+### Codex CLI (실험적)
+
+> ⚠️ **현재는 파일 참조 수준의 실험 지원입니다.** `./setup`이 Claude Code 전용 경로·훅·statusline을 건드리므로 **Codex 환경에서는 `./setup`을 실행하지 마세요.** 슬래시 커맨드 `/openclone`, `UserPromptSubmit`/`SessionStart` 훅 기반 자동 주입, statusline, 백그라운드 자동 업데이트는 아직 동작하지 않으며, 현재는 `clones/<slug>/persona.md`·`knowledge/` 파일을 Codex가 읽도록 배치하는 정도만 가능합니다. 네이티브 `--host=codex` 인스톨러는 추후 릴리스 예정입니다.
+
+레포만 Codex 스킬 경로에 sparse clone합니다.
+
+```bash
+git clone --filter=blob:none --sparse --depth=1 \
+  https://github.com/taurin-inc/openclone.git \
+  ~/.codex/skills/openclone \
+  && cd ~/.codex/skills/openclone \
+  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
+```
+
+이후 Codex 세션의 `AGENTS.md`(또는 프로젝트 지침)에 아래 문단을 붙여두면, Codex가 대화 맥락에 따라 해당 파일을 참조합니다.
+
+```text
+openclone 페르소나·지식이 `~/.codex/skills/openclone/clones/<slug>/` 아래에 있습니다. 사용자가
+"<이름>처럼 말해봐" 또는 "openclone <slug>"라고 요청하면 `persona.md`를 읽고 해당 톤·관점을 따르세요.
+사용 가능한 클론 목록은 `~/.codex/skills/openclone/README.md`의 "기본 클론" 섹션을 참고합니다.
+```
+
+특정 클론의 지식 파일이 필요하면 그때그때 lazy-fetch:
+
+```bash
+cd ~/.codex/skills/openclone && git sparse-checkout add clones/<slug>/knowledge/
+```
+
+**업데이트**: 자동 업데이트 훅이 없으므로 `git pull --ff-only`로 수동 갱신합니다. **제거**: 디렉터리 삭제(`rm -rf ~/.codex/skills/openclone`)로 충분합니다 — Claude Code처럼 settings.json을 건드리지 않기 때문입니다.
+
 ### 플랫폼 지원
 
 | 환경 | 상태 | 비고 |
@@ -75,7 +109,7 @@ git clone --filter=blob:none --sparse --depth=1 \
 | Windows (Git Bash) | ⚠️ 미지원 | 훅 실행이 환경 의존적. `session-update.sh`의 백그라운드 detach와 `dev-link.sh`의 `ln -sfn`이 특히 취약 |
 | Windows (cmd / PowerShell 네이티브) | ❌ 미지원 | 훅·스크립트가 전부 bash 기반. 현재 구조로는 불가능 |
 
-`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 `setup`/`uninstall`이 자동으로 따라갑니다.
+`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 `setup`/`uninstall`이 자동으로 따라갑니다. Codex CLI 호스트 지원은 현재 실험 단계이며, 위 "Codex CLI (실험적)" 섹션을 참고하세요.
 
 <details>
 <summary>업데이트·제거·자동 업데이트 끄기</summary>
