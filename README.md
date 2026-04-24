@@ -37,6 +37,7 @@
 | ✅ | [조쉬](clones/josh/persona.md) | `founder`, `expert` | 빌더 조쉬 · 조쉬의 뉴스레터 · 《나는 솔로프리너다》 저자 |
 | ✅ | [이경훈](clones/kyunghun/persona.md) | `founder`, `vc` | 채널코퍼레이션 부대표·CAIO. 글로벌브레인 한국 대표 출신 AI·일본 시장 전문가 |
 |  | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | 김용훈그로스연구소 대표. 160+ 스타트업의 그로스 마케팅, M&A·IPO 경험 CMO |
+|  | [이승건 (SG Lee)](clones/sglee/persona.md) | `founder`, `expert` | 토스팀 리더·비바리퍼블리카 창업자. 5년 8번 실패 뒤 9번째로 국민 슈퍼앱을 만든 사람 |
 
 ## 설치
 
