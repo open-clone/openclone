@@ -21,6 +21,9 @@ jobs:
       - name: Validate clone schema
         run: node .github/scripts/validate-clones.ts
 
+      - name: Validate README i18n (picker, sync header, clone coverage)
+        run: node .github/scripts/validate-readme-i18n.ts
+
       - name: Hook smoke test (JSON output across key states)
         run: bash .github/scripts/smoke-hook.sh
 
