@@ -36,7 +36,7 @@
 |  | [이동욱 (향로)](clones/jojoldu/persona.md) | `tech` | 인프랩 CTO. 기록하는 개발자, "기억보단 기록을" · "개발바닥" |
 | ✅ | [조쉬](clones/josh/persona.md) | `founder`, `expert` | 빌더 조쉬 · 조쉬의 뉴스레터 · 《나는 솔로프리너다》 저자 |
 | ✅ | [이경훈](clones/kyunghun/persona.md) | `founder`, `vc` | 채널코퍼레이션 부대표·CAIO. 글로벌브레인 한국 대표 출신 AI·일본 시장 전문가 |
-|  | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | 김용훈그로스연구소 대표. 160+ 스타트업의 그로스 마케팅, M&A·IPO 경험 CMO |
+| ✅ | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | 김용훈그로스연구소 대표. 160+ 스타트업의 그로스 마케팅, M&A·IPO 경험 CMO |
 |  | [이승건 (SG Lee)](clones/sglee/persona.md) | `founder`, `expert` | 토스팀 리더·비바리퍼블리카 창업자. 5년 8번 실패 뒤 9번째로 국민 슈퍼앱을 만든 사람 |
 |  | [김동신 (John Kim)](clones/johnkim/persona.md) | `founder`, `expert` | 센드버드 창업자. 파프리카랩 Exit → 스마일패밀리 피봇 → 한국인 최초 실리콘밸리 B2B 유니콘. 현재 Delight.ai |
 
