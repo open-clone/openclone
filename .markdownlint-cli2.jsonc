@@ -8,12 +8,17 @@
     "MD033": false,
     "MD041": false,
     "MD060": false,
-    "MD024": { "siblings_only": true },
-    "MD029": { "style": "ordered" }
+    "MD024": {
+      "siblings_only": true
+    },
+    "MD029": {
+      "style": "ordered"
+    }
   },
   "ignores": [
     "clones/*/knowledge/**",
     "node_modules/**",
-    ".context/**"
+    ".context/**",
+    ".omx/**"
   ]
 }

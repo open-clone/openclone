@@ -8,7 +8,7 @@ A Claude Code **standalone skill** named `openclone`. The repo root **is** the s
 
 ## Commands
 
-No `npm install`, no build — everything is bash and markdown. CI validators are TypeScript but Node 24+ runs `.ts` natively without flags.
+Claude Code skill support remains bash and markdown, but the repository also includes an additive Node.js CLI for standalone API-based chat with the same markdown clones. Existing Claude Code setup must continue to work without requiring the CLI.
 
 ```bash
 ./setup                                   # register UserPromptSubmit + SessionStart hooks + statusline in ~/.claude/settings.json (idempotent)
@@ -19,6 +19,7 @@ touch ~/.openclone/no-auto-update         # disable SessionStart git pull (use w
 rm ~/.openclone/no-auto-update            # re-enable auto-update
 node .github/scripts/validate-skill.ts    # CI: SKILL.md frontmatter + references/*.md existence
 node .github/scripts/validate-clones.ts   # CI: clones/*/persona.md schema + FIXED_CATEGORIES cross-file mentions
+npm install && npm run build && npm test  # CLI: TypeScript build + Node test runner for standalone AI SDK CLI
 bash .github/scripts/smoke-hook.sh        # CI: hook JSON output across 5 states (no state, active, missing, room, force-push)
 shellcheck hooks/*.sh scripts/*.sh        # CI shellcheck (severity: error; action also picks up setup/uninstall via shebang)
 npx markdownlint-cli2 "**/*.md"           # CI markdownlint (config: .markdownlint-cli2.jsonc)
@@ -41,6 +42,11 @@ clones/<name>/
   knowledge/                   # built-in knowledge — sparse-EXCLUDED; lazy-fetched on first /openclone <name>
 hooks/
   inject-active-clone.sh       # UserPromptSubmit hook: room > active-clone > no-op; also emits force-push banner
+src/
+  cli/index.ts                 # standalone Node CLI: list/status/chat using Vercel AI SDK
+  lib/clone-loader.ts          # reads persona/knowledge markdown with user-over-built-in precedence
+  lib/prompt-renderer.ts       # renders CLI system prompts from markdown source of truth
+  lib/provider-resolver.ts     # OpenAI-compatible, Codex OAuth, and Ollama provider config
 scripts/
   session-update.sh            # SessionStart hook: fork-to-bg, throttled git pull --ff-only + cone→non-cone migration
   fetch-clone-knowledge.sh     # git sparse-checkout add clones/<slug>/knowledge — called by SKILL.md on activation
@@ -92,6 +98,10 @@ Rules:
 ### Single-dispatcher SKILL.md
 
 The root `SKILL.md` is the sole entry point for both `/openclone` and natural-language requests that match its `description` triggers. Its body parses `$ARGUMENTS` into a sub-action (`<empty>` → home panel, `<N>` → menu selection, `stop`, `new`, `ingest`, `room`, `panel`, `<clone-name>` → activate) and delegates to the matching reference under `references/`. Frontmatter keys required: `name`, `description`, `allowed-tools` (enforced by `validate-skill.ts`); `argument-hint` is optional. When adding a sub-action, extend the dispatch table in `SKILL.md` and put the logic in a new `references/<name>-workflow.md` — **never** add `commands/*.md` files; standalone skills do not have a `commands/` directory.
+
+### Standalone Node CLI
+
+The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth, and `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`.
 
 ### Persona injection via UserPromptSubmit hook
 

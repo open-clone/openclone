@@ -1,0 +1,40 @@
+{
+  "name": "openclone",
+  "version": "0.3.0",
+  "description": "Markdown-native AI persona clones for Claude Code and standalone CLI chat.",
+  "type": "module",
+  "bin": {
+    "openclone": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "clones",
+    "references",
+    "assets",
+    "hooks",
+    "scripts",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "validate": "npm run typecheck && npm test && bash .github/scripts/smoke-hook.sh"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.41",
+    "ai": "^6.0.168",
+    "ai-sdk-ollama": "^3.8.3",
+    "openai-oauth-provider": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "license": "MIT"
+}

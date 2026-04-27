@@ -71,6 +71,39 @@ git clone --filter=blob:none --sparse --depth=1 \
 
 설치 후 Claude Code 세션을 재시작하면 `/openclone`이 바로 동작합니다.
 
+### Node.js CLI (실험적)
+
+기존 Claude Code 스킬 지원은 그대로 유지하면서, 같은 마크다운 클론을 일반 API 호출로 대화하는 Node.js CLI도 제공합니다. CLI는 `clones/<slug>/persona.md`와 `knowledge/*.md`를 그대로 읽으므로 마크다운 파일이 계속 single source of truth입니다.
+
+```bash
+npm install
+npm run build
+node dist/cli/index.js list
+node dist/cli/index.js status
+node dist/cli/index.js chat douglas --prompt "내 아이디어를 평가해줘"
+```
+
+기본 provider는 Vercel AI SDK의 OpenAI-compatible provider입니다. API 키 방식은 아래 환경변수를 사용합니다.
+
+```bash
+export OPENCLONE_PROVIDER="openai-compatible"
+export OPENCLONE_BASE_URL="https://api.openai.com/v1"
+export OPENCLONE_API_KEY="..."      # 또는 OPENAI_API_KEY
+export OPENCLONE_MODEL="gpt-4.1-mini"
+```
+
+Codex에 로그인된 환경에서는 `--use-codex-auth`로 `openai-oauth-provider` 기반 Codex OAuth transport를 사용할 수 있습니다. 이 경로는 일반 `api.openai.com/v1`이 아니라 Codex backend(`https://chatgpt.com/backend-api/codex`)로 요청을 보내며, 로컬 `~/.codex/auth.json`/`CODEX_HOME/auth.json`을 사용합니다. 로컬 개인 머신 실험용이며, hosted service나 token 공유 용도로 쓰지 마세요.
+
+```bash
+node dist/cli/index.js chat douglas --use-codex-auth --model gpt-5.5 --prompt "짧게 조언해줘"
+```
+
+Ollama는 전용 AI SDK provider(`ai-sdk-ollama`)로 지원합니다.
+
+```bash
+node dist/cli/index.js chat douglas --provider ollama --model llama3.2 --prompt "로컬 모델로 답해줘"
+```
+
 ### Codex CLI (실험적)
 
 > ⚠️ **현재는 파일 참조 수준의 실험 지원입니다.** `./setup`이 Claude Code 전용 경로·훅·statusline을 건드리므로 **Codex 환경에서는 `./setup`을 실행하지 마세요.** 슬래시 커맨드 `/openclone`, `UserPromptSubmit`/`SessionStart` 훅 기반 자동 주입, statusline, 백그라운드 자동 업데이트는 아직 동작하지 않으며, 현재는 `clones/<slug>/persona.md`·`knowledge/` 파일을 Codex가 읽도록 배치하는 정도만 가능합니다. 네이티브 `--host=codex` 인스톨러는 추후 릴리스 예정입니다.

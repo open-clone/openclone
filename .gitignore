@@ -4,3 +4,7 @@
 .vscode/
 .idea/
 .context/
+
+node_modules/
+dist/
+coverage/

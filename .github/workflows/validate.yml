@@ -21,6 +21,15 @@ jobs:
       - name: Validate clone schema
         run: node .github/scripts/validate-clones.ts
 
+      - name: Install Node CLI dependencies
+        run: npm ci
+
+      - name: Build standalone CLI
+        run: npm run build
+
+      - name: Test standalone CLI
+        run: npm test
+
       - name: Hook smoke test (JSON output across key states)
         run: bash .github/scripts/smoke-hook.sh
 
