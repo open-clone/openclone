@@ -51,8 +51,8 @@ jobs:
         run: |
           node .github/scripts/validate-skill.ts
           node .github/scripts/validate-clones.ts
-          npm run validate
           npm run build
+          npm run validate
           npx markdownlint-cli2 "**/*.md"
           shellcheck -S error hooks/*.sh scripts/*.sh setup uninstall
           npm audit --audit-level=moderate
