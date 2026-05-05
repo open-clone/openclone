@@ -39,5 +39,5 @@
   "engines": {
     "node": ">=22.6"
   },
-  "license": "MIT"
+  "license": "(MIT AND CC-BY-NC-SA-4.0)"
 }
