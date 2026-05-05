@@ -178,6 +178,15 @@ openclone chat douglas --use-codex-auth --model gpt-5.5
 
 ChatGPT 백엔드가 ChatGPT 일반 사용자 토큰에 대해 `store=true` 요청을 거부하기 때문에 Codex OAuth는 기본적으로 response item persistence를 끕니다(`store=false`). CLI가 매 턴마다 전체 messages 배열을 직접 전송하므로 `previous_response_id` 없이도 멀티턴 대화가 정상 동작합니다.
 
+**Claude Code 구독 OAuth (이미 `claude /login`을 끝낸 머신):**
+
+```bash
+openclone chat douglas --use-claude-code-auth --model claude-sonnet-4-6
+# alias: --use-claude-auth
+```
+
+별도 Anthropic API 키 없이 Claude Pro/Max 구독 토큰을 그대로 재사용합니다. macOS에서는 키체인 항목 `Claude Code-credentials`을, Linux/WSL에서는 `~/.claude/.credentials.json`을 읽고, 만료 임박 시 `https://console.anthropic.com/v1/oauth/token`으로 자동 갱신해 같은 위치에 다시 씁니다. 첫 실행 시 macOS가 띄우는 키체인 접근 다이얼로그는 정상 동작입니다.
+
 **로컬 Ollama:**
 
 ```bash

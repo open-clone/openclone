@@ -5,7 +5,7 @@ description: |
   
   Available official clones include: 장동욱(Brian, VC), 김철우(VC/founder), 권도균(Douglas, founder/VC), 조여준(Ethan, VC), 정구봉(tech/founder), 김동현(iid, HR), 신재명(Jay, founder), 조쉬(founder/expert), 이경훈(founder/VC), 김용훈(Levi, growth/CMO). 
   
-  Also use when users ask how to install openclone via npm, run openclone outside Claude Code, choose a provider (OpenAI-compatible API, Codex OAuth, or local Ollama), pick a model, list or resume saved conversation sessions (openclone history, --resume, --resume=<id>), use --no-persist, understand interactive chat mode, knowledge lookup, conversation persistence under ~/.openclone/conversations, or fix CLI errors.
+  Also use when users ask how to install openclone via npm, run openclone outside Claude Code, choose a provider (OpenAI-compatible API, Codex OAuth, Claude Code subscription OAuth, or local Ollama), pick a model, list or resume saved conversation sessions (openclone history, --resume, --resume=<id>), use --no-persist, understand interactive chat mode, knowledge lookup, conversation persistence under ~/.openclone/conversations, or fix CLI errors.
 ---
 
 # openclone CLI helper
@@ -17,6 +17,7 @@ Use this skill when the user wants help running the standalone `openclone` CLI f
 1. Identify the user's target runtime:
    - Local model/Ollama → read `references/ollama.md`.
    - Codex OAuth → read `references/codex-oauth.md`.
+   - Claude Code subscription OAuth → read `references/claude-code-oauth.md`.
    - API key or custom OpenAI-compatible endpoint → read `references/openai-compatible.md`.
    - General install, first run, listing/resuming sessions → read `references/quickstart.md`.
 2. Explain that the CLI uses the same markdown persona and `knowledge/` files as source of truth.

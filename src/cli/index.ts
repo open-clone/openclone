@@ -85,7 +85,7 @@ function usage(): string {
   openclone history                     # show history command help (no implicit clone)
   openclone history <slug>              # list saved sessions for a single clone
   openclone history --all               # cross-clone grouped view (also flags orphan sessions)
-  openclone history [...] --quiet       # suppress column header and per-session resume hints (for piping)\n\nProvider flags for chat:\n  --base-url <url>       OpenAI-compatible base URL (default: https://api.openai.com/v1)\n  --api-key <key>        API key (prefer env OPENCLONE_API_KEY/OPENAI_API_KEY)\n  --model <id>           Model id (default: gpt-5.5)\n  --use-codex-auth       Opt in to read-only Codex OAuth token reuse from ~/.codex/auth.json\n  --resume[=<id>]        Resume a saved interactive session (latest if no id)\n  --no-persist           Do not write this session to disk\n\nSessions are stored at ~/.openclone/conversations/<slug>/<sessionId>.json (plaintext JSON).\n`;
+  openclone history [...] --quiet       # suppress column header and per-session resume hints (for piping)\n\nProvider flags for chat:\n  --base-url <url>       OpenAI-compatible base URL (default: https://api.openai.com/v1)\n  --api-key <key>        API key (prefer env OPENCLONE_API_KEY/OPENAI_API_KEY)\n  --model <id>           Model id (default: gpt-5.5)\n  --use-codex-auth       Opt in to read-only Codex OAuth token reuse from ~/.codex/auth.json\n  --use-claude-code-auth Reuse Claude Code subscription OAuth from ~/.claude or macOS keychain (alias: --use-claude-auth)\n  --resume[=<id>]        Resume a saved interactive session (latest if no id)\n  --no-persist           Do not write this session to disk\n\nSessions are stored at ~/.openclone/conversations/<slug>/<sessionId>.json (plaintext JSON).\n`;
 }
 
 async function listCommand(): Promise<void> {
@@ -155,7 +155,12 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
     model: flagString(args.flags, "model"),
     providerName: flagString(args.flags, "providerName"),
     useCodexAuth: flagBoolean(args.flags, "useCodexAuth"),
+    useClaudeCodeAuth: flagBoolean(args.flags, "useClaudeCodeAuth") ?? flagBoolean(args.flags, "useClaudeAuth"),
   });
+
+  const systemPrompt = provider.systemPrefix
+    ? `${provider.systemPrefix}\n\n${rendered.system}`
+    : rendered.system;
 
   const tools = createCloneTools(clone);
 
@@ -178,7 +183,7 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
     const conversationOptions = {
       cloneLabel,
       model: provider.model,
-      system: rendered.system,
+      system: systemPrompt,
       tools,
       initialMessages: resumedRecord?.messages,
       initialSummary: resumedRecord?.conversationSummary,
@@ -226,7 +231,7 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
     model: provider.model,
     modelId: provider.modelId,
     providerName: provider.providerName,
-    system: rendered.system,
+    system: systemPrompt,
     prompt,
     tools,
     resumeRequested,
