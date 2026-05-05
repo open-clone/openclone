@@ -15,6 +15,7 @@ import {
 import { renderActiveClonePrompt } from "../lib/prompt-renderer.js";
 import { opencloneHome } from "../lib/paths.js";
 import { resolveProvider } from "../lib/provider-resolver.js";
+import { formatErrorBlock, isErrorFormatted, markErrorFormatted } from "../lib/format-error.js";
 
 interface ParsedArgs {
   command: string;
@@ -371,8 +372,25 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`openclone: ${message}`);
+function reportError(error: unknown): void {
+  if (isErrorFormatted(error)) {
+    process.exitCode = 1;
+    return;
+  }
+  markErrorFormatted(error);
+  const useColor = Boolean(process.stderr.isTTY);
+  const width = process.stderr.columns;
+  process.stderr.write(`${formatErrorBlock(error, { color: useColor, width })}\n`);
   process.exitCode = 1;
+}
+
+process.on("unhandledRejection", (reason) => {
+  reportError(reason);
+  process.exit(process.exitCode ?? 1);
 });
+process.on("uncaughtException", (error) => {
+  reportError(error);
+  process.exit(process.exitCode ?? 1);
+});
+
+main().catch(reportError);
