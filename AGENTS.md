@@ -60,6 +60,7 @@ references/
   home-workflow.md             # /openclone (no arg) — home panel render + menu-context write
   interview-workflow.md        # /openclone new <slug>
   refine-workflow.md           # /openclone ingest <source>
+  update-workflow.md           # /openclone update <name> — Chrome MCP-gated incremental refresh from persona.md ## Links
   panel-workflow.md            # /openclone panel <category> "<question>" — also canonical "no emojis" rule
   room-workflow.md             # /openclone room — roster management + runtime routing rules
 assets/clone-template.md       # copy-pasteable starting persona.md for hand-authoring
@@ -98,7 +99,9 @@ Rules:
 
 ### Single-dispatcher SKILL.md
 
-The root `SKILL.md` is the sole entry point for both `/openclone` and natural-language requests that match its `description` triggers. Its body parses `$ARGUMENTS` into a sub-action (`<empty>` → home panel, `<N>` → menu selection, `stop`, `new`, `ingest`, `room`, `panel`, `<clone-name>` → activate) and delegates to the matching reference under `references/`. Frontmatter keys required: `name`, `description`, `allowed-tools` (enforced by `validate-skill.ts`); `argument-hint` is optional. When adding a sub-action, extend the dispatch table in `SKILL.md` and put the logic in a new `references/<name>-workflow.md` — **never** add `commands/*.md` files; standalone skills do not have a `commands/` directory.
+The root `SKILL.md` is the sole entry point for both `/openclone` and natural-language requests that match its `description` triggers. Its body parses `$ARGUMENTS` into a sub-action (`<empty>` → home panel, `<N>` → menu selection, `stop`, `new`, `ingest`, `update`, `room`, `panel`, `<clone-name>` → activate) and delegates to the matching reference under `references/`. Frontmatter keys required: `name`, `description`, `allowed-tools` (enforced by `validate-skill.ts`); `argument-hint` is optional. When adding a sub-action, extend the dispatch table in `SKILL.md` and put the logic in a new `references/<name>-workflow.md` — **never** add `commands/*.md` files; standalone skills do not have a `commands/` directory.
+
+`new`, `ingest`, and `update` all have a hard preflight gate on `claude-in-chrome` (Chrome MCP) — login-walled / JS-rendered sources (LinkedIn, Threads, X, Instagram, Facebook) cannot be reached with plain `curl`/`WebFetch`. The reference files abort with a Korean error message instructing the user to enable the extension; do not propose curl workarounds.
 
 ### Standalone Node CLI
 
