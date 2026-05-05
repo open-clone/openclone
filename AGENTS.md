@@ -143,7 +143,17 @@ Persistence is wired purely at the CLI layer:
 - `chatCommand` (in `src/cli/index.ts`) constructs a `HistoryStore`, generates a fresh `sessionId` for new chats or reuses the loaded one for `--resume`, and wires `onPersist` to call `historyStore.save(...)`.
 - `--resume` (no value → latest by lexicographic `sessionId` sort) or `--resume=<id>` (specific session) loads the record and seeds `initialMessages` / `initialSummary`. A `[resumed: N message(s)]` banner is printed, the prior summary (if any) is rendered between `--- prior summary ---` / `--- end summary ---` markers, and every restored message is replayed to stdout in chronological order (user messages prefixed with `>>>`, assistant responses unprefixed) followed by `--- continuing conversation ---` before the live prompt loop. This lets users scroll up in their terminal to see the full prior dialogue.
 - `--no-persist` passes `onPersist: undefined`, so the run is fully ephemeral.
-- `openclone history <slug>` lists saved sessions for a single clone (newest first by `sessionId`). `openclone history --all` (or `openclone history` when no `active-clone` is set) walks every directory under `~/.openclone/conversations/`, groups sessions by slug, and tags any group whose slug is not in `CloneLoader.listClones()` with `[orphan: clone not found]`. Cross-clone listing reuses `HistoryStore.listClonesWithSessions()` and `HistoryStore.listAllSessions()`; orphan classification reuses `CloneLoader.listClones()` so adding/removing a clone automatically reflects in the orphan tag.
+- `openclone history <slug>` lists saved sessions for a single clone (newest first by `sessionId`). `openclone history --all` (or `openclone history` when no `active-clone` is set) walks every directory under `~/.openclone/conversations/`, groups sessions by slug, and tags any group whose slug is not in `CloneLoader.listClones()` with `[orphan: clone not found]`. Cross-clone listing reuses `HistoryStore.listClonesWithSessions()` and `HistoryStore.listAllSessions()`; orphan classification reuses `CloneLoader.listClones()` so adding/removing a clone automatically reflects in the orphan tag. By default the listing prints a column header (`SESSION_ID / MESSAGES / LAST_UPDATED / PATH`) plus a per-session `openclone chat <slug> --resume=<id>` hint; `--quiet` suppresses both, useful for piping into shell scripts.
+
+#### Auto-compaction and `/compact`
+
+Long interactive sessions auto-compact older turns into a running `conversationSummary` so context windows stay bounded. The threshold and behavior are configured per-`runConversation` call (see `src/lib/conversation.ts`):
+
+- `compactMaxChars` — total chars (messages + summary) above which compaction runs at the next user prompt boundary. Default `350000`, overridable via `OPENCLONE_COMPACT_MAX_CHARS`.
+- `compactKeepTurns` — how many of the most recent turns to leave verbatim when compacting. Default `8`, overridable via `OPENCLONE_COMPACT_KEEP_TURNS`.
+- `compactSummaryMaxChars` — soft cap on the summary itself. Default `20000`, overridable via `OPENCLONE_COMPACT_SUMMARY_MAX_CHARS`.
+
+Users can also force compaction at any time by typing `/compact` at the prompt. Both auto and manual compaction call `onPersist` with `reason: "compact"` so the new summary is written to the session JSON immediately (resume after a crash mid-compaction is safe). Set `compactMaxChars: 0` to disable auto-compaction entirely while keeping `/compact` available.
 
 Invariants:
 
