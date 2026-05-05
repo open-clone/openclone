@@ -204,6 +204,10 @@ Clone output, `SKILL.md`, references, docs — nothing emits emojis unless the u
 
 Standalone skill commands are **not namespaced** — `/openclone` works directly. A plugin equivalent would have been `/openclone:openclone`. Do not re-introduce `.claude-plugin/plugin.json` or a marketplace manifest; it would re-promote the skill to plugin status and break the UX. `uninstall` still scrubs legacy `enabledPlugins["openclone@openclone"]` and `extraKnownMarketplaces["openclone"]` from `~/.claude/settings.json` for users migrating off the v1 plugin install.
 
+### License separation: code (MIT) vs. clones/ (CC BY-NC-SA 4.0)
+
+Source code is MIT (`LICENSE`). Content under `clones/**` is CC BY-NC-SA 4.0 (`clones/LICENSE`, `clones/NOTICE.md`). The npm package ships both — `package.json` declares `license: "(MIT AND CC-BY-NC-SA-4.0)"`. When adding clones/knowledge files, fill `source_url` in frontmatter and reject sources that conflict with NC/SA (NoDerivs licenses, private/non-public material, anything requiring commercial-only distribution). When changing `package.json`'s `files` field, keep `clones/`, `LICENSE`, and the `clones/LICENSE`/`clones/NOTICE.md` pair shipped together — splitting them breaks attribution.
+
 ## Editing conventions
 
 - **`references/clone-schema.md` is canonical** for persona.md frontmatter (`name`, `display_name`, `tagline`, `categories`, `created`, `voice_traits` required; `primary_category` optional), required body sections (`## Persona` → `## Speaking style` → `## Guidelines` → `## Background`), optional `## Category-specific framing`, and the knowledge filename convention. Keep it in sync with `clones/douglas/persona.md` as the worked example. `validate-clones.ts` enforces the frontmatter keys, category enum, and body sections.
