@@ -26,9 +26,10 @@ touch ~/.openclone/no-auto-update         # disable SessionStart git pull (use w
 rm ~/.openclone/no-auto-update            # re-enable auto-update
 node .github/scripts/validate-skill.ts    # CI: SKILL.md frontmatter + references/*.md existence
 node .github/scripts/validate-clones.ts   # CI: clones/*/persona.md schema + FIXED_CATEGORIES cross-file mentions
-npm install && npm run build && npm test  # CLI: TypeScript build + Node test runner for standalone AI SDK CLI
+npm install && npm run validate           # CLI: typecheck + build + test + smoke-hook in one shot (CI uses this)
+npm test                                  # CLI: just the Node test runner specs (test/*.test.mjs)
 bash .github/scripts/smoke-hook.sh        # CI: hook JSON output across 5 states (no state, active, missing, room, force-push)
-shellcheck hooks/*.sh scripts/*.sh        # CI shellcheck (severity: error; action also picks up setup/uninstall via shebang)
+shellcheck hooks/*.sh scripts/*.sh setup uninstall  # CI shellcheck (severity: error; setup/uninstall also covered)
 npx markdownlint-cli2 "**/*.md"           # CI markdownlint (config: .markdownlint-cli2.jsonc)
 ```
 
@@ -46,6 +47,9 @@ CONTRIBUTING.md                # human contributor guide (Korean) — PR process
 CHANGELOG.md · LICENSE · SECURITY.md · CODE_OF_CONDUCT.md
 setup                          # bash; registers hooks + statusline in ~/.claude/settings.json + self-heals old installs
 uninstall                      # bash; strips managed entries + removes install dir + cleans legacy plugin keys
+package.json · tsconfig.json · package-lock.json    # Node CLI build config (scripts: build, typecheck, test, validate, clean)
+.markdownlint-cli2.jsonc       # markdownlint config — ignores clones/*/knowledge/, node_modules/, .context/, .omx/
+test/                          # Node test runner specs for the CLI — *.test.mjs (history-store, conversation, clone-tools, ink-conversation, provider-resolver, etc.)
 clones/<name>/
   persona.md                   # built-in persona — shipped; sparse-default ON
   knowledge/                   # built-in knowledge — sparse-EXCLUDED; lazy-fetched on first /openclone <name>
@@ -84,7 +88,7 @@ references/
   interview-workflow.md        # /openclone new <slug>
   refine-workflow.md           # /openclone ingest <source>
   update-workflow.md           # /openclone update <name> — Chrome MCP-gated incremental refresh from persona.md ## Links
-  panel-workflow.md            # /openclone panel <category> "<question>" — also canonical "no emojis" rule
+  panel-workflow.md            # /openclone panel <category> "<question>" — broadcast + per-clone consolidation
   room-workflow.md             # /openclone room — roster management + runtime routing rules
 assets/clone-template.md       # copy-pasteable starting persona.md for hand-authoring
 docs/architecture.md           # human-oriented Korean architecture walkthrough
@@ -243,7 +247,7 @@ The dispatcher passes panel category tokens through to `panel-workflow.md` verba
 
 ### No emojis
 
-Clone output, `SKILL.md`, references, docs — nothing emits emojis unless the user explicitly asks. The rule is explicit in `references/panel-workflow.md` and inherited everywhere else.
+Clone output, `SKILL.md`, references, docs — nothing emits emojis unless the user explicitly asks. The rule is repeated in five workflow references (`panel-workflow.md`, `room-workflow.md`, `refine-workflow.md`, `update-workflow.md`, `home-workflow.md`) so each entry point has it inline; if you change the rule, change all five together.
 
 ### Standalone skill, not a plugin
 
