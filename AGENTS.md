@@ -86,6 +86,9 @@ references/
   room-workflow.md             # /openclone room — roster management + runtime routing rules
 assets/clone-template.md       # copy-pasteable starting persona.md for hand-authoring
 docs/architecture.md           # human-oriented Korean architecture walkthrough
+skills/openclone-cli/          # nested Claude Code skill — usage help for the standalone CLI
+  SKILL.md                     # invoked when users ask about npm/Codex OAuth/Ollama/--resume/etc.
+  references/                  # quickstart · openai-compatible · codex-oauth · ollama · conversation-and-knowledge · troubleshooting
 .github/
   scripts/validate-skill.ts    # CI: SKILL.md frontmatter + body references/*.md existence check
   scripts/validate-clones.ts   # CI: persona.md schema + FIXED_CATEGORIES cross-file mentions (6 files)
@@ -246,6 +249,7 @@ Standalone skill commands are **not namespaced** — `/openclone` works directly
 ## Editing conventions
 
 - **`references/clone-schema.md` is canonical** for persona.md frontmatter (`name`, `display_name`, `tagline`, `categories`, `created`, `voice_traits` required; `primary_category` optional), required body sections (`## Persona` → `## Speaking style` → `## Guidelines` → `## Background`), optional `## Category-specific framing`, and the knowledge filename convention. Keep it in sync with `clones/douglas/persona.md` as the worked example. `validate-clones.ts` enforces the frontmatter keys, category enum, and body sections.
+- **Nested skill `skills/openclone-cli/`** — a separate Claude Code skill that surfaces standalone-CLI usage help (npm install, provider choice, `--resume`, conversation persistence, troubleshooting). It auto-loads in Claude Code sessions when a user asks about CLI topics; treat it as a sibling to root `SKILL.md` rather than a reference of it. `validate-skill.ts` validates nested skills as well — every reference its `SKILL.md` mentions must exist.
 - **Helper scripts live in `scripts/`** and are invoked from `SKILL.md` via `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`. Scripts exit 0 with output on stdout; the dispatcher is responsible for capturing. Scripts executed from **hooks** must also exit 0 on failure paths — never let a hook cascade into the session.
 - **`setup` and `uninstall` are executable shell scripts** at the repo root (no `.sh` extension). They edit `~/.claude/settings.json` via an inline `python3` block, tagging every inserted entry with `_openclone_managed: true` so uninstall can strip exactly those and leave user-authored hooks/statuslines intact. Preserve all unrelated keys when editing these scripts.
 - **CI runs on every push and PR** (`.github/workflows/validate.yml`): the two TypeScript validators (`validate-skill.ts` also cross-checks that every `${CLAUDE_SKILL_DIR}/references/<slug>.md` mentioned in `SKILL.md` exists; `validate-clones.ts` also verifies that every `FIXED_CATEGORIES` token is mentioned in each of the six downstream files), the `smoke-hook.sh` fixture (runs `hooks/inject-active-clone.sh` under an isolated temp `$HOME` across 5 states and asserts valid JSON + expected tags), `shellcheck` at `severity: error` (action detects shebang+executable files, so root `setup`/`uninstall` are covered too), and `markdownlint-cli2` with knowledge directories ignored (`.markdownlint-cli2.jsonc`).
