@@ -185,6 +185,7 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
       model: provider.model,
       system: systemPrompt,
       tools,
+      stripOpenAIResponsesItemIds: provider.stripOpenAIResponsesItemIds,
       initialMessages: resumedRecord?.messages,
       initialSummary: resumedRecord?.conversationSummary,
       onPersist: persistDisabled ? undefined : async ({ messages, conversationSummary }: ConversationPersistEvent) => {
@@ -237,6 +238,7 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
     resumeRequested,
     resumeSessionId,
     persistDisabled,
+    stripOpenAIResponsesItemIds: provider.stripOpenAIResponsesItemIds,
   });
 }
 

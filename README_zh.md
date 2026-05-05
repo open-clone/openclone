@@ -1,6 +1,6 @@
 <!--
 This file is a translation of README.md (Korean canonical source).
-Last synced with README.md at commit: a5072ed
+Last synced with README.md at commit: a0b4c52
 Report drift or translation errors via a GitHub issue.
 
 REVIEW NEEDED: native zh-CN reviewer.
@@ -183,7 +183,7 @@ openclone chat douglas
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 
-ChatGPT 后端目前对 ChatGPT 普通用户级别的 OAuth token 拒绝 `store=true` 请求,因此 Codex OAuth 默认关闭 response item 持久化(`store=false`)。CLI 在每一轮都直接发送完整的 messages 数组,因此即便没有 `previous_response_id`,多轮对话仍可正常进行。
+ChatGPT 后端目前对 ChatGPT 普通用户级别的 OAuth token 拒绝 `store=true` 请求,因此 Codex OAuth 默认关闭 response item 持久化(`store=false`)。CLI 在每一轮都直接发送完整的 messages 数组,因此即便没有 `previous_response_id`,多轮对话仍可正常进行。在使用工具的多 step 轮次中,AI SDK 会把前一个 step 的 `rs_...` reasoning/tool item id 原样回传到下一个 step 的 input,后端会返回 `Item with id 'rs_...' not found.` 404;openclone 默认在 step 之间剥离这些 id 与 reasoning 内容片段。如需关闭,设置 `OPENCLONE_CODEX_STRIP_REASONING=0`。
 
 **本地 Ollama:**
 

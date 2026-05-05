@@ -1,6 +1,6 @@
 <!--
 This file is a translation of README.md (Korean canonical source).
-Last synced with README.md at commit: a5072ed
+Last synced with README.md at commit: a0b4c52
 Report drift or translation errors via a GitHub issue.
 -->
 
@@ -179,7 +179,7 @@ openclone chat douglas
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 
-The ChatGPT backend currently rejects `store=true` requests for ChatGPT-tier OAuth tokens, so Codex OAuth defaults to response-item persistence off (`store=false`). The CLI sends the full message array on every turn, so multi-turn conversations work fine without `previous_response_id`.
+The ChatGPT backend currently rejects `store=true` requests for ChatGPT-tier OAuth tokens, so Codex OAuth defaults to response-item persistence off (`store=false`). The CLI sends the full message array on every turn, so multi-turn conversations work fine without `previous_response_id`. In tool-driven multi-step turns, the AI SDK would otherwise echo prior-step `rs_...` reasoning/tool item IDs into the next step's input and the backend returns `Item with id 'rs_...' not found.` 404; openclone strips those IDs and reasoning parts between steps by default. Set `OPENCLONE_CODEX_STRIP_REASONING=0` to disable.
 
 **Local Ollama:**
 

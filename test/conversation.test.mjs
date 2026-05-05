@@ -96,6 +96,33 @@ test('runConversation keeps in-memory message history across turns', async () =>
   assert.match(output.text, /openclone conversation: Alice \(alice\)/);
 });
 
+test('runConversation forwards stripOpenAIResponsesItemIds into chat-step stream calls only', async () => {
+  const turnCalls = [];
+  const compactCalls = [];
+  const output = new CaptureOutput();
+  await runConversation({
+    cloneLabel: 'Alice (alice)',
+    model: {},
+    system: 'system',
+    tools: {},
+    output,
+    readline: fakeReadline(['hi', '/bye']),
+    stripOpenAIResponsesItemIds: true,
+    stream: async (options) => {
+      if (options.system.includes('compact conversation history')) {
+        compactCalls.push({ stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds });
+        return 'summary';
+      }
+      turnCalls.push({ stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds });
+      options.onText?.('ok');
+      return 'ok';
+    },
+  });
+  assert.equal(turnCalls.length, 1);
+  assert.equal(turnCalls[0].stripOpenAIResponsesItemIds, true);
+  assert.equal(compactCalls.length, 0);
+});
+
 test('manual /compact summarizes older turns and keeps recent messages', async () => {
   const chatCalls = [];
   const summaryPrompts = [];

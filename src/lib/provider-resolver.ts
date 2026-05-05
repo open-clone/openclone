@@ -30,6 +30,7 @@ export interface ResolvedProvider {
   baseURL?: string;
   authSource: "api-key" | "codex-oauth" | "claude-code-oauth" | "none";
   codexStore?: boolean;
+  stripOpenAIResponsesItemIds?: boolean;
   systemPrefix?: string;
 }
 
@@ -264,6 +265,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
     const baseURL = config.baseURL ?? "https://chatgpt.com/backend-api/codex";
     const modelId = config.model ?? "gpt-5.5";
     const codexStore = config.codexStore ?? false;
+    const stripOpenAIResponsesItemIds = !codexStore && env.OPENCLONE_CODEX_STRIP_REASONING !== "0";
     const provider = createOpenAIOAuth({
       name: providerName,
       baseURL,
@@ -280,6 +282,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
       baseURL,
       authSource: "codex-oauth",
       codexStore,
+      stripOpenAIResponsesItemIds,
     };
   }
 

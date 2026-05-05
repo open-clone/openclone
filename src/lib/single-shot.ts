@@ -30,6 +30,7 @@ export interface SingleShotOptions {
   compactMaxChars?: number;
   compactKeepTurns?: number;
   compactSummaryMaxChars?: number;
+  stripOpenAIResponsesItemIds?: boolean;
 }
 
 export interface SingleShotResult {
@@ -93,6 +94,7 @@ export async function runSingleShot(options: SingleShotOptions): Promise<SingleS
       messages,
       tools: options.tools,
       onText: (chunk) => stdout.write(chunk),
+      stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
     });
   } catch (error) {
     const useColor = "isTTY" in stderr ? Boolean((stderr as { isTTY?: boolean }).isTTY) : false;

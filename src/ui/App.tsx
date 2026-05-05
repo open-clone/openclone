@@ -34,6 +34,7 @@ export interface AppProps {
   initialMessages?: ModelMessage[];
   initialSummary?: string;
   onPersist?: (event: ConversationPersistEvent) => Promise<void> | void;
+  stripOpenAIResponsesItemIds?: boolean;
   onExit?: () => void;
 }
 
@@ -234,6 +235,7 @@ export function App(props: AppProps): React.JSX.Element {
           streamingBufferRef.current += chunk;
           scheduleStreamFlush();
         },
+        stripOpenAIResponsesItemIds: props.stripOpenAIResponsesItemIds,
       });
 
       cancelStreamFlush();

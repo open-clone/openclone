@@ -22,6 +22,7 @@ export interface RunInkConversationOptions {
   initialMessages?: ModelMessage[];
   initialSummary?: string;
   onPersist?: (event: ConversationPersistEvent) => Promise<void> | void;
+  stripOpenAIResponsesItemIds?: boolean;
   onExit?: () => void;
   stdin?: NodeJS.ReadStream | Readable;
   stdout?: NodeJS.WriteStream | Writable;
@@ -47,6 +48,7 @@ export async function runInkConversation(options: RunInkConversationOptions): Pr
       initialMessages={options.initialMessages}
       initialSummary={options.initialSummary}
       onPersist={options.onPersist}
+      stripOpenAIResponsesItemIds={options.stripOpenAIResponsesItemIds}
       onExit={options.onExit}
     />,
     {

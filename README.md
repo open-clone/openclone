@@ -176,7 +176,7 @@ openclone chat douglas
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 
-ChatGPT 백엔드가 ChatGPT 일반 사용자 토큰에 대해 `store=true` 요청을 거부하기 때문에 Codex OAuth는 기본적으로 response item persistence를 끕니다(`store=false`). CLI가 매 턴마다 전체 messages 배열을 직접 전송하므로 `previous_response_id` 없이도 멀티턴 대화가 정상 동작합니다.
+ChatGPT 백엔드가 ChatGPT 일반 사용자 토큰에 대해 `store=true` 요청을 거부하기 때문에 Codex OAuth는 기본적으로 response item persistence를 끕니다(`store=false`). CLI가 매 턴마다 전체 messages 배열을 직접 전송하므로 `previous_response_id` 없이도 멀티턴 대화가 정상 동작합니다. 다만 도구가 호출되는 멀티 step 흐름에서는 AI SDK가 직전 step의 `rs_...` reasoning/tool item id를 다음 step input에 그대로 재전송해 백엔드가 `Item with id 'rs_...' not found.` 404를 내는 케이스가 있어, 기본적으로 step 사이에서 해당 id와 reasoning part를 제거합니다. 끄고 싶다면 `OPENCLONE_CODEX_STRIP_REASONING=0`.
 
 **Claude Code 구독 OAuth (이미 `claude /login`을 끝낸 머신):**
 

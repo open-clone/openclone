@@ -42,6 +42,7 @@ export interface ConversationOptions {
   initialMessages?: ModelMessage[];
   initialSummary?: string;
   onPersist?: (event: ConversationPersistEvent) => Promise<void> | void;
+  stripOpenAIResponsesItemIds?: boolean;
 }
 
 export interface CompactionSplit {
@@ -259,6 +260,7 @@ export async function runConversation(options: ConversationOptions): Promise<voi
           messages,
           tools: options.tools,
           onText: (chunk) => output.write(chunk),
+          stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
         });
         output.write("\n");
         messages.push({ role: "assistant", content: response });
