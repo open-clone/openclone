@@ -38,7 +38,9 @@ Node 22.6–23.5 requires `NODE_OPTIONS=--experimental-strip-types` to run the `
 
 ```text
 SKILL.md                       # single-dispatcher for /openclone — frontmatter + $ARGUMENTS branch table
-README.md                      # user-facing install one-liner + usage (Korean)
+README.md                      # user-facing install one-liner + usage (Korean — canonical source)
+README_en.md                   # English translation (synced via sync-comment SHA header)
+README_zh.md                   # Simplified Chinese translation (carries REVIEW NEEDED marker until native review)
 CLAUDE.md                      # this file — AI-agent guide
 CONTRIBUTING.md                # human contributor guide (Korean) — PR process, local dev loop, schema how-to
 CHANGELOG.md · LICENSE · SECURITY.md · CODE_OF_CONDUCT.md
@@ -92,6 +94,7 @@ skills/openclone-cli/          # nested Claude Code skill — usage help for the
 .github/
   scripts/validate-skill.ts    # CI: SKILL.md frontmatter + body references/*.md existence check
   scripts/validate-clones.ts   # CI: persona.md schema + FIXED_CATEGORIES cross-file mentions (6 files)
+  scripts/validate-readme-i18n.ts  # CI: README_ko/en/zh language-picker, sync-comment SHA, clone-slug drift, install fragment, ZH REVIEW NEEDED
   scripts/smoke-hook.sh        # CI: isolated-$HOME fixture — runs the hook across 5 states, asserts valid JSON + expected tags
   workflows/validate.yml       # runs validators + smoke-hook + shellcheck + markdownlint-cli2 on push/PR
   workflows/publish-npm.yml    # GitHub Release → npm publish with provenance; tag-driven version + dist-tag (latest|next)
@@ -252,11 +255,11 @@ Standalone skill commands are **not namespaced** — `/openclone` works directly
 - **Nested skill `skills/openclone-cli/`** — a separate Claude Code skill that surfaces standalone-CLI usage help (npm install, provider choice, `--resume`, conversation persistence, troubleshooting). It auto-loads in Claude Code sessions when a user asks about CLI topics; treat it as a sibling to root `SKILL.md` rather than a reference of it. `validate-skill.ts` validates nested skills as well — every reference its `SKILL.md` mentions must exist.
 - **Helper scripts live in `scripts/`** and are invoked from `SKILL.md` via `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`. Scripts exit 0 with output on stdout; the dispatcher is responsible for capturing. Scripts executed from **hooks** must also exit 0 on failure paths — never let a hook cascade into the session.
 - **`setup` and `uninstall` are executable shell scripts** at the repo root (no `.sh` extension). They edit `~/.claude/settings.json` via an inline `python3` block, tagging every inserted entry with `_openclone_managed: true` so uninstall can strip exactly those and leave user-authored hooks/statuslines intact. Preserve all unrelated keys when editing these scripts.
-- **CI runs on every push and PR** (`.github/workflows/validate.yml`): the two TypeScript validators (`validate-skill.ts` also cross-checks that every `${CLAUDE_SKILL_DIR}/references/<slug>.md` mentioned in `SKILL.md` exists; `validate-clones.ts` also verifies that every `FIXED_CATEGORIES` token is mentioned in each of the six downstream files), the `smoke-hook.sh` fixture (runs `hooks/inject-active-clone.sh` under an isolated temp `$HOME` across 5 states and asserts valid JSON + expected tags), `shellcheck` at `severity: error` (action detects shebang+executable files, so root `setup`/`uninstall` are covered too), and `markdownlint-cli2` with knowledge directories ignored (`.markdownlint-cli2.jsonc`).
+- **CI runs on every push and PR** (`.github/workflows/validate.yml`): three TypeScript validators (`validate-skill.ts` cross-checks that every `${CLAUDE_SKILL_DIR}/references/<slug>.md` mentioned in `SKILL.md` exists, including for nested skills; `validate-clones.ts` verifies that every `FIXED_CATEGORIES` token is mentioned in each of the six downstream files; `validate-readme-i18n.ts` enforces the README ko/en/zh translation set — language picker, sync-comment SHA header, 12-clone slug list parity, install one-liner verbatim, ZH `REVIEW NEEDED` marker), the `smoke-hook.sh` fixture (runs `hooks/inject-active-clone.sh` under an isolated temp `$HOME` across 5 states and asserts valid JSON + expected tags), `npm ci && npm run build && npm test` for the CLI, `shellcheck` at `severity: error` (action detects shebang+executable files, so root `setup`/`uninstall` are covered too), and `markdownlint-cli2` with knowledge directories ignored (`.markdownlint-cli2.jsonc`).
 
 ## Gotchas
 
-- **Sparse-checkout pattern lives in three places** — the install one-liner in `README.md`, `scripts/fetch-clone-knowledge.sh`, and the migration branch in `scripts/session-update.sh`. If you change the pattern, update all three together.
+- **Sparse-checkout pattern lives in five places** — the install one-liner in `README.md` / `README_en.md` / `README_zh.md` (all three must match verbatim — `validate-readme-i18n.ts` enforces this), `scripts/fetch-clone-knowledge.sh`, and the migration branch in `scripts/session-update.sh`. If you change the pattern, update all five together.
 - **`fetch-clone-knowledge.sh` is a no-op** when the repo is not a git checkout (e.g., a dev machine where files were symlinked in). Knowledge is expected to already be on disk in that case.
 - **Apostrophes in the hook's heredoc body break shell parsing.** Bash parses `$(...)` substitutions inside heredocs and gets confused by unmatched single quotes in the content. Avoid contractions like `clone's` in the heredoc body — use "this clone" or typographic `'`.
 - **The hook has two JSON-escaping paths**: `python3` (preferred) and `sed/awk` (fallback). macOS always hits the python3 path by default, so the fallback is not exercised there — test both branches if you touch the escaping code.
