@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Static, Text, useApp } from "ink";
-import Spinner from "ink-spinner";
 import type { LanguageModel, ModelMessage, ToolSet } from "ai";
 import {
   CONVERSATION_DEFAULTS,
@@ -90,6 +89,8 @@ export function App(props: AppProps): React.JSX.Element {
   const [, messagesRef, setMessages] = useStateAndRef<ModelMessage[]>(initialMessages);
   const [, summaryRef, setSummary] = useStateAndRef<string>(initialSummary);
   const [streaming, setStreaming] = useState<string | null>(null);
+  const streamingBufferRef = useRef<string>("");
+  const streamingFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, busyRef, setBusy] = useStateAndRef<boolean>(false);
   const [exited, setExited] = useState<boolean>(false);
 
@@ -101,6 +102,25 @@ export function App(props: AppProps): React.JSX.Element {
   const appendItem = (item: MessageItem) => {
     setCommitted((previous) => [...previous, item]);
   };
+
+  const STREAM_FLUSH_MS = 33;
+
+  const scheduleStreamFlush = () => {
+    if (streamingFlushTimerRef.current !== null) return;
+    streamingFlushTimerRef.current = setTimeout(() => {
+      streamingFlushTimerRef.current = null;
+      setStreaming(streamingBufferRef.current);
+    }, STREAM_FLUSH_MS);
+  };
+
+  const cancelStreamFlush = () => {
+    if (streamingFlushTimerRef.current !== null) {
+      clearTimeout(streamingFlushTimerRef.current);
+      streamingFlushTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => cancelStreamFlush(), []);
 
   const persist = async (reason: "turn" | "exit") => {
     if (!props.onPersist) return;
@@ -191,6 +211,7 @@ export function App(props: AppProps): React.JSX.Element {
 
     appendItem({ kind: "user", text: command.text });
     setBusy(true);
+    streamingBufferRef.current = "";
     setStreaming("");
     try {
       const userMessage: ModelMessage = { role: "user", content: command.text };
@@ -203,24 +224,25 @@ export function App(props: AppProps): React.JSX.Element {
         await compactNow("auto");
       }
 
-      let buffer = "";
       const response = await streamFn({
         model: props.model,
         system: systemWithConversationSummary(props.system, summaryRef.current),
         messages: messagesRef.current,
         tools: props.tools,
         onText: (chunk) => {
-          buffer += chunk;
-          setStreaming(buffer);
+          streamingBufferRef.current += chunk;
+          scheduleStreamFlush();
         },
       });
 
+      cancelStreamFlush();
       const assistantMessage: ModelMessage = { role: "assistant", content: response };
       setMessages((previous) => [...previous, assistantMessage]);
       appendItem({ kind: "assistant", text: response, speakerLabel });
       setStreaming(null);
       await persist("turn");
     } catch (error) {
+      cancelStreamFlush();
       const message = error instanceof Error ? error.message : String(error);
       appendItem({ kind: "system-banner", text: `[openclone: error during streaming: ${message}]` });
       setStreaming(null);
@@ -250,8 +272,6 @@ export function App(props: AppProps): React.JSX.Element {
           <Box>
             <Text color="cyan" bold>{speakerLabel} </Text>
             <Text color="gray" dimColor>›</Text>
-            <Text> </Text>
-            <Text color="magenta"><Spinner type="dots" /></Text>
           </Box>
           <Box paddingLeft={2}>
             <Text>{streaming || ""}</Text>
