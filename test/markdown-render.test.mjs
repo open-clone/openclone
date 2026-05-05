@@ -91,6 +91,19 @@ test("Markdown renders link text and shows the href", async () => {
   assert.match(out, /github\.com\/open-clone\/openclone/);
 });
 
+test("Markdown renders escaped-bracket citation as compact [1]", async () => {
+  const out = await renderMarkdownToText("Some claim. \\[[1](https://example.com)\\] tail.");
+  assert.match(out, /\[1\]/);
+  assert.doesNotMatch(out, /https:\/\/example\.com/);
+  assert.doesNotMatch(out, /\(https/);
+});
+
+test("Markdown renders 2-digit citations as compact [12]", async () => {
+  const out = await renderMarkdownToText("Claim. \\[[12](https://example.org/path)\\] tail.");
+  assert.match(out, /\[12\]/);
+  assert.doesNotMatch(out, /example\.org/);
+});
+
 test("Markdown is fault-tolerant on malformed input", async () => {
   const out = await renderMarkdownToText("```js\nunclosed code block");
   assert.match(out, /unclosed/);
