@@ -82,22 +82,101 @@ function rewriteAnthropicMessagesUrl(input: FetchInput): FetchInput {
   return new Request(url, input);
 }
 
+function debugHttpEnabled(env: NodeJS.ProcessEnv): boolean {
+  const v = env.OPENCLONE_DEBUG_HTTP;
+  return v === "1" || v === "true" || v === "yes";
+}
+
+function redactedHeaderEntries(headers: Headers): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  headers.forEach((value, key) => {
+    if (key.toLowerCase() === "authorization") entries.push([key, "Bearer ***"]);
+    else entries.push([key, value]);
+  });
+  return entries;
+}
+
+function truncate(text: string, max = 1500): string {
+  return text.length <= max ? text : `${text.slice(0, max)}…[+${text.length - max} chars]`;
+}
+
+type FetchHeadersInit = NonNullable<RequestInit["headers"]>;
+type FetchBodyInit = NonNullable<RequestInit["body"]>;
+
+export function normalizeClaudeCodeHeaders(input: FetchHeadersInit | undefined, accessToken: string): Headers {
+  const headers = new Headers(input);
+  headers.delete("x-api-key");
+  headers.set("authorization", `Bearer ${accessToken}`);
+  headers.set("user-agent", CLAUDE_CODE_USER_AGENT);
+  headers.set("anthropic-beta", CLAUDE_CODE_REQUIRED_BETAS);
+  for (const key of Array.from(headers.keys())) {
+    if (key.toLowerCase().startsWith("x-stainless-")) headers.delete(key);
+  }
+  return headers;
+}
+
+export function splitClaudeCodeSystemBlocks(rawBody: FetchBodyInit | null | undefined): FetchBodyInit | null | undefined {
+  if (typeof rawBody !== "string") return rawBody;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawBody);
+  } catch {
+    return rawBody;
+  }
+  if (!parsed || typeof parsed !== "object") return rawBody;
+  const obj = parsed as Record<string, unknown>;
+  const system = obj.system;
+  if (!Array.isArray(system) || system.length === 0) return rawBody;
+  const first = system[0] as { type?: unknown; text?: unknown } | undefined;
+  if (!first || first.type !== "text" || typeof first.text !== "string") return rawBody;
+  const prefix = `${CLAUDE_CODE_IDENTITY_PROMPT}\n\n`;
+  if (!first.text.startsWith(prefix)) return rawBody;
+  const remainder = first.text.slice(prefix.length);
+  obj.system = [
+    { type: "text", text: CLAUDE_CODE_IDENTITY_PROMPT },
+    { type: "text", text: remainder },
+    ...system.slice(1),
+  ];
+  return JSON.stringify(obj);
+}
+
 function buildClaudeCodeFetch(
   env: NodeJS.ProcessEnv,
   initialRecord: ClaudeCodeCredentialRecord,
 ): { fetch: typeof fetch; getCurrent: () => ClaudeCodeCredentialRecord } {
   let record = initialRecord;
+  const debug = debugHttpEnabled(env);
 
   const wrapped: typeof fetch = async (input, init = {}) => {
     const rewritten = rewriteAnthropicMessagesUrl(input);
 
-    const baseHeaders = new Headers(init.headers ?? (rewritten instanceof Request ? rewritten.headers : undefined));
-    baseHeaders.delete("x-api-key");
-    baseHeaders.set("authorization", `Bearer ${record.tokens.accessToken}`);
-    if (!baseHeaders.has("user-agent")) baseHeaders.set("user-agent", CLAUDE_CODE_USER_AGENT);
+    const baseHeaders = normalizeClaudeCodeHeaders(
+      init.headers ?? (rewritten instanceof Request ? rewritten.headers : undefined),
+      record.tokens.accessToken,
+    );
+    const body = splitClaudeCodeSystemBlocks(init.body ?? null);
 
-    const sendInit: RequestInit = { ...init, headers: baseHeaders };
+    const sendInit: RequestInit = { ...init, headers: baseHeaders, body };
+
+    if (debug) {
+      const url = rewritten instanceof Request ? rewritten.url : rewritten.toString();
+      const method = sendInit.method ?? (rewritten instanceof Request ? rewritten.method : "GET");
+      const bodyPreview = typeof sendInit.body === "string" ? truncate(sendInit.body) : `[${typeof sendInit.body}]`;
+      console.error(`[openclone-debug] → ${method} ${url}`);
+      console.error(`[openclone-debug]   request headers: ${JSON.stringify(redactedHeaderEntries(baseHeaders))}`);
+      console.error(`[openclone-debug]   request body: ${bodyPreview}`);
+    }
+
     let response = await fetch(rewritten, sendInit);
+
+    if (debug) {
+      const cloned = response.clone();
+      const text = await cloned.text().catch(() => "");
+      console.error(`[openclone-debug] ← ${response.status} ${response.statusText}`);
+      console.error(`[openclone-debug]   response headers: ${JSON.stringify(redactedHeaderEntries(response.headers))}`);
+      console.error(`[openclone-debug]   response body: ${truncate(text)}`);
+    }
+
     if (response.status !== 401) return response;
 
     let refreshed: ClaudeCodeCredentialRecord;
@@ -109,8 +188,7 @@ function buildClaudeCodeFetch(
       return response;
     }
     record = refreshed;
-    const retryHeaders = new Headers(sendInit.headers);
-    retryHeaders.set("authorization", `Bearer ${record.tokens.accessToken}`);
+    const retryHeaders = normalizeClaudeCodeHeaders(sendInit.headers, record.tokens.accessToken);
     response = await fetch(rewritten, { ...sendInit, headers: retryHeaders });
     return response;
   };
