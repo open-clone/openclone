@@ -4,7 +4,14 @@ Guidance for AI coding agents (Claude Code, OpenAI Codex, Cursor, etc.) working 
 
 ## What this repo is
 
-A Claude Code **standalone skill** named `openclone`. The repo root **is** the skill — `SKILL.md` at the root declares the `/openclone` slash command and owns its dispatch logic. There is no build step, no test runner, no package manager, no `node_modules`. Distribution is by direct `git clone` into `~/.claude/skills/openclone/` (not `/plugin install`, not a marketplace), then `./setup` registers hooks + statusline in `~/.claude/settings.json`. Claude Code auto-discovers the skill on next session start.
+A Claude Code **standalone skill** named `openclone`. The repo root **is** the skill — `SKILL.md` at the root declares the `/openclone` slash command and owns its dispatch logic.
+
+Distribution has two paths and they coexist:
+
+1. **Claude Code skill** — direct `git clone` (with non-cone sparse-checkout) into `~/.claude/skills/openclone/`, not `/plugin install`, not a marketplace. Then `./setup` registers hooks + statusline in `~/.claude/settings.json`. Claude Code auto-discovers the skill on next session start. The skill itself is bash + markdown — no Node.js needed.
+2. **Standalone Node.js CLI** — published as `@openclone/openclone` on npm (`npm install -g @openclone/openclone`, exposing the `openclone` bin). The CLI shares the same `clones/<slug>/persona.md` and `knowledge/*.md` files and renders them through the Vercel AI SDK (`src/cli/`, `src/lib/`, `src/ui/`). Has its own `package.json`, `tsconfig.json`, `dist/` build output, `test/` test runner, and `npm` workflows. Existing Claude Code setup must continue to work without requiring the CLI.
+
+The `.github/workflows/publish-npm.yml` workflow auto-publishes on GitHub Release: it reads the semver from the release tag, picks `next` dist-tag for prereleases (anything containing `-` or marked as prerelease) and `latest` otherwise, runs the full validate + build + audit + shellcheck + markdownlint pipeline, then `npm publish --provenance --access public`.
 
 ## Commands
 
@@ -70,6 +77,7 @@ docs/architecture.md           # human-oriented Korean architecture walkthrough
   scripts/validate-clones.ts   # CI: persona.md schema + FIXED_CATEGORIES cross-file mentions (6 files)
   scripts/smoke-hook.sh        # CI: isolated-$HOME fixture — runs the hook across 5 states, asserts valid JSON + expected tags
   workflows/validate.yml       # runs validators + smoke-hook + shellcheck + markdownlint-cli2 on push/PR
+  workflows/publish-npm.yml    # GitHub Release → npm publish with provenance; tag-driven version + dist-tag (latest|next)
   ISSUE_TEMPLATE/              # bug, feature, clone_add, clone_update, opt_in_request, config.yml
 ```
 
