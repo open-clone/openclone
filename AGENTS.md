@@ -61,6 +61,7 @@ src/
   lib/clone-tools.ts           # AI SDK ToolSet: list_knowledge_files / read_knowledge_file / web_fetch / web_search
   lib/config.ts                # CLI config + env var defaults (model, baseURL, provider, OPENCLONE_*)
   lib/conversation.ts          # interactive chat loop — runConversation, /compact, auto-compaction, onPersist callback
+  lib/format-error.ts          # normalizes provider/SDK errors into the structured shape rendered by ErrorBanner
   lib/frontmatter.ts           # YAML frontmatter parse helpers shared by clone-loader and validators
   lib/history-store.ts         # ~/.openclone/conversations/<slug>/<sessionId>.json — schemaVersion + normalizeRecord
   lib/paths.ts                 # XDG-aware ~/.openclone resolution + per-clone subpaths
@@ -70,7 +71,7 @@ src/
   lib/slug.ts                  # slug normalization shared between CLI and history-store
   lib/stream-chat.ts           # generateText/streamText wrapper with shared tool wiring
   ui/                          # Ink TUI (React reconciler) — interactive chat renderer when stdin/stdout are TTY
-    App.tsx · HeaderBar.tsx · InputBox.tsx · Markdown.tsx · MessageView.tsx · PromptInput.tsx
+    App.tsx · HeaderBar.tsx · InputBox.tsx · Markdown.tsx · MessageView.tsx · PromptInput.tsx · ErrorBanner.tsx
     runInkConversation.tsx     # entry point invoked from chatCommand when isInteractiveTty
     hooks/useStateAndRef.ts    # React hook keeping a ref synced with state for stable closures
     marked-terminal.d.ts       # ambient typings for marked-terminal renderer
