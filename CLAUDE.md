@@ -46,7 +46,8 @@ src/
   cli/index.ts                 # standalone Node CLI: list/status/chat using Vercel AI SDK
   lib/clone-loader.ts          # reads persona/knowledge markdown with user-over-built-in precedence
   lib/prompt-renderer.ts       # renders CLI system prompts from markdown source of truth
-  lib/provider-resolver.ts     # OpenAI-compatible, Codex OAuth, and Ollama provider config
+  lib/provider-resolver.ts     # OpenAI-compatible, Codex OAuth, Claude Code OAuth, and Ollama provider config
+  lib/claude-code-auth.ts      # reads ~/.claude/.credentials.json or macOS keychain "Claude Code-credentials"; refreshes via console.anthropic.com
 scripts/
   session-update.sh            # SessionStart hook: fork-to-bg, throttled git pull --ff-only + cone→non-cone migration
   fetch-clone-knowledge.sh     # git sparse-checkout add clones/<slug>/knowledge — called by SKILL.md on activation
@@ -102,7 +103,7 @@ The root `SKILL.md` is the sole entry point for both `/openclone` and natural-la
 
 ### Standalone Node CLI
 
-The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth, and `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`.
+The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth. `--use-claude-code-auth` (alias `--use-claude-auth`) switches to `@ai-sdk/anthropic` against `https://api.anthropic.com/v1` using the Claude Code subscription OAuth token from macOS keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json`; the resolver injects `anthropic-beta: oauth-2025-04-20,interleaved-thinking-2025-05-14`, prepends the Claude Code identity sentence to the system prompt (rejected without it), rewrites `/v1/messages` to add `?beta=true`, and refreshes near-expiry tokens via `https://console.anthropic.com/v1/oauth/token` (client_id `9d1c250a-e61b-44d9-88ed-5944d1962f5e`). `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`, and do not route Claude Code OAuth through `x-api-key` (the Bearer token is rejected with the API-key header).
 
 ### CLI conversation persistence
 

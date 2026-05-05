@@ -12,6 +12,9 @@ export interface CliConfig {
   codexEnsureFresh?: boolean;
   codexStore?: boolean;
   codexAuthFilePath?: string;
+  useClaudeCodeAuth?: boolean;
+  claudeCodeEnsureFresh?: boolean;
+  claudeCodeAuthFilePath?: string;
   headers?: Record<string, string>;
 }
 

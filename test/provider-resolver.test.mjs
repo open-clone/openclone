@@ -63,3 +63,44 @@ test('provider resolver allows disabling Codex response item persistence for pri
   assert.equal(resolved.authSource, 'codex-oauth');
   assert.equal(resolved.codexStore, false);
 });
+
+test('provider resolver does not read Claude Code credentials unless OAuth is explicitly requested', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'openclone-provider-'));
+  await mkdir(join(home, '.claude'), { recursive: true });
+  await writeFile(
+    join(home, '.claude', '.credentials.json'),
+    JSON.stringify({ claudeAiOauth: { accessToken: 'sk-ant-leak', refreshToken: 'rt', expiresAt: 4102444800000 } }),
+  );
+  await assert.rejects(
+    () => resolveProvider({ env: { HOME: home } }),
+    /No API credential configured/,
+  );
+});
+
+test('provider resolver uses Claude Code OAuth when --use-claude-code-auth is set, exposes systemPrefix, and defaults to api.anthropic.com', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'openclone-provider-'));
+  await mkdir(join(home, '.claude'), { recursive: true });
+  const expiresAt = Date.now() + 60 * 60 * 1000;
+  await writeFile(
+    join(home, '.claude', '.credentials.json'),
+    JSON.stringify({ claudeAiOauth: { accessToken: 'sk-ant-x', refreshToken: 'rt-x', expiresAt } }),
+  );
+  const resolved = await resolveProvider({ env: { HOME: home }, useClaudeCodeAuth: true });
+  assert.equal(resolved.authSource, 'claude-code-oauth');
+  assert.equal(resolved.provider, 'claude-code-oauth');
+  assert.equal(resolved.baseURL, 'https://api.anthropic.com/v1');
+  assert.equal(resolved.modelId, 'claude-sonnet-4-6');
+  assert.match(resolved.systemPrefix ?? '', /Claude Agent SDK/);
+});
+
+test('provider resolver respects OPENCLONE_USE_CLAUDE_AUTH alias env var', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'openclone-provider-'));
+  await mkdir(join(home, '.claude'), { recursive: true });
+  const expiresAt = Date.now() + 60 * 60 * 1000;
+  await writeFile(
+    join(home, '.claude', '.credentials.json'),
+    JSON.stringify({ claudeAiOauth: { accessToken: 'sk-ant-y', refreshToken: 'rt-y', expiresAt } }),
+  );
+  const resolved = await resolveProvider({ env: { HOME: home, OPENCLONE_USE_CLAUDE_AUTH: '1' } });
+  assert.equal(resolved.provider, 'claude-code-oauth');
+});
