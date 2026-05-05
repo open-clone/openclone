@@ -3,6 +3,14 @@
   "version": "0.3.0",
   "description": "Markdown-native AI persona clones for Claude Code and standalone CLI chat.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-clone/openclone.git"
+  },
+  "homepage": "https://github.com/open-clone/openclone#readme",
+  "bugs": {
+    "url": "https://github.com/open-clone/openclone/issues"
+  },
   "bin": {
     "openclone": "./dist/cli/index.js"
   },
