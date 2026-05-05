@@ -9,17 +9,26 @@ export async function streamChat(options: {
   maxSteps?: number;
   onText?: (chunk: string) => void;
 }): Promise<string> {
+  let captured: unknown;
   const result = streamText({
     model: options.model,
     system: options.system,
     messages: options.messages,
     tools: options.tools,
     stopWhen: stepCountIs(options.maxSteps ?? 6),
+    onError: ({ error }) => {
+      captured = error;
+    },
   });
   let full = "";
-  for await (const chunk of result.textStream) {
-    full += chunk;
-    options.onText?.(chunk);
+  try {
+    for await (const chunk of result.textStream) {
+      full += chunk;
+      options.onText?.(chunk);
+    }
+  } catch (error) {
+    throw captured ?? error;
   }
+  if (captured) throw captured;
   return full;
 }

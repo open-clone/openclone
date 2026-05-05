@@ -55,6 +55,7 @@ export async function runInkConversation(options: RunInkConversationOptions): Pr
       stderr: options.stderr as NodeJS.WriteStream | undefined,
       exitOnCtrlC: options.exitOnCtrlC ?? false,
       patchConsole: false,
+      incrementalRendering: true,
       debug: options.debug,
     },
   );

@@ -8,6 +8,7 @@ import {
 } from "./conversation.js";
 import { HistoryStore, newSessionId, type ConversationSessionRecord } from "./history-store.js";
 import { streamChat } from "./stream-chat.js";
+import { formatErrorBlock, markErrorFormatted } from "./format-error.js";
 import type { Writable } from "node:stream";
 
 export interface SingleShotOptions {
@@ -84,13 +85,22 @@ export async function runSingleShot(options: SingleShotOptions): Promise<SingleS
     }
   }
 
-  const response = await stream({
-    model: options.model,
-    system: systemWithConversationSummary(options.system, summary),
-    messages,
-    tools: options.tools,
-    onText: (chunk) => stdout.write(chunk),
-  });
+  let response: string;
+  try {
+    response = await stream({
+      model: options.model,
+      system: systemWithConversationSummary(options.system, summary),
+      messages,
+      tools: options.tools,
+      onText: (chunk) => stdout.write(chunk),
+    });
+  } catch (error) {
+    const useColor = "isTTY" in stderr ? Boolean((stderr as { isTTY?: boolean }).isTTY) : false;
+    const width = "columns" in stderr ? (stderr as { columns?: number }).columns : undefined;
+    stderr.write(`\n${formatErrorBlock(error, { color: useColor, width })}\n`);
+    markErrorFormatted(error);
+    throw error;
+  }
   stdout.write("\n");
   messages.push({ role: "assistant", content: response });
 
