@@ -50,10 +50,24 @@ clones/<name>/
 hooks/
   inject-active-clone.sh       # UserPromptSubmit hook: room > active-clone > no-op; also emits force-push banner
 src/
-  cli/index.ts                 # standalone Node CLI: list/status/chat using Vercel AI SDK
+  cli/index.ts                 # standalone Node CLI bin: list / status / chat / history / help
   lib/clone-loader.ts          # reads persona/knowledge markdown with user-over-built-in precedence
+  lib/clone-tools.ts           # AI SDK ToolSet: list_knowledge_files / read_knowledge_file / web_fetch / web_search
+  lib/config.ts                # CLI config + env var defaults (model, baseURL, provider, OPENCLONE_*)
+  lib/conversation.ts          # interactive chat loop — runConversation, /compact, auto-compaction, onPersist callback
+  lib/frontmatter.ts           # YAML frontmatter parse helpers shared by clone-loader and validators
+  lib/history-store.ts         # ~/.openclone/conversations/<slug>/<sessionId>.json — schemaVersion + normalizeRecord
+  lib/paths.ts                 # XDG-aware ~/.openclone resolution + per-clone subpaths
   lib/prompt-renderer.ts       # renders CLI system prompts from markdown source of truth
-  lib/provider-resolver.ts     # OpenAI-compatible, Codex OAuth, and Ollama provider config
+  lib/provider-resolver.ts     # OpenAI-compatible / Codex OAuth / Ollama provider config from flags + OPENCLONE_* env
+  lib/single-shot.ts           # non-TTY one-shot path used by --prompt and piped stdin
+  lib/slug.ts                  # slug normalization shared between CLI and history-store
+  lib/stream-chat.ts           # generateText/streamText wrapper with shared tool wiring
+  ui/                          # Ink TUI (React reconciler) — interactive chat renderer when stdin/stdout are TTY
+    App.tsx · HeaderBar.tsx · InputBox.tsx · Markdown.tsx · MessageView.tsx · PromptInput.tsx
+    runInkConversation.tsx     # entry point invoked from chatCommand when isInteractiveTty
+    hooks/useStateAndRef.ts    # React hook keeping a ref synced with state for stable closures
+    marked-terminal.d.ts       # ambient typings for marked-terminal renderer
 scripts/
   session-update.sh            # SessionStart hook: fork-to-bg, throttled git pull --ff-only + cone→non-cone migration
   fetch-clone-knowledge.sh     # git sparse-checkout add clones/<slug>/knowledge — called by SKILL.md on activation
@@ -113,7 +127,11 @@ The root `SKILL.md` is the sole entry point for both `/openclone` and natural-la
 
 ### Standalone Node CLI
 
-The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth, and `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`.
+The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible` with default model `gpt-5.5`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path, with `OPENCLONE_BASE_URL`, `OPENCLONE_PROVIDER`, `OPENCLONE_PROVIDER_NAME` overriding via env. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth (with `OPENCLONE_CODEX_ENSURE_FRESH` / `OPENCLONE_CODEX_STORE` / `OPENCLONE_CODEX_AUTH_FILE` knobs), and `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`.
+
+The CLI exposes four AI SDK tools (`src/lib/clone-tools.ts`) so the model can fetch primary sources at conversation time: `list_knowledge_files` and `read_knowledge_file` (built-in + user knowledge) plus best-effort `web_fetch` and `web_search`. The same inline citation contract from the hook (`\[[N](<target>)\]` with `source_url` priority) applies to tool outputs.
+
+Interactive chat (when both stdin and stdout are TTY) renders through an Ink-based TUI in `src/ui/` (React reconciler + `marked-terminal` for markdown). Non-TTY paths (`--prompt`, piped stdin) skip Ink entirely and use `src/lib/single-shot.ts`.
 
 ### CLI conversation persistence
 
