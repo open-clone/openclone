@@ -35,6 +35,7 @@ function makeStreamFn(responses) {
     calls.push({
       system: options.system,
       messages: options.messages.map((m) => ({ role: m.role, content: m.content })),
+      stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
     });
     const text = responses[i++] ?? "default-response";
     options.onText?.(text);
@@ -226,6 +227,22 @@ test("single-shot: stdout receives only the streamed response, not the session m
     assert.equal(stdout.text, "pong\n");
     assert.doesNotMatch(stdout.text, /\[session:/);
     assert.match(stderr.text, /\[session: /);
+  });
+});
+
+test("single-shot: forwards stripOpenAIResponsesItemIds into the stream call", async () => {
+  await withTempStore(async ({ store }) => {
+    const stream = makeStreamFn(["resp"]);
+    await runSingleShot({
+      cloneSlug: "alice",
+      cloneLabel: "Alice (alice)",
+      model: {}, system: "system", prompt: "q", tools: {},
+      historyStore: store,
+      stream,
+      stdout: new CaptureStream(), stderr: new CaptureStream(),
+      stripOpenAIResponsesItemIds: true,
+    });
+    assert.equal(stream.calls[0].stripOpenAIResponsesItemIds, true);
   });
 });
 

@@ -1,3 +1,4 @@
+import { CITATION_CONTRACT } from "./citation-contract.js";
 import type { KnowledgeFile, LoadedClone } from "./clone-loader.js";
 import { buildKnowledgeManifest } from "./clone-tools.js";
 
@@ -99,7 +100,8 @@ Knowledge rules:
 - User-ingested knowledge is higher priority than built-in knowledge on the same topic.
 - Use web_search/web_fetch for current or external facts that are not covered by local knowledge.
 - Do not invent facts to stay in character.
-- Cite specific facts from knowledge or web results with inline markdown links like [1](target). Skip citations for style, opinions, or common knowledge.
+
+${CITATION_CONTRACT}
 
 --- clone metadata ---
 slug: ${clone.slug}

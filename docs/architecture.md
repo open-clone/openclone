@@ -1,6 +1,6 @@
 # openclone 아키텍처 가이드 (컨트리뷰터용)
 
-이 문서는 openclone이 내부적으로 어떻게 동작하는지 설명합니다. **사람 컨트리뷰터**가 코드 변경 전에 읽고 전체 그림을 잡는 것이 목표입니다. AI 코딩 에이전트용 요약은 루트의 [CLAUDE.md](../CLAUDE.md)에 별도로 있고, "어떻게 기여하나"는 [CONTRIBUTING.md](../CONTRIBUTING.md)에서 다룹니다.
+이 문서는 openclone이 내부적으로 어떻게 동작하는지 설명합니다. **사람 컨트리뷰터**가 코드 변경 전에 읽고 전체 그림을 잡는 것이 목표입니다. AI 코딩 에이전트용 요약은 루트의 [AGENTS.md](../AGENTS.md)에 별도로 있고(루트 `CLAUDE.md`는 `@AGENTS.md` 임포트 스텁), "어떻게 기여하나"는 [CONTRIBUTING.md](../CONTRIBUTING.md)에서 다룹니다.
 
 ## 한눈에 보기
 
@@ -231,7 +231,7 @@ clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md
 
 ## 더 읽을거리
 
-- [CLAUDE.md](../CLAUDE.md) — AI 코딩 에이전트용 아키텍처 요약(영문)
+- [AGENTS.md](../AGENTS.md) — AI 코딩 에이전트용 아키텍처 요약(영문). 루트 `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 Claude Code 임포트 스텁이며 같은 본문으로 해석됨.
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — PR 절차, 로컬 개발 루프, CI 로컬 재현
 - [references/clone-schema.md](../references/clone-schema.md) — 클론 파일의 공식 스키마
 - [references/panel-workflow.md](../references/panel-workflow.md) — 패널 커맨드의 표준 절차

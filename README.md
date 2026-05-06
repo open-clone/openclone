@@ -2,7 +2,8 @@
 
 **한국어** | [English](README_en.md) | [简体中文](README_zh.md)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg)](LICENSE)
+[![Content: CC BY-NC-SA 4.0](https://img.shields.io/badge/Content-CC%20BY--NC--SA%204.0-lightgrey.svg)](clones/LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Skill-8A2BE2)](https://docs.claude.com/en/docs/claude-code)
 [![Status](https://img.shields.io/badge/Status-v0.3.0-brightgreen)](CHANGELOG.md)
 ![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)
@@ -175,7 +176,16 @@ openclone chat douglas
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 
-ChatGPT 백엔드가 ChatGPT 일반 사용자 토큰에 대해 `store=true` 요청을 거부하기 때문에 Codex OAuth는 기본적으로 response item persistence를 끕니다(`store=false`). CLI가 매 턴마다 전체 messages 배열을 직접 전송하므로 `previous_response_id` 없이도 멀티턴 대화가 정상 동작합니다.
+ChatGPT 백엔드가 ChatGPT 일반 사용자 토큰에 대해 `store=true` 요청을 거부하기 때문에 Codex OAuth는 기본적으로 response item persistence를 끕니다(`store=false`). CLI가 매 턴마다 전체 messages 배열을 직접 전송하므로 `previous_response_id` 없이도 멀티턴 대화가 정상 동작합니다. 다만 도구가 호출되는 멀티 step 흐름에서는 AI SDK가 직전 step의 `rs_...` reasoning/tool item id를 다음 step input에 그대로 재전송해 백엔드가 `Item with id 'rs_...' not found.` 404를 내는 케이스가 있어, 기본적으로 step 사이에서 해당 id와 reasoning part를 제거합니다. 끄고 싶다면 `OPENCLONE_CODEX_STRIP_REASONING=0`.
+
+**Claude Code 구독 OAuth (이미 `claude /login`을 끝낸 머신):**
+
+```bash
+openclone chat douglas --use-claude-code-auth --model claude-sonnet-4-6
+# alias: --use-claude-auth
+```
+
+별도 Anthropic API 키 없이 Claude Pro/Max 구독 토큰을 그대로 재사용합니다. macOS에서는 키체인 항목 `Claude Code-credentials`을, Linux/WSL에서는 `~/.claude/.credentials.json`을 읽고, 만료 임박 시 `https://console.anthropic.com/v1/oauth/token`으로 자동 갱신해 같은 위치에 다시 씁니다. 첫 실행 시 macOS가 띄우는 키체인 접근 다이얼로그는 정상 동작입니다.
 
 **로컬 Ollama:**
 
@@ -354,4 +364,14 @@ openclone에 기본 클론으로 배포되는 인물 페르소나는 **공개된
 - [references/categories.md](references/categories.md) — 카테고리 렌즈·톤 가이드
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)
 - 후원: [팀어텐션 (Team Attention)](https://www.team-attention.com/)
-- 라이선스: MIT — [LICENSE](LICENSE)
+
+## 라이선스
+
+openclone은 코드와 클론 콘텐츠에 서로 다른 라이선스를 적용합니다.
+
+- **소스 코드 (저장소 전반)**: MIT — [LICENSE](LICENSE)
+- **클론 콘텐츠 (`clones/**`)**: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) — [clones/LICENSE](clones/LICENSE)
+  - 저작자 표기(BY) + 비상업적 용도(NC) + 동일 라이선스 공유(SA) 의무
+  - 표기 방법, 원저작자 권리, 옵트아웃 절차는 [clones/NOTICE.md](clones/NOTICE.md) 참고
+
+상업적 사용 문의: `hayun@rapidstudio.dev`

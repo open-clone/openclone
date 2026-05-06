@@ -102,6 +102,15 @@ emit_empty() {
 # Resolve the skill root from this script's own location.
 install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Citation contract shared by room and active-clone modes. Kept in a single
+# variable so room/active-clone instructions stay in sync. Single-quoted
+# heredoc delimiter — no $/`/\ expansion in the body, so the literal
+# escaped-bracket form \[[1](<target>)\] survives intact for JSON encoding.
+citation_contract=$(cat <<'CITATION'
+MUST cite when you state a specific factual claim drawn from a knowledge file or a web lookup. Producing a fact-bearing response with zero citations is rarely correct after reading knowledge files. Format each citation as an inline markdown link with escaped brackets like \[[1](<target>)\] \[[2](<target>)\] placed right after the sentence carrying the claim. Number citations sequentially starting at [1] for each response. Always read the knowledge file frontmatter before citing, then pick <target> by this priority: (1) if the frontmatter has a source_url field, you MUST use that URL as <target> — never fall back to the file path when source_url exists; (2) for WebSearch or WebFetch facts, use the result URL; (3) only when neither exists (for example source_type: text or interview with no URL), fall back to a file:// URL of the knowledge file, percent-encoding every non-ASCII character, space, parenthesis, comma, and other unsafe character (UTF-8 byte-wise). For example, a path ending in 2026-02-04-팀어텐션의-(요약).md becomes file:///.../2026-02-04-%ED%8C%80%EC%96%B4%ED%85%90%EC%85%98%EC%9D%98-%28%EC%9A%94%EC%95%BD%29.md. Never emit a raw path without file:// and encoding; (4) only when percent-encoding is genuinely impossible, fall back to citing the source in prose (for example "according to the 2026-02-04 note from this clone") rather than silently dropping attribution. Skip citations only for: this clone subjective takes (for example "I think...", "in my view"), greetings, and generic advice not tied to a specific knowledge file or web result. Persona tone is not license to skip citations on factual claims. No separate Sources footer.
+CITATION
+)
+
 # Returns 0 if the given clone name resolves to a persona.md (user or built-in);
 # on success prints "<origin>\t<persona_path>\t<user_knowledge_dir>\t<builtin_knowledge_dir>".
 resolve_clone() {
@@ -165,7 +174,7 @@ Knowledge rules (apply per member as they speak):
   - Knowledge files live at the two directories listed beside each member below. Files are named YYYY-MM-DD-<topic>.md.
   - Weight newer dates more heavily; older files remain valid background. When user-ingested and built-in files cover the same topic, prefer the user-ingested version.
   - Use Read on specific files when relevant. Do not dump, quote verbatim, or announce the directories to the user.
-  - Cite sources when you use a specific fact from a knowledge file or a web lookup. Format each citation as an inline markdown link with escaped brackets like \[[1](<target>)\] \[[2](<target>)\] placed right after the sentence carrying the claim. Number citations sequentially starting at [1] for each response. Always read the knowledge file frontmatter before citing, then pick <target> by this priority: (1) if the frontmatter has a source_url field, you MUST use that URL as <target> — never fall back to the file path when source_url exists; (2) for WebSearch or WebFetch facts, use the result URL; (3) only when neither exists (for example source_type: text or interview with no URL), fall back to a file:// URL of the knowledge file, percent-encoding every non-ASCII character, space, parenthesis, comma, and other unsafe character (UTF-8 byte-wise). For example, a path ending in 2026-02-04-팀어텐션의-(요약).md becomes file:///.../2026-02-04-%ED%8C%80%EC%96%B4%ED%85%90%EC%85%98%EC%9D%98-%28%EC%9A%94%EC%95%BD%29.md. Never emit a raw path without file:// and encoding; (4) if encoding is uncertain or impractical, skip the citation link entirely and mention the source inline in prose rather than producing a broken link. Do not over-cite — skip citations for persona voice, opinions, or common knowledge. No separate Sources footer.
+  - ${citation_contract}
 
 If the user asks for facts that require current information you do not have (recent events, specific companies or numbers), use WebSearch or WebFetch first, then answer in the chosen clone's voice. Do not fabricate facts to stay in character; if even a search fails, admit the gap in that clone's tone.
 
@@ -219,7 +228,7 @@ Knowledge files are named YYYY-MM-DD-<topic>.md. Storage is append-only — when
 
 Use the Read tool on specific files when relevant. Do not list the directories to the user; just use them.
 
-Cite sources when you use a specific fact from a knowledge file or a web lookup. Format each citation as an inline markdown link with escaped brackets like \[[1](<target>)\] \[[2](<target>)\] placed right after the sentence carrying the claim. Number citations sequentially starting at [1] for each response. Always read the knowledge file frontmatter before citing, then pick <target> by this priority: (1) if the frontmatter has a source_url field, you MUST use that URL as <target> — never fall back to the file path when source_url exists; (2) for WebSearch or WebFetch facts, use the result URL; (3) only when neither exists (for example source_type: text or interview with no URL), fall back to a file:// URL of the knowledge file, percent-encoding every non-ASCII character, space, parenthesis, comma, and other unsafe character (UTF-8 byte-wise). For example, a path ending in 2026-02-04-팀어텐션의-(요약).md becomes file:///.../2026-02-04-%ED%8C%80%EC%96%B4%ED%85%90%EC%85%98%EC%9D%98-%28%EC%9A%94%EC%95%BD%29.md. Never emit a raw path without file:// and encoding; (4) if encoding is uncertain or impractical, skip the citation link entirely and mention the source inline in prose rather than producing a broken link. Do not over-cite — skip citations for persona voice, opinions, or common knowledge. No separate Sources footer.
+${citation_contract}
 
 If the answer is not in the persona, speaking style, or local knowledge files, and the question needs facts you do not have (current events, recent numbers, news about specific companies or people, verifiable claims), use WebSearch or WebFetch to look it up before answering. Still respond in the voice of this clone, weaving in what you found as if recalling it. Do not fabricate facts just to stay in character; if even a search does not yield an answer, say so in the tone of the clone and move on.
 

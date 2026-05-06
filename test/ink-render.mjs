@@ -1,9 +1,12 @@
 import { EventEmitter } from "node:events";
 
-const ANSI_RE = /\u001b\[[0-9;?]*[ -/]*[@-~]/gu;
+// CSI sequences: ESC [ ... final byte (e.g. \u001b[31m).
+const CSI_RE = /\u001b\[[0-9;?]*[ -/]*[@-~]/gu;
+// OSC sequences (including OSC 8 hyperlinks): ESC ] ... terminated by BEL or ESC \.
+const OSC_RE = /\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/gu;
 
 export function stripAnsi(text) {
-  return String(text).replace(ANSI_RE, "");
+  return String(text).replace(CSI_RE, "").replace(OSC_RE, "");
 }
 
 export class FakeStdin extends EventEmitter {

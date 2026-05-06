@@ -13,6 +13,7 @@
 - Rename npm package to scoped `@openclone/openclone` for the newly created npm org.
 - Add auto-compaction and manual `/compact` for long interactive CLI conversations.
 - Add a separate `openclone-cli` agent skill with provider-specific reference files for CLI usage help.
+- 루트 `CLAUDE.md`를 `AGENTS.md`로 이동해 Codex/Cursor 등 비-Claude 에이전트도 같은 컨트리뷰팅 가이드를 읽도록 함. 루트 `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 Claude Code 네이티브 임포트 스텁으로 유지(SSOT — 본문은 `AGENTS.md`에서만 편집).
 
 - Add experimental Node.js CLI for Vercel AI SDK/OpenAI-compatible chat over existing markdown clones while preserving Claude Code support.
 

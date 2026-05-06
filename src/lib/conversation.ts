@@ -3,6 +3,7 @@ import { stdin as defaultInput, stdout as defaultOutput } from "node:process";
 import type { Readable, Writable } from "node:stream";
 import type { LanguageModel, ModelMessage, ToolSet } from "ai";
 import { streamChat } from "./stream-chat.js";
+import { formatErrorBlock } from "./format-error.js";
 
 export interface InteractiveDecisionInput {
   explicitPrompt?: string;
@@ -41,6 +42,7 @@ export interface ConversationOptions {
   initialMessages?: ModelMessage[];
   initialSummary?: string;
   onPersist?: (event: ConversationPersistEvent) => Promise<void> | void;
+  stripOpenAIResponsesItemIds?: boolean;
 }
 
 export interface CompactionSplit {
@@ -251,16 +253,24 @@ export async function runConversation(options: ConversationOptions): Promise<voi
         await compactNow("auto");
       }
 
-      const response = await stream({
-        model: options.model,
-        system: systemWithConversationSummary(options.system, conversationSummary),
-        messages,
-        tools: options.tools,
-        onText: (chunk) => output.write(chunk),
-      });
-      output.write("\n");
-      messages.push({ role: "assistant", content: response });
-      await persist("turn");
+      try {
+        const response = await stream({
+          model: options.model,
+          system: systemWithConversationSummary(options.system, conversationSummary),
+          messages,
+          tools: options.tools,
+          onText: (chunk) => output.write(chunk),
+          stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
+        });
+        output.write("\n");
+        messages.push({ role: "assistant", content: response });
+        await persist("turn");
+      } catch (error) {
+        if (messages.length > 0 && messages[messages.length - 1].role === "user") messages.pop();
+        const useColor = "isTTY" in output ? Boolean((output as { isTTY?: boolean }).isTTY) : false;
+        const width = "columns" in output ? (output as { columns?: number }).columns : undefined;
+        output.write(`\n${formatErrorBlock(error, { color: useColor, width })}\n`);
+      }
     }
     await persist("exit");
   } finally {
