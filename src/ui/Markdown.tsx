@@ -5,8 +5,8 @@ import { Marked, type Token, type Tokens } from "marked";
 const lexer = new Marked({ gfm: true, breaks: false });
 
 const HEADING_COLORS = ["magenta", "cyan", "yellow", "green", "blue", "red"] as const;
-const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f]/u;
-const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f]/gu;
+const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/u;
+const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f-\u009f]/gu;
 
 function inlineKey(parentKey: string, index: number): string {
   return `${parentKey}-i${index}`;

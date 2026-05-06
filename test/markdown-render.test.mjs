@@ -119,6 +119,28 @@ test("Markdown citation hyperlinks do not emit control bytes from malicious href
   assert.doesNotMatch(raw, /\u0007/u);
 });
 
+test("Markdown citation hyperlinks do not emit C1 control bytes from malicious hrefs", async () => {
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  const raw = await renderMarkdownToRaw(`[1](<https://safe.example/${c1Osc}52;c;SGVsbG8=${c1St}>)`);
+
+  assert.match(stripAnsi(raw), /1/);
+  assert.doesNotMatch(raw, /\u009d/u);
+  assert.doesNotMatch(raw, /\u009c/u);
+});
+
+test("Markdown strips C1 control bytes from displayed non-compact hrefs", async () => {
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  const raw = await renderMarkdownToRaw(`[open](<https://safe.example/${c1Osc}52;c;SGVsbG8=${c1St}>)`);
+  const out = stripAnsi(raw);
+
+  assert.match(out, /open/);
+  assert.match(out, /https:\/\/safe\.example\/52;c;SGVsbG8=/);
+  assert.doesNotMatch(raw, /\u009d/u);
+  assert.doesNotMatch(raw, /\u009c/u);
+});
+
 test("Markdown is fault-tolerant on malformed input", async () => {
   const out = await renderMarkdownToText("```js\nunclosed code block");
   assert.match(out, /unclosed/);
