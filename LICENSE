@@ -1,3 +1,13 @@
+The MIT License below applies ONLY to the source code in this repository.
+
+Content under the `clones/` directory (persona definitions and knowledge
+files) is NOT covered by this license. That content is distributed under
+the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+International License (CC BY-NC-SA 4.0). See `clones/LICENSE` for the
+full text and `clones/NOTICE.md` for attribution requirements.
+
+-----------------------------------------------------------------------
+
 MIT License
 
 Copyright (c) 2026 Taurin

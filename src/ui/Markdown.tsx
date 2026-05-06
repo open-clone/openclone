@@ -62,6 +62,21 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
     }
     case "link": {
       const t = token as Tokens.Link;
+      const visibleText = (t.text ?? "").trim();
+      // Footnote-like citations (e.g. \[[1](<url>)\] -> visible text is just a
+      // 1-2 digit number) render compact: no inline (URL) appendage. Wrap the
+      // number in an OSC 8 hyperlink so terminals that support it keep the URL
+      // clickable while terminals that don't just show plain "[1]".
+      if (/^\d{1,2}$/.test(visibleText)) {
+        const ESC = String.fromCharCode(0x1b);
+        const OSC = `${ESC}]8;;`;
+        const ST = `${ESC}\\`;
+        return (
+          <Text key={key} color="blueBright" underline>
+            {`${OSC}${t.href}${ST}${visibleText}${OSC}${ST}`}
+          </Text>
+        );
+      }
       return (
         <Text key={key} color="blueBright" underline>
           {renderInlineTokens(t.tokens, key)}

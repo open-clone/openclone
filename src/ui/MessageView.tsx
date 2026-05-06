@@ -1,12 +1,14 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Markdown } from "./Markdown.js";
+import { ErrorBanner } from "./ErrorBanner.js";
 
 export type MessageItem =
   | { kind: "user"; text: string }
   | { kind: "assistant"; text: string; speakerLabel?: string }
   | { kind: "system"; text: string }
-  | { kind: "system-banner"; text: string };
+  | { kind: "system-banner"; text: string }
+  | { kind: "error-block"; title: string; message: string; hint?: string };
 
 export function MessageView({ item }: { item: MessageItem }): React.JSX.Element {
   if (item.kind === "user") {
@@ -42,6 +44,9 @@ export function MessageView({ item }: { item: MessageItem }): React.JSX.Element 
         <Text color="yellow" dimColor>{item.text}</Text>
       </Box>
     );
+  }
+  if (item.kind === "error-block") {
+    return <ErrorBanner title={item.title} message={item.message} hint={item.hint} />;
   }
   return (
     <Box>
