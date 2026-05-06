@@ -6,6 +6,11 @@ import { Markdown } from "../dist/ui/Markdown.js";
 import { FakeStdin, FakeStdout, joinedFrames, stripAnsi, tick } from "./ink-render.mjs";
 
 async function renderMarkdownToText(text) {
+  const raw = await renderMarkdownToRaw(text);
+  return stripAnsi(raw);
+}
+
+async function renderMarkdownToRaw(text) {
   const stdin = new FakeStdin();
   const stdout = new FakeStdout();
   const stderr = new FakeStdout();
@@ -20,7 +25,7 @@ async function renderMarkdownToText(text) {
   await tick(3);
   instance.unmount();
   await instance.waitUntilExit();
-  return stripAnsi(joinedFrames(stdout));
+  return joinedFrames(stdout);
 }
 
 test("Markdown renders empty text without crashing", async () => {
@@ -102,6 +107,16 @@ test("Markdown renders 2-digit citations as compact [12]", async () => {
   const out = await renderMarkdownToText("Claim. \\[[12](https://example.org/path)\\] tail.");
   assert.match(out, /\[12\]/);
   assert.doesNotMatch(out, /example\.org/);
+});
+
+test("Markdown citation hyperlinks do not emit control bytes from malicious hrefs", async () => {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const raw = await renderMarkdownToRaw(`[1](<https://safe.example/${esc}]52;c;SGVsbG8=${bel}>)`);
+
+  assert.match(stripAnsi(raw), /1/);
+  assert.doesNotMatch(raw, /\u001b\]52;c;SGVsbG8=/u);
+  assert.doesNotMatch(raw, /\u0007/u);
 });
 
 test("Markdown is fault-tolerant on malformed input", async () => {

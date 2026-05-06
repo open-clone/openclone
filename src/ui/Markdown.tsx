@@ -5,6 +5,8 @@ import { Marked, type Token, type Tokens } from "marked";
 const lexer = new Marked({ gfm: true, breaks: false });
 
 const HEADING_COLORS = ["magenta", "cyan", "yellow", "green", "blue", "red"] as const;
+const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f]/u;
+const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f]/gu;
 
 function inlineKey(parentKey: string, index: number): string {
   return `${parentKey}-i${index}`;
@@ -63,24 +65,29 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
     case "link": {
       const t = token as Tokens.Link;
       const visibleText = (t.text ?? "").trim();
+      const safeHref = safeTerminalHyperlinkHref(t.href);
       // Footnote-like citations (e.g. \[[1](<url>)\] -> visible text is just a
       // 1-2 digit number) render compact: no inline (URL) appendage. Wrap the
       // number in an OSC 8 hyperlink so terminals that support it keep the URL
       // clickable while terminals that don't just show plain "[1]".
       if (/^\d{1,2}$/.test(visibleText)) {
-        const ESC = String.fromCharCode(0x1b);
-        const OSC = `${ESC}]8;;`;
-        const ST = `${ESC}\\`;
+        if (!safeHref) {
+          return (
+            <Text key={key} color="blueBright" underline>
+              {visibleText}
+            </Text>
+          );
+        }
         return (
           <Text key={key} color="blueBright" underline>
-            {`${OSC}${t.href}${ST}${visibleText}${OSC}${ST}`}
+            {`${OSC_8_OPEN}${safeHref}${OSC_8_ST}${visibleText}${OSC_8_OPEN}${OSC_8_ST}`}
           </Text>
         );
       }
       return (
         <Text key={key} color="blueBright" underline>
           {renderInlineTokens(t.tokens, key)}
-          <Text color="gray" dimColor>{` (${t.href})`}</Text>
+          <Text color="gray" dimColor>{` (${stripTerminalControlChars(t.href)})`}</Text>
         </Text>
       );
     }
@@ -102,6 +109,25 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       return <Text key={key}>{fallback}</Text>;
     }
   }
+}
+
+const ESC = String.fromCharCode(0x1b);
+const OSC_8_OPEN = `${ESC}]8;;`;
+const OSC_8_ST = `${ESC}\\`;
+
+function safeTerminalHyperlinkHref(href: string): string | null {
+  if (TERMINAL_CONTROL_CHARS.test(href)) return null;
+  try {
+    const url = new URL(href);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return href;
+  } catch {
+    return null;
+  }
+}
+
+function stripTerminalControlChars(text: string): string {
+  return text.replace(TERMINAL_CONTROL_CHARS_GLOBAL, "");
 }
 
 function decodeEntities(text: string): string {
