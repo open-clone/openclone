@@ -288,6 +288,21 @@ test('load normalizes a record with missing optional fields', async () => {
   }
 });
 
+test('load rejects non filename-safe session ids before building a path', async () => {
+  const { store, cleanup } = await makeStore();
+  try {
+    await assert.rejects(
+      () => store.load('alice', '../2026-04-28T14-32-19-487Z'),
+      /Invalid sessionId/,
+    );
+    await assert.rejects(
+      () => store.load('alice', `2026-04-28T14-32-19-487Z${terminalControlPayload()}`),
+      /Invalid sessionId/,
+    );
+  } finally {
+    await cleanup();
+  }
+});
 
 test('load canonicalizes sessionId to the requested filename-safe id', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'openclone-history-'));

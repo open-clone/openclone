@@ -31,6 +31,18 @@ export interface SessionListEntry {
   cloneLabel?: string;
 }
 
+const SESSION_ID_TIMESTAMP_RE = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/;
+
+export function isValidSessionId(sessionId: string): boolean {
+  return SESSION_ID_TIMESTAMP_RE.test(sessionId);
+}
+
+export function assertValidSessionId(sessionId: string): void {
+  if (!isValidSessionId(sessionId)) {
+    throw new Error(`Invalid sessionId: expected filename-safe timestamp, received ${JSON.stringify(sessionId)}`);
+  }
+}
+
 export class HistoryStore {
   readonly baseDir: string;
 
@@ -43,6 +55,7 @@ export class HistoryStore {
   }
 
   sessionPath(slug: string, sessionId: string): string {
+    assertValidSessionId(sessionId);
     return join(this.cloneDir(slug), `${sessionId}.json`);
   }
 
@@ -76,7 +89,7 @@ export class HistoryStore {
     for (const name of names) {
       if (!name.endsWith(".json")) continue;
       const sessionId = name.slice(0, -".json".length);
-      const path = this.sessionPath(slug, sessionId);
+      const path = join(this.cloneDir(slug), `${sessionId}.json`);
       let parsed: Partial<ConversationSessionRecord> | undefined;
       try {
         parsed = JSON.parse(await readFile(path, "utf8")) as Partial<ConversationSessionRecord>;
@@ -145,8 +158,6 @@ export function newSessionId(now?: Date): string {
   }
   return timestamp.toISOString().replace(/:/g, "-").replace(/\./g, "-");
 }
-
-const SESSION_ID_TIMESTAMP_RE = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/;
 
 export function sessionIdToIso(sessionId: string): string {
   const match = sessionId.match(SESSION_ID_TIMESTAMP_RE);

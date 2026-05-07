@@ -32,6 +32,20 @@ test('formatSessionLine emits tab-separated columns matching header', () => {
   assert.equal(cols[3], sampleEntry.path);
 });
 
+test('history formatting collapses field separators inside untrusted table fields', () => {
+  const line = formatSessionLine({
+    ...sampleEntry,
+    sessionId: '2026-04-28T15-38-41-598Z\nnext',
+    updatedAt: '2026-04-28T15:50:23.179Z\tcell',
+    path: '/tmp/openclone/history\rpath.json',
+  });
+  const cols = line.split('\t');
+  assert.equal(cols.length, 4);
+  assert.equal(cols[0], '2026-04-28T15-38-41-598Z next');
+  assert.equal(cols[2], 'updated 2026-04-28T15:50:23.179Z cell');
+  assert.equal(cols[3], '/tmp/openclone/history path.json');
+});
+
 test('formatSessionLine falls back to sessionId-derived ISO when updatedAt missing', () => {
   const noUpdated = { ...sampleEntry, updatedAt: undefined };
   const line = formatSessionLine(noUpdated);

@@ -360,37 +360,25 @@ test("single-shot: terminal output strips model control bytes without mutating p
 });
 
 
-test("single-shot: session marker sanitizes malformed requested session ids", async () => {
-  await withTempStore(async ({ store, dir }) => {
+test("single-shot: --resume=<id> rejects malformed path-bearing session ids", async () => {
+  await withTempStore(async ({ store }) => {
     const payload = terminalControlPayload().replace(/\u0000/g, "");
     const sessionId = `bad-session${payload}`;
-    const cloneDir = join(dir, "alice");
-    await mkdir(cloneDir, { recursive: true });
-    await writeFile(join(cloneDir, `${sessionId}.json`), JSON.stringify({
-      schemaVersion: 1,
-      sessionId,
-      cloneSlug: "alice",
-      cloneLabel: "Alice (alice)",
-      startedAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-      messages: [{ role: "user", content: "old" }],
-      conversationSummary: "",
-    }));
-
     const stderr = new CaptureStream();
-    const result = await runSingleShot({
-      cloneSlug: "alice",
-      cloneLabel: "Alice (alice)",
-      model: {}, system: "system", prompt: "q", tools: {},
-      resumeRequested: true,
-      resumeSessionId: sessionId,
-      historyStore: store,
-      stream: makeStreamFn(["safe"]),
-      stdout: new CaptureStream(), stderr,
-    });
 
-    assert.equal(result.sessionId, sessionId, "raw session id remains the in-memory persistence key");
-    assertNoTerminalControls(stderr.text);
-    assert.match(stderr.text, /\[session: bad-session/);
+    await assert.rejects(
+      () => runSingleShot({
+        cloneSlug: "alice",
+        cloneLabel: "Alice (alice)",
+        model: {}, system: "system", prompt: "q", tools: {},
+        resumeRequested: true,
+        resumeSessionId: sessionId,
+        historyStore: store,
+        stream: makeStreamFn(["safe"]),
+        stdout: new CaptureStream(), stderr,
+      }),
+      /Invalid sessionId/,
+    );
+    assert.equal(stderr.text, "");
   });
 });

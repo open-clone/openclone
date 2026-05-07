@@ -9,7 +9,7 @@ import {
 import { HistoryStore, newSessionId, type ConversationSessionRecord } from "./history-store.js";
 import { streamChat } from "./stream-chat.js";
 import { formatErrorBlock, markErrorFormatted } from "./format-error.js";
-import { sanitizeTerminalText } from "./terminal-safety.js";
+import { sanitizeTerminalField, sanitizeTerminalText } from "./terminal-safety.js";
 import type { Writable } from "node:stream";
 
 export interface SingleShotOptions {
@@ -121,7 +121,7 @@ export async function runSingleShot(options: SingleShotOptions): Promise<SingleS
       providerName: options.providerName,
       modelId: options.modelId,
     });
-    stderr.write(`[session: ${sanitizeTerminalText(sessionId)}]\n`);
+    stderr.write(`[session: ${sanitizeTerminalField(sessionId)}]\n`);
     persisted = true;
   }
 
