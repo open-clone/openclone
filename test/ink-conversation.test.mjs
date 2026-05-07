@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import React from "react";
+import { renderToString } from "ink";
+import { StreamingAssistantMessage } from "../dist/ui/App.js";
 import { runInkConversation } from "../dist/ui/runInkConversation.js";
 import {
   FakeStdin,
@@ -22,16 +25,20 @@ function makeIO() {
 
 
 function terminalControlPayload() {
+  const nul = String.fromCharCode(0x00);
   const esc = String.fromCharCode(0x1b);
   const bel = String.fromCharCode(0x07);
+  const del = String.fromCharCode(0x7f);
   const c1Osc = String.fromCharCode(0x9d);
   const c1St = String.fromCharCode(0x9c);
-  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+  return `${nul}A${esc}]52;c;SGVsbG8=${bel}B${del}C${c1Osc}D${c1St}E`;
 }
 
 function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/u);
   assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
   assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u007f/u);
   assert.doesNotMatch(text, /\u009d/u);
   assert.doesNotMatch(text, /\u009c/u);
 }
@@ -481,6 +488,62 @@ test("ink: empty input does not call stream", async () => {
   assert.equal(called, 0);
 });
 
+test("ink: live assistant streaming view strips terminal controls at the display boundary", () => {
+  const payload = terminalControlPayload();
+  const output = renderToString(
+    React.createElement(StreamingAssistantMessage, {
+      speakerLabel: "clone",
+      streaming: `streaming ${payload} text`,
+    }),
+  );
+
+  assertNoTerminalControls(output);
+  assert.match(output, /streaming A\]52;c;SGVsbG8=BCDE text/);
+});
+
+test("ink: live assistant streaming strips terminal controls before commit", async () => {
+  const payload = terminalControlPayload();
+  const io = makeIO();
+  let markStreamStarted;
+  let releaseStream;
+  const streamStarted = new Promise((resolve) => { markStreamStarted = resolve; });
+  const holdStream = new Promise((resolve) => { releaseStream = resolve; });
+  const run = runInkConversation({
+    cloneLabel: "Alice (alice)",
+    model: {},
+    system: "system",
+    tools: {},
+    stdin: io.stdin,
+    stdout: io.stdout,
+    stderr: io.stderr,
+    debug: true,
+    exitOnCtrlC: false,
+    stream: async (options) => {
+      options.onText?.(`streaming ${payload} text`);
+      markStreamStarted();
+      await holdStream;
+      return `final ${payload} text`;
+    },
+  });
+  await tick(5);
+  await submitLine(io.stdin, "hello");
+  try {
+    await streamStarted;
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await tick(5);
+
+    const streamingFrames = joinedFrames(io.stdout);
+    assertNoTerminalControls(streamingFrames);
+    assert.match(streamingFrames, /streaming A\]52;c;SGVsbG8=BCDE text/);
+    assert.doesNotMatch(streamingFrames, /final A\]52;c;SGVsbG8=BCDE text/);
+  } finally {
+    releaseStream();
+  }
+  await tick(8);
+  await submitLine(io.stdin, "/bye");
+  await run;
+});
+
 test("ink: resumed replay strips terminal controls without mutating raw history", async () => {
   const payload = terminalControlPayload();
   const chatCalls = [];
@@ -514,9 +577,9 @@ test("ink: resumed replay strips terminal controls without mutating raw history"
 
   const raw = joinedFrames(io.stdout);
   assertNoTerminalControls(raw);
-  assert.match(raw, /summary \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
-  assert.match(raw, /prior user \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
-  assert.match(raw, /prior assistant \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.match(raw, /summary A\]52;c;SGVsbG8=BCDE text/);
+  assert.match(raw, /prior user A\]52;c;SGVsbG8=BCDE text/);
+  assert.match(raw, /prior assistant A\]52;c;SGVsbG8=BCDE text/);
   assert.ok(chatCalls[0].system.includes(initialSummary), "raw summary still seeds the model context");
   assert.deepEqual(chatCalls[0].messages.slice(0, 2), initialMessages, "raw messages still seed the model context");
 });

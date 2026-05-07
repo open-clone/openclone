@@ -73,6 +73,23 @@ function buildBootItems(args: {
   return items;
 }
 
+export function StreamingAssistantMessage(props: {
+  speakerLabel: string;
+  streaming: string;
+}): React.JSX.Element {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Box>
+        <Text color="cyan" bold>{props.speakerLabel} </Text>
+        <Text color="gray" dimColor>›</Text>
+      </Box>
+      <Box paddingLeft={2}>
+        <Text>{sanitizeTerminalText(props.streaming)}</Text>
+      </Box>
+    </Box>
+  );
+}
+
 export function App(props: AppProps): React.JSX.Element {
   const ink = useApp();
 
@@ -277,17 +294,7 @@ export function App(props: AppProps): React.JSX.Element {
       <Static items={committed.map((item, index) => ({ ...item, _key: `m-${index}` }))}>
         {(item) => <MessageView key={(item as { _key: string })._key} item={item} />}
       </Static>
-      {streaming !== null ? (
-        <Box flexDirection="column" marginBottom={1}>
-          <Box>
-            <Text color="cyan" bold>{speakerLabel} </Text>
-            <Text color="gray" dimColor>›</Text>
-          </Box>
-          <Box paddingLeft={2}>
-            <Text>{streaming || ""}</Text>
-          </Box>
-        </Box>
-      ) : null}
+      {streaming !== null ? <StreamingAssistantMessage speakerLabel={speakerLabel} streaming={streaming} /> : null}
       {!exited ? (
         <InputBox
           disabled={streaming !== null}
