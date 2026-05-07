@@ -1,13 +1,11 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Marked, type Token, type Tokens } from "marked";
+import { safeTerminalHyperlinkHref, sanitizeTerminalText, stripTerminalControlChars } from "./terminal-safety.js";
 
 const lexer = new Marked({ gfm: true, breaks: false });
 
 const HEADING_COLORS = ["magenta", "cyan", "yellow", "green", "blue", "red"] as const;
-const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/u;
-const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f-\u009f]/gu;
-const TERMINAL_HYPERLINK_PROTOCOLS = new Set(["http:", "https:", "file:"]);
 
 function inlineKey(parentKey: string, index: number): string {
   return `${parentKey}-i${index}`;
@@ -115,25 +113,6 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
 const ESC = String.fromCharCode(0x1b);
 const OSC_8_OPEN = `${ESC}]8;;`;
 const OSC_8_ST = `${ESC}\\`;
-
-function safeTerminalHyperlinkHref(href: string): string | null {
-  if (TERMINAL_CONTROL_CHARS.test(href)) return null;
-  try {
-    const url = new URL(href);
-    if (!TERMINAL_HYPERLINK_PROTOCOLS.has(url.protocol)) return null;
-    return href;
-  } catch {
-    return null;
-  }
-}
-
-function stripTerminalControlChars(text: string): string {
-  return text.replace(TERMINAL_CONTROL_CHARS_GLOBAL, "");
-}
-
-function sanitizeTerminalText(text: string): string {
-  return stripTerminalControlChars(text);
-}
 
 function decodeEntities(text: string): string {
   return text
