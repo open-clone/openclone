@@ -7,6 +7,7 @@ import { runConversation, shouldStartInteractive, type ConversationPersistEvent 
 import { runSingleShot } from "../lib/single-shot.js";
 import {
   HistoryStore,
+  isValidSessionId,
   newSessionId,
   sessionIdToIso,
   type ConversationSessionRecord,
@@ -267,9 +268,11 @@ async function historyCommand(args: ParsedArgs): Promise<void> {
     return;
   }
   if (!quietFlag) console.log(historyHeaderLine());
-  for (const [index, entry] of sessions.entries()) {
+  const latestValidSessionId = sessions.find((entry) => isValidSessionId(entry.sessionId))?.sessionId;
+  for (const entry of sessions) {
     console.log(formatSessionLine(entry));
-    if (!quietFlag) console.log(resumeHintLine(slug, entry.sessionId, index === 0));
+    const hint = resumeHintLine(slug, entry.sessionId, entry.sessionId === latestValidSessionId);
+    if (!quietFlag && hint) console.log(hint);
   }
   if (!quietFlag) console.log(historyFooterHint());
 }
@@ -311,7 +314,8 @@ export function formatSessionLine(entry: SessionListEntry): string {
   return `${sessionId}\t${turnCount} msgs\tupdated ${updated}\t${path}`;
 }
 
-export function resumeHintLine(slug: string, sessionId: string, isLatest: boolean): string {
+export function resumeHintLine(slug: string, sessionId: string, isLatest: boolean): string | undefined {
+  if (!isValidSessionId(sessionId)) return undefined;
   if (isLatest) {
     return `  → resume: openclone chat ${sanitizeTerminalField(slug)} --resume   (or --resume=${sanitizeTerminalField(sessionId)})`;
   }
@@ -348,9 +352,11 @@ async function printAllSessionsGrouped(store: HistoryStore, quiet: boolean): Pro
     const header = label === slug ? sanitizeTerminalLine(slug) : `${sanitizeTerminalLine(label)} (${sanitizeTerminalLine(slug)})`;
     console.log(`\n# ${header}${orphanTag} — ${sessions.length} session(s)`);
     if (!quiet) console.log(historyHeaderLine());
-    for (const [index, entry] of sessions.entries()) {
+    const latestValidSessionId = sessions.find((entry) => isValidSessionId(entry.sessionId))?.sessionId;
+    for (const entry of sessions) {
       console.log(formatSessionLine(entry));
-      if (!quiet) console.log(resumeHintLine(slug, entry.sessionId, index === 0));
+      const hint = resumeHintLine(slug, entry.sessionId, entry.sessionId === latestValidSessionId);
+      if (!quiet && hint) console.log(hint);
     }
   }
   console.log(`\n${totalSessions} session(s) across ${slugsWithSessions.length} clone(s).`);

@@ -70,6 +70,11 @@ test('resumeHintLine for non-latest session shows only explicit --resume=<id>', 
   assert.doesNotMatch(hint, /--resume\s/);
 });
 
+test('resumeHintLine suppresses malformed path-bearing session ids', () => {
+  assert.equal(resumeHintLine('douglas', 'zzzz', true), undefined);
+  assert.equal(resumeHintLine('douglas', '../2026-04-27T09-15-42-123Z', false), undefined);
+});
+
 test('history footer mentions all relevant flags so users know how to suppress', () => {
   const footer = historyFooterHint();
   assert.match(footer, /--resume/);
@@ -118,10 +123,10 @@ test('history formatting sanitizes metadata before terminal display', () => {
 
 test('resume hint sanitizes slug and session metadata before terminal display', () => {
   const payload = terminalControlPayload();
-  const latest = resumeHintLine(`douglas${payload}`, `2026${payload}`, true);
-  const older = resumeHintLine(`douglas${payload}`, `2025${payload}`, false);
+  const latest = resumeHintLine(`douglas${payload}`, '2026-04-28T15-38-41-598Z', true);
+  const older = resumeHintLine(`douglas${payload}`, '2026-04-27T09-15-42-123Z', false);
   assertNoTerminalControls(latest);
   assertNoTerminalControls(older);
   assert.match(latest, /douglas/);
-  assert.match(older, /2025/);
+  assert.match(older, /2026-04-27T09-15-42-123Z/);
 });

@@ -112,8 +112,9 @@ export class HistoryStore {
 
   async findLatest(slug: string): Promise<ConversationSessionRecord | undefined> {
     const sessions = await this.list(slug);
-    if (sessions.length === 0) return undefined;
-    return this.load(slug, sessions[0].sessionId);
+    const latestLoadable = sessions.find((entry) => isValidSessionId(entry.sessionId));
+    if (!latestLoadable) return undefined;
+    return this.load(slug, latestLoadable.sessionId);
   }
 
   async listClonesWithSessions(): Promise<string[]> {

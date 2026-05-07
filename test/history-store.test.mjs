@@ -177,6 +177,22 @@ test('findLatest returns the most recent session record', async () => {
   }
 });
 
+test('findLatest ignores malformed session filenames when choosing latest loadable session', async () => {
+  const { store, baseDir, cleanup } = await makeStore();
+  try {
+    const valid = sampleRecord({ sessionId: '2026-04-28T14-32-19-487Z' });
+    await store.save(valid);
+    const cloneDir = join(baseDir, 'alice');
+    await writeFile(join(cloneDir, 'zzzz.json'), JSON.stringify(sampleRecord({ sessionId: 'zzzz' })), 'utf8');
+
+    const latest = await store.findLatest('alice');
+    assert.ok(latest);
+    assert.equal(latest.sessionId, valid.sessionId);
+  } finally {
+    await cleanup();
+  }
+});
+
 test('findLatest returns undefined when no sessions exist', async () => {
   const { store, cleanup } = await makeStore();
   try {
