@@ -52,10 +52,6 @@ export class FakeStdout extends EventEmitter {
     this.lastFrame = text;
     return true;
   }
-  on() { return this; }
-  once() { return this; }
-  removeListener() { return this; }
-  removeAllListeners() { return this; }
   ref() { return this; }
   unref() { return this; }
   end() {}

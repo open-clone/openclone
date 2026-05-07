@@ -112,8 +112,16 @@ export class HistoryStore {
 
   async findLatest(slug: string): Promise<ConversationSessionRecord | undefined> {
     const sessions = await this.list(slug);
-    if (sessions.length === 0) return undefined;
-    return this.load(slug, sessions[0].sessionId);
+    for (const session of sessions) {
+      if (!isValidSessionId(session.sessionId)) continue;
+      try {
+        return await this.load(slug, session.sessionId);
+      } catch {
+        // A stray or partially-written session file should not prevent `--resume`
+        // from falling back to the next newest loadable session.
+      }
+    }
+    return undefined;
   }
 
   async listClonesWithSessions(): Promise<string[]> {

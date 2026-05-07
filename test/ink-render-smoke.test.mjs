@@ -46,3 +46,24 @@ test("ink-render harness cleanup does not leak process beforeExit listeners", as
 
   assert.equal(process.listenerCount("beforeExit"), before);
 });
+
+test("FakeStdout dispatches and removes EventEmitter listeners", () => {
+  const stdout = new FakeStdout();
+  let resizeCount = 0;
+  const onResize = () => { resizeCount += 1; };
+
+  stdout.on("resize", onResize);
+  stdout.emitFakeResize(80, 24);
+  assert.equal(resizeCount, 1);
+  assert.equal(stdout.columns, 80);
+  assert.equal(stdout.rows, 24);
+
+  stdout.removeListener("resize", onResize);
+  stdout.emitFakeResize(90, 30);
+  assert.equal(resizeCount, 1);
+
+  stdout.on("resize", onResize);
+  stdout.removeAllListeners();
+  stdout.emitFakeResize(100, 40);
+  assert.equal(resizeCount, 1);
+});

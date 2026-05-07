@@ -187,6 +187,36 @@ test('findLatest returns undefined when no sessions exist', async () => {
   }
 });
 
+test('findLatest skips malformed session filenames that sort newer than a valid session', async () => {
+  const { store, baseDir, cleanup } = await makeStore();
+  try {
+    const valid = sampleRecord({ sessionId: '2026-04-28T14-32-19-487Z' });
+    await store.save(valid);
+    await writeFile(join(baseDir, 'alice', 'zzzz.json'), JSON.stringify(sampleRecord({ sessionId: 'zzzz' })), 'utf8');
+
+    const latest = await store.findLatest('alice');
+    assert.ok(latest);
+    assert.equal(latest.sessionId, valid.sessionId);
+  } finally {
+    await cleanup();
+  }
+});
+
+test('findLatest skips unreadable newer session files and resumes the newest loadable session', async () => {
+  const { store, baseDir, cleanup } = await makeStore();
+  try {
+    const valid = sampleRecord({ sessionId: '2026-04-28T14-32-19-487Z' });
+    await store.save(valid);
+    await writeFile(join(baseDir, 'alice', '2026-04-29T00-00-00-000Z.json'), '{not valid json', 'utf8');
+
+    const latest = await store.findLatest('alice');
+    assert.ok(latest);
+    assert.equal(latest.sessionId, valid.sessionId);
+  } finally {
+    await cleanup();
+  }
+});
+
 test('listClonesWithSessions returns clone slugs in alphabetical order', async () => {
   const { store, cleanup } = await makeStore();
   try {
