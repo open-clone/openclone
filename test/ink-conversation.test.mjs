@@ -547,6 +547,34 @@ test("ink: live assistant streaming strips terminal controls before commit", asy
   await run;
 });
 
+test("ink: stream error banners sanitize terminal controls in the live app path", async () => {
+  const payload = terminalControlPayload();
+  const io = makeIO();
+  let streamCalled = false;
+  const run = startInk({
+    cloneLabel: "Alice (alice)",
+    model: {},
+    system: "system",
+    tools: {},
+    stream: async () => {
+      streamCalled = true;
+      throw new Error(`provider failed${payload} tail`);
+    },
+  }, io);
+
+  await tick(5);
+  await submitLine(io.stdin, "hello");
+  await tick(10);
+  await submitLine(io.stdin, "/bye");
+  await run;
+
+  assert.equal(streamCalled, true);
+  const text = joinedFrames(io.stdout);
+  assertNoTerminalControls(text);
+  assert.match(stripAnsi(text), /provider failed/);
+  assert.match(stripAnsi(text), /tail/);
+});
+
 test("ink: resumed replay strips terminal controls without mutating raw history", async () => {
   const payload = terminalControlPayload();
   const chatCalls = [];

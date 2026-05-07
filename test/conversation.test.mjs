@@ -25,14 +25,17 @@ class CaptureOutput extends Writable {
 function terminalControlPayload() {
   const esc = String.fromCharCode(0x1b);
   const bel = String.fromCharCode(0x07);
+  const del = String.fromCharCode(0x7f);
   const c1Osc = String.fromCharCode(0x9d);
   const c1St = String.fromCharCode(0x9c);
-  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+  return `${String.fromCharCode(0x00)}${esc}]52;c;SGVsbG8=${bel}${del}${c1Osc}52;c;SGVsbG8=${c1St}`;
 }
 
 function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/u);
   assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
   assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u007f/u);
   assert.doesNotMatch(text, /\u009d/u);
   assert.doesNotMatch(text, /\u009c/u);
 }
@@ -111,6 +114,26 @@ test('runConversation keeps in-memory message history across turns', async () =>
   ]);
   assert.match(output.text, /openclone conversation: Alice/);
   assert.match(output.text, /\(alice\)/);
+});
+
+test('runConversation sanitizes stream error messages at the terminal boundary', async () => {
+  const payload = terminalControlPayload();
+  const output = new CaptureOutput();
+  await runConversation({
+    cloneLabel: 'Alice (alice)',
+    model: {},
+    system: 'system',
+    tools: {},
+    output,
+    readline: fakeReadline(['hello', '/bye']),
+    stream: async () => {
+      throw new Error(`provider failed${payload} tail`);
+    },
+  });
+
+  assertNoTerminalControls(output.text);
+  assert.match(output.text, /provider failed/);
+  assert.match(output.text, /tail/);
 });
 
 test('runConversation forwards stripOpenAIResponsesItemIds into chat-step stream calls only', async () => {

@@ -32,14 +32,17 @@ async function withTempStore(callback) {
 function terminalControlPayload() {
   const esc = String.fromCharCode(0x1b);
   const bel = String.fromCharCode(0x07);
+  const del = String.fromCharCode(0x7f);
   const c1Osc = String.fromCharCode(0x9d);
   const c1St = String.fromCharCode(0x9c);
-  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+  return `${String.fromCharCode(0x00)}${esc}]52;c;SGVsbG8=${bel}${del}${c1Osc}52;c;SGVsbG8=${c1St}`;
 }
 
 function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/u);
   assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
   assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u007f/u);
   assert.doesNotMatch(text, /\u009d/u);
   assert.doesNotMatch(text, /\u009c/u);
 }
@@ -262,6 +265,37 @@ test("single-shot: forwards stripOpenAIResponsesItemIds into the stream call", a
   });
 });
 
+test("single-shot: stream errors are sanitized before terminal display", async () => {
+  await withTempStore(async ({ store }) => {
+    const payload = terminalControlPayload();
+    const stdout = new CaptureStream();
+    const stderr = new CaptureStream();
+
+    await assert.rejects(
+      runSingleShot({
+        cloneSlug: "alice",
+        cloneLabel: "Alice (alice)",
+        model: {},
+        system: "system",
+        prompt: "first question",
+        tools: {},
+        historyStore: store,
+        stream: async () => {
+          throw new Error(`provider failed${payload} tail`);
+        },
+        stdout,
+        stderr,
+      }),
+      /provider failed/,
+    );
+
+    assert.equal(stdout.text, "");
+    assertNoTerminalControls(stderr.text);
+    assert.match(stderr.text, /provider failed/);
+    assert.match(stderr.text, /tail/);
+  });
+});
+
 test("single-shot: persisted record carries forward conversationSummary on resume", async () => {
   await withTempStore(async ({ store }) => {
     const cloneSlug = "alice";
@@ -328,7 +362,7 @@ test("single-shot: terminal output strips model control bytes without mutating p
 
 test("single-shot: session marker sanitizes malformed requested session ids", async () => {
   await withTempStore(async ({ store, dir }) => {
-    const payload = terminalControlPayload();
+    const payload = terminalControlPayload().replace(/\u0000/g, "");
     const sessionId = `bad-session${payload}`;
     const cloneDir = join(dir, "alice");
     await mkdir(cloneDir, { recursive: true });
