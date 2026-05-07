@@ -7,6 +7,7 @@ const lexer = new Marked({ gfm: true, breaks: false });
 const HEADING_COLORS = ["magenta", "cyan", "yellow", "green", "blue", "red"] as const;
 const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/u;
 const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f-\u009f]/gu;
+const TERMINAL_HYPERLINK_PROTOCOLS = new Set(["http:", "https:", "file:"]);
 
 function inlineKey(parentKey: string, index: number): string {
   return `${parentKey}-i${index}`;
@@ -119,7 +120,7 @@ function safeTerminalHyperlinkHref(href: string): string | null {
   if (TERMINAL_CONTROL_CHARS.test(href)) return null;
   try {
     const url = new URL(href);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    if (!TERMINAL_HYPERLINK_PROTOCOLS.has(url.protocol)) return null;
     return href;
   } catch {
     return null;

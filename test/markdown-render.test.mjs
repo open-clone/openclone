@@ -109,6 +109,30 @@ test("Markdown renders 2-digit citations as compact [12]", async () => {
   assert.doesNotMatch(out, /example\.org/);
 });
 
+test("Markdown keeps safe file citations clickable with compact OSC 8 links", async () => {
+  const fileHref = "file:///tmp/openclone-knowledge.md";
+  const raw = await renderMarkdownToRaw(`Local fact. \\[[1](${fileHref})\\] tail.`);
+
+  assert.match(stripAnsi(raw), /\[1\]/);
+  assert.ok(raw.includes(`\u001b]8;;${fileHref}\u001b\\1\u001b]8;;\u001b\\`));
+  assert.doesNotMatch(stripAnsi(raw), /file:\/\/\/tmp\/openclone-knowledge\.md/);
+});
+
+test("Markdown rejects compact file citations containing terminal control bytes", async () => {
+  const esc = String.fromCharCode(0x1b);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  const raw = await renderMarkdownToRaw(
+    `[1](<file:///tmp/openclone-${esc}]52;c;SGVsbG8=-${c1Osc}52;c;SGVsbG8=${c1St}.md>)`,
+  );
+
+  assert.match(stripAnsi(raw), /1/);
+  assert.doesNotMatch(raw, /\u001b\]8;;file:\/\//u);
+  assert.doesNotMatch(raw, /\u001b\]52;c;SGVsbG8=/u);
+  assert.doesNotMatch(raw, /\u009d/u);
+  assert.doesNotMatch(raw, /\u009c/u);
+});
+
 test("Markdown citation hyperlinks do not emit control bytes from malicious hrefs", async () => {
   const esc = String.fromCharCode(0x1b);
   const bel = String.fromCharCode(0x07);
