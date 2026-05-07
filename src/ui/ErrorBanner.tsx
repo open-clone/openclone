@@ -18,7 +18,7 @@ export function ErrorBanner({ title, message, hint }: ErrorBannerProps): React.J
       marginBottom={1}
     >
       <Text color="yellow" bold>
-        {`⚠ ${sanitizeTerminalText(title)}`}
+        {`Error: ${sanitizeTerminalText(title)}`}
       </Text>
       <Text>{sanitizeTerminalText(message)}</Text>
       {hint ? (

@@ -16,7 +16,7 @@ import { renderActiveClonePrompt } from "../lib/prompt-renderer.js";
 import { opencloneHome } from "../lib/paths.js";
 import { resolveProvider } from "../lib/provider-resolver.js";
 import { formatErrorBlock, isErrorFormatted, markErrorFormatted } from "../lib/format-error.js";
-import { sanitizeTerminalText } from "../lib/terminal-safety.js";
+import { sanitizeTerminalText, terminalSafeJsonStringify } from "../lib/terminal-safety.js";
 
 interface ParsedArgs {
   command: string;
@@ -135,13 +135,13 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
   const rendered = renderActiveClonePrompt(clone, { question: prompt });
 
   if (args.flags.dryRun) {
-    console.log(JSON.stringify({
+    console.log(terminalSafeJsonStringify({
       clone: { slug: clone.slug, origin: clone.origin, displayName: clone.displayName, categories: clone.categories },
       selectedKnowledge: rendered.knowledge.map((file) => ({ path: file.path, origin: file.origin, topic: file.topic, dateKey: file.dateKey })),
       system: rendered.system,
       user: prompt,
       interactive,
-    }, null, 2));
+    }, 2));
     return;
   }
 

@@ -665,7 +665,8 @@ test("ink: error banners sanitize terminal controls", () => {
 
   assertNoTerminalControls(direct);
   assertNoTerminalControls(viaMessage);
-  assert.match(direct, /title/);
+  assert.match(direct, /Error: title/);
+  assert.doesNotMatch(direct, new RegExp(String.fromCodePoint(0x26a0), "u"));
   assert.match(direct, /message/);
   assert.match(direct, /hint/);
 });

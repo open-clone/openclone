@@ -28,3 +28,9 @@ export function safeTerminalHyperlink(label: string, href: string): string | nul
   const esc = String.fromCharCode(0x1b);
   return `${esc}]8;;${safeHref}${esc}\\${safeLabel}${esc}]8;;${esc}\\`;
 }
+
+export function terminalSafeJsonStringify(value: unknown, space?: string | number): string {
+  return JSON.stringify(value, null, space).replace(/[\u007f-\u009f]/gu, (char) => {
+    return `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+  });
+}

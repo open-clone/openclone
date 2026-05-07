@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 export interface InputBoxProps {
   disabled?: boolean;
@@ -60,9 +61,9 @@ export function InputBox({ disabled = false, placeholder = "type a message · /h
             <Text color="magenta" bold>›</Text>
             <Text> </Text>
             {showPlaceholder ? (
-              <Text color="gray">{placeholder}</Text>
+              <Text color="gray">{sanitizeTerminalText(placeholder)}</Text>
             ) : (
-              <Text>{buffer}<Text inverse>{" "}</Text></Text>
+              <Text>{sanitizeTerminalText(buffer)}<Text inverse>{" "}</Text></Text>
             )}
           </Box>
         )}

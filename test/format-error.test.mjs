@@ -23,3 +23,9 @@ test('formatErrorBlock sanitizes terminal controls from error messages', () => {
   assertNoTerminalControls(block);
   assert.match(block, /provider failed/);
 });
+
+test('formatErrorBlock uses plain error text instead of pictograph', () => {
+  const block = formatErrorBlock(new Error('provider failed'));
+  assert.match(block, /Error:/);
+  assert.doesNotMatch(block, new RegExp(String.fromCodePoint(0x26a0), "u"));
+});

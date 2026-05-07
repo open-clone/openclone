@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 export interface PromptInputProps {
   disabled?: boolean;
@@ -46,7 +47,7 @@ export function PromptInput({ disabled = false, onSubmit, onAbort }: PromptInput
   return (
     <Box>
       <Text color={disabled ? "gray" : undefined}>{">>> "}</Text>
-      <Text>{buffer}</Text>
+      <Text>{sanitizeTerminalText(buffer)}</Text>
     </Box>
   );
 }

@@ -89,7 +89,7 @@ export function formatErrorBlock(error: unknown, options: FormatBlockOptions = {
   const width = clampWidth(options.width);
   const paint = (code: string, text: string) => (useColor ? `${code}${text}${ANSI.reset}` : text);
 
-  const titleText = `⚠ ${sanitizeTerminalText(normalized.title)}`;
+  const titleText = `Error: ${sanitizeTerminalText(normalized.title)}`;
   const titleLine = (() => {
     const dashesEach = Math.max(3, Math.floor((width - visibleLength(titleText) - 2) / 2));
     const left = "─".repeat(dashesEach);
