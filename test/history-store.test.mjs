@@ -19,6 +19,14 @@ async function makeStore() {
   };
 }
 
+function terminalControlPayload() {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+}
+
 function sampleRecord(overrides = {}) {
   return {
     schemaVersion: 1,
@@ -277,5 +285,27 @@ test('load normalizes a record with missing optional fields', async () => {
     assert.equal(loaded.messages.length, 1);
   } finally {
     await cleanup();
+  }
+});
+
+
+test('load canonicalizes sessionId to the requested filename-safe id', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'openclone-history-'));
+  const store = new HistoryStore({ baseDir: dir });
+  try {
+    const sessionId = '2026-04-28T14-32-19-487Z';
+    const payload = terminalControlPayload();
+    const cloneDir = join(dir, 'alice');
+    await mkdir(cloneDir, { recursive: true });
+    await writeFile(join(cloneDir, `${sessionId}.json`), JSON.stringify({
+      ...sampleRecord(),
+      sessionId: `${sessionId}${payload}`,
+      cloneSlug: 'alice',
+    }));
+
+    const loaded = await store.load('alice', sessionId);
+    assert.equal(loaded.sessionId, sessionId);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

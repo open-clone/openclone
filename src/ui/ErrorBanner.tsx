@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 export interface ErrorBannerProps {
   title: string;
@@ -17,12 +18,12 @@ export function ErrorBanner({ title, message, hint }: ErrorBannerProps): React.J
       marginBottom={1}
     >
       <Text color="yellow" bold>
-        {`⚠ ${title}`}
+        {`⚠ ${sanitizeTerminalText(title)}`}
       </Text>
-      <Text>{message}</Text>
+      <Text>{sanitizeTerminalText(message)}</Text>
       {hint ? (
         <Text color="gray" dimColor>
-          {`↳ ${hint}`}
+          {`↳ ${sanitizeTerminalText(hint)}`}
         </Text>
       ) : null}
     </Box>

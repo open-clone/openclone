@@ -121,7 +121,7 @@ export async function runSingleShot(options: SingleShotOptions): Promise<SingleS
       providerName: options.providerName,
       modelId: options.modelId,
     });
-    stderr.write(`[session: ${sessionId}]\n`);
+    stderr.write(`[session: ${sanitizeTerminalText(sessionId)}]\n`);
     persisted = true;
   }
 

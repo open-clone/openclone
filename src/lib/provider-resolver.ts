@@ -11,6 +11,7 @@ import {
   persistClaudeCodeCredentials,
   type ClaudeCodeCredentialRecord,
 } from "./claude-code-auth.js";
+import { sanitizeTerminalText } from "./terminal-safety.js";
 
 export type ProviderKind = "openai-compatible" | "codex-oauth" | "ollama" | "claude-code-oauth";
 
@@ -101,6 +102,10 @@ function truncate(text: string, max = 1500): string {
   return text.length <= max ? text : `${text.slice(0, max)}…[+${text.length - max} chars]`;
 }
 
+export function formatDebugHttpLine(text: string): string {
+  return sanitizeTerminalText(text);
+}
+
 type FetchHeadersInit = NonNullable<RequestInit["headers"]>;
 type FetchBodyInit = NonNullable<RequestInit["body"]>;
 
@@ -163,9 +168,9 @@ function buildClaudeCodeFetch(
       const url = rewritten instanceof Request ? rewritten.url : rewritten.toString();
       const method = sendInit.method ?? (rewritten instanceof Request ? rewritten.method : "GET");
       const bodyPreview = typeof sendInit.body === "string" ? truncate(sendInit.body) : `[${typeof sendInit.body}]`;
-      console.error(`[openclone-debug] → ${method} ${url}`);
-      console.error(`[openclone-debug]   request headers: ${JSON.stringify(redactedHeaderEntries(baseHeaders))}`);
-      console.error(`[openclone-debug]   request body: ${bodyPreview}`);
+      console.error(formatDebugHttpLine(`[openclone-debug] → ${method} ${url}`));
+      console.error(formatDebugHttpLine(`[openclone-debug]   request headers: ${JSON.stringify(redactedHeaderEntries(baseHeaders))}`));
+      console.error(formatDebugHttpLine(`[openclone-debug]   request body: ${bodyPreview}`));
     }
 
     let response = await fetch(rewritten, sendInit);
@@ -173,9 +178,9 @@ function buildClaudeCodeFetch(
     if (debug) {
       const cloned = response.clone();
       const text = await cloned.text().catch(() => "");
-      console.error(`[openclone-debug] ← ${response.status} ${response.statusText}`);
-      console.error(`[openclone-debug]   response headers: ${JSON.stringify(redactedHeaderEntries(response.headers))}`);
-      console.error(`[openclone-debug]   response body: ${truncate(text)}`);
+      console.error(formatDebugHttpLine(`[openclone-debug] ← ${response.status} ${response.statusText}`));
+      console.error(formatDebugHttpLine(`[openclone-debug]   response headers: ${JSON.stringify(redactedHeaderEntries(response.headers))}`));
+      console.error(formatDebugHttpLine(`[openclone-debug]   response body: ${truncate(text)}`));
     }
 
     if (response.status !== 401) return response;

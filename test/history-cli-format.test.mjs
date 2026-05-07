@@ -74,3 +74,40 @@ test('historyHelp explains both single-clone and cross-clone usage with resume g
   assert.match(help, /SESSION_ID is the first column/);
   assert.match(help, /~\/\.openclone\/conversations/);
 });
+
+
+function terminalControlPayload() {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+}
+
+function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/u);
+  assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
+}
+
+test('history formatting sanitizes metadata before terminal display', () => {
+  const payload = terminalControlPayload();
+  const line = formatSessionLine({
+    ...sampleEntry,
+    sessionId: `bad${payload}`,
+    updatedAt: `updated${payload}`,
+    path: `/tmp/openclone${payload}/bad.json`,
+  });
+  assertNoTerminalControls(line);
+  assert.match(line, /bad/);
+  assert.match(line, /updated/);
+});
+
+test('resume hint sanitizes slug and session metadata before terminal display', () => {
+  const payload = terminalControlPayload();
+  const latest = resumeHintLine(`douglas${payload}`, `2026${payload}`, true);
+  const older = resumeHintLine(`douglas${payload}`, `2025${payload}`, false);
+  assertNoTerminalControls(latest);
+  assertNoTerminalControls(older);
+  assert.match(latest, /douglas/);
+  assert.match(older, /2025/);
+});

@@ -80,7 +80,7 @@ export function StreamingAssistantMessage(props: {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Box>
-        <Text color="cyan" bold>{props.speakerLabel} </Text>
+        <Text color="cyan" bold>{sanitizeTerminalText(props.speakerLabel)} </Text>
         <Text color="gray" dimColor>›</Text>
       </Box>
       <Box paddingLeft={2}>

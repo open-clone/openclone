@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "ink";
 import { StreamingAssistantMessage } from "../dist/ui/App.js";
+import { HeaderBar } from "../dist/ui/HeaderBar.js";
+import { MessageView } from "../dist/ui/MessageView.js";
+import { ErrorBanner } from "../dist/ui/ErrorBanner.js";
 import { runInkConversation } from "../dist/ui/runInkConversation.js";
 import {
   FakeStdin,
@@ -582,4 +585,59 @@ test("ink: resumed replay strips terminal controls without mutating raw history"
   assert.match(raw, /prior assistant A\]52;c;SGVsbG8=BCDE text/);
   assert.ok(chatCalls[0].system.includes(initialSummary), "raw summary still seeds the model context");
   assert.deepEqual(chatCalls[0].messages.slice(0, 2), initialMessages, "raw messages still seed the model context");
+});
+
+
+test("ink: header and assistant labels sanitize terminal controls", () => {
+  const payload = terminalControlPayload();
+  const header = stripAnsi(renderToString(
+    React.createElement(HeaderBar, {
+      cloneLabel: `Alice${payload}`,
+      modelLabel: `model${payload}`,
+      sessionLabel: `ses${payload}`,
+    }),
+  ));
+  const streaming = stripAnsi(renderToString(
+    React.createElement(StreamingAssistantMessage, {
+      speakerLabel: `clone${payload}`,
+      streaming: "safe",
+    }),
+  ));
+  const committed = stripAnsi(renderToString(
+    React.createElement(MessageView, {
+      item: { kind: "assistant", text: "safe", speakerLabel: `clone${payload}` },
+    }),
+  ));
+
+  assertNoTerminalControls(header);
+  assertNoTerminalControls(streaming);
+  assertNoTerminalControls(committed);
+  assert.match(header, /Alice/);
+  assert.match(header, /model/);
+  assert.match(header, /ses/);
+  assert.match(streaming, /clone/);
+  assert.match(committed, /clone/);
+});
+
+
+test("ink: error banners sanitize terminal controls", () => {
+  const payload = terminalControlPayload();
+  const direct = stripAnsi(renderToString(
+    React.createElement(ErrorBanner, {
+      title: `title${payload}`,
+      message: `message${payload}`,
+      hint: `hint${payload}`,
+    }),
+  ));
+  const viaMessage = stripAnsi(renderToString(
+    React.createElement(MessageView, {
+      item: { kind: "error-block", title: `title${payload}`, message: `message${payload}`, hint: `hint${payload}` },
+    }),
+  ));
+
+  assertNoTerminalControls(direct);
+  assertNoTerminalControls(viaMessage);
+  assert.match(direct, /title/);
+  assert.match(direct, /message/);
+  assert.match(direct, /hint/);
 });

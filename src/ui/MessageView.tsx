@@ -30,7 +30,7 @@ export function MessageView({ item }: { item: MessageItem }): React.JSX.Element 
     return (
       <Box flexDirection="column" marginBottom={1}>
         <Box>
-          <Text color="cyan" bold>{speaker} </Text>
+          <Text color="cyan" bold>{sanitizeTerminalText(speaker)} </Text>
           <Text color="gray" dimColor>›</Text>
         </Box>
         <Box paddingLeft={2}>

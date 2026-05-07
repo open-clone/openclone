@@ -162,7 +162,7 @@ function normalizeRecord(
 ): ConversationSessionRecord {
   return {
     schemaVersion: 1,
-    sessionId: parsed.sessionId ?? sessionId,
+    sessionId,
     cloneSlug: parsed.cloneSlug ?? slug,
     cloneLabel: parsed.cloneLabel ?? slug,
     startedAt: parsed.startedAt ?? "",

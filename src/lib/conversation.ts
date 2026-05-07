@@ -195,7 +195,7 @@ export async function runConversation(options: ConversationOptions): Promise<voi
     return true;
   }
 
-  output.write(`openclone conversation: ${options.cloneLabel}\n`);
+  output.write(`openclone conversation: ${sanitizeTerminalText(options.cloneLabel)}\n`);
   if (messages.length > 0 || conversationSummary) {
     output.write(`[resumed: ${messages.length} message(s)${conversationSummary ? ", with prior summary" : ""}]\n`);
   }

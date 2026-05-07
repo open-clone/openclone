@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Marked, type Token, type Tokens } from "marked";
-import { safeTerminalHyperlinkHref, sanitizeTerminalText, stripTerminalControlChars } from "../lib/terminal-safety.js";
+import { safeTerminalHyperlink, sanitizeTerminalText, stripTerminalControlChars } from "../lib/terminal-safety.js";
 
 const lexer = new Marked({ gfm: true, breaks: false });
 
@@ -64,22 +64,14 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
     case "link": {
       const t = token as Tokens.Link;
       const visibleText = sanitizeTerminalText(t.text ?? "").trim();
-      const safeHref = safeTerminalHyperlinkHref(t.href);
+      const hyperlink = safeTerminalHyperlink(visibleText, t.href);
       // Footnote-like citations (e.g. \[[1](<url>)\] -> visible text is just a
-      // citation number) render compact: no inline (URL) appendage. Wrap the
-      // number in an OSC 8 hyperlink so terminals that support it keep the URL
-      // clickable while terminals that don't just show plain "[1]".
+      // citation number) render compact: no inline (URL) appendage. The shared
+      // terminal-safety helper owns both href validation and OSC 8 framing.
       if (/^\d+$/.test(visibleText)) {
-        if (!safeHref) {
-          return (
-            <Text key={key} color="blueBright" underline>
-              {visibleText}
-            </Text>
-          );
-        }
         return (
           <Text key={key} color="blueBright" underline>
-            {`${OSC_8_OPEN}${safeHref}${OSC_8_ST}${visibleText}${OSC_8_OPEN}${OSC_8_ST}`}
+            {hyperlink ?? visibleText}
           </Text>
         );
       }
@@ -110,9 +102,6 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
   }
 }
 
-const ESC = String.fromCharCode(0x1b);
-const OSC_8_OPEN = `${ESC}]8;;`;
-const OSC_8_ST = `${ESC}\\`;
 
 function decodeEntities(text: string): string {
   return text

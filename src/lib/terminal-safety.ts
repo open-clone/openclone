@@ -20,3 +20,11 @@ export function stripTerminalControlChars(text: string): string {
 export function sanitizeTerminalText(text: string): string {
   return stripTerminalControlChars(text);
 }
+
+export function safeTerminalHyperlink(label: string, href: string): string | null {
+  const safeLabel = sanitizeTerminalText(label);
+  const safeHref = safeTerminalHyperlinkHref(href);
+  if (!safeHref) return null;
+  const esc = String.fromCharCode(0x1b);
+  return `${esc}]8;;${safeHref}${esc}\\${safeLabel}${esc}]8;;${esc}\\`;
+}

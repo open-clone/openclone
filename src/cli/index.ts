@@ -16,6 +16,7 @@ import { renderActiveClonePrompt } from "../lib/prompt-renderer.js";
 import { opencloneHome } from "../lib/paths.js";
 import { resolveProvider } from "../lib/provider-resolver.js";
 import { formatErrorBlock, isErrorFormatted, markErrorFormatted } from "../lib/format-error.js";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 interface ParsedArgs {
   command: string;
@@ -93,16 +94,16 @@ async function listCommand(): Promise<void> {
   const clones = await loader.listClones();
   for (const clone of clones) {
     const cats = clone.categories.length ? clone.categories.join(",") : "uncategorized";
-    console.log(`${clone.slug}\t${clone.origin}\t${clone.displayName}\t${cats}\t${clone.tagline}`);
+    console.log(`${sanitizeTerminalText(clone.slug)}\t${sanitizeTerminalText(clone.origin)}\t${sanitizeTerminalText(clone.displayName)}\t${sanitizeTerminalText(cats)}\t${sanitizeTerminalText(clone.tagline)}`);
   }
 }
 
 async function statusCommand(): Promise<void> {
   const active = await activeCloneSlug();
   const room = await roomMembers();
-  if (room.length > 0) console.log(`room: ${room.join(", ")}`);
+  if (room.length > 0) console.log(`room: ${sanitizeTerminalText(room.join(", "))}`);
   else console.log("room: inactive");
-  if (active) console.log(`active-clone: ${active}`);
+  if (active) console.log(`active-clone: ${sanitizeTerminalText(active)}`);
   else console.log("active-clone: inactive");
 }
 
@@ -218,7 +219,7 @@ async function chatCommand(args: ParsedArgs): Promise<void> {
     }
 
     if (!persistDisabled) {
-      console.log(`[session saved: ${historyStore.sessionPath(slug, sessionId)}]`);
+      console.log(`[session saved: ${sanitizeTerminalText(historyStore.sessionPath(slug, sessionId))}]`);
     }
     if (useInkTui) {
       process.exit(0);
@@ -262,7 +263,7 @@ async function historyCommand(args: ParsedArgs): Promise<void> {
   const slug = explicitSlug as string;
   const sessions = await store.list(slug);
   if (sessions.length === 0) {
-    console.log(`No saved sessions for clone "${slug}".`);
+    console.log(`No saved sessions for clone "${sanitizeTerminalText(slug)}".`);
     return;
   }
   if (!quietFlag) console.log(historyHeaderLine());
@@ -304,15 +305,17 @@ export function historyHeaderLine(): string {
 
 export function formatSessionLine(entry: SessionListEntry): string {
   const turnCount = entry.messageCount ?? 0;
-  const updated = entry.updatedAt || sessionIdToIso(entry.sessionId);
-  return `${entry.sessionId}\t${turnCount} msgs\tupdated ${updated}\t${entry.path}`;
+  const sessionId = sanitizeTerminalText(entry.sessionId);
+  const updated = sanitizeTerminalText(entry.updatedAt || sessionIdToIso(entry.sessionId));
+  const path = sanitizeTerminalText(entry.path);
+  return `${sessionId}\t${turnCount} msgs\tupdated ${updated}\t${path}`;
 }
 
 export function resumeHintLine(slug: string, sessionId: string, isLatest: boolean): string {
   if (isLatest) {
-    return `  → resume: openclone chat ${slug} --resume   (or --resume=${sessionId})`;
+    return `  → resume: openclone chat ${sanitizeTerminalText(slug)} --resume   (or --resume=${sanitizeTerminalText(sessionId)})`;
   }
-  return `  → resume: openclone chat ${slug} --resume=${sessionId}`;
+  return `  → resume: openclone chat ${sanitizeTerminalText(slug)} --resume=${sanitizeTerminalText(sessionId)}`;
 }
 
 export function historyFooterHint(): string {
@@ -342,7 +345,7 @@ async function printAllSessionsGrouped(store: HistoryStore, quiet: boolean): Pro
     totalSessions += sessions.length;
     const orphanTag = knownSlugs.has(slug) ? "" : " [orphan: clone not found]";
     const label = displayName.get(slug) ?? slug;
-    const header = label === slug ? slug : `${label} (${slug})`;
+    const header = label === slug ? sanitizeTerminalText(slug) : `${sanitizeTerminalText(label)} (${sanitizeTerminalText(slug)})`;
     console.log(`\n# ${header}${orphanTag} — ${sessions.length} session(s)`);
     if (!quiet) console.log(historyHeaderLine());
     for (const [index, entry] of sessions.entries()) {

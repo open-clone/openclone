@@ -109,7 +109,8 @@ test('runConversation keeps in-memory message history across turns', async () =>
     { role: 'assistant', content: 'response-1' },
     { role: 'user', content: 'again' },
   ]);
-  assert.match(output.text, /openclone conversation: Alice \(alice\)/);
+  assert.match(output.text, /openclone conversation: Alice/);
+  assert.match(output.text, /\(alice\)/);
 });
 
 test('runConversation forwards stripOpenAIResponsesItemIds into chat-step stream calls only', async () => {
@@ -483,4 +484,23 @@ test('runConversation strips terminal controls from resumed summary and message 
   assert.match(output.text, /summary \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
   assert.match(output.text, /prior user \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
   assert.match(output.text, /prior assistant \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+});
+
+
+test('conversation sanitizes clone label in terminal header only', async () => {
+  const output = new CaptureOutput();
+  const payload = terminalControlPayload();
+  await runConversation({
+    cloneLabel: `Alice${payload} (alice)`,
+    model: {},
+    system: 'system',
+    tools: {},
+    output,
+    readline: fakeReadline(['/bye']),
+    stream: async () => 'unused',
+  });
+
+  assertNoTerminalControls(output.text);
+  assert.match(output.text, /openclone conversation: Alice/);
+  assert.match(output.text, /\(alice\)/);
 });
