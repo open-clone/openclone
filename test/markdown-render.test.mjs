@@ -118,6 +118,18 @@ test("Markdown keeps safe file citations clickable with compact OSC 8 links", as
   assert.doesNotMatch(stripAnsi(raw), /file:\/\/\/tmp\/openclone-knowledge\.md/);
 });
 
+test("Markdown canonicalizes safe compact file citation hrefs before OSC 8 emission", async () => {
+  const esc = String.fromCharCode(0x1b);
+  const rawHref = "file:///tmp/openclone knowledge.md";
+  const canonicalHref = "file:///tmp/openclone%20knowledge.md";
+  const raw = await renderMarkdownToRaw(`Local fact. \\[[2](<${rawHref}>)\\] tail.`);
+
+  assert.match(stripAnsi(raw), /\[2\]/);
+  assert.ok(raw.includes(`${esc}]8;;${canonicalHref}${esc}\\2${esc}]8;;${esc}\\`));
+  assert.ok(!raw.includes(`${esc}]8;;${rawHref}${esc}\\2`));
+  assert.doesNotMatch(stripAnsi(raw), /file:\/\/\/tmp\/openclone(?:%20| )knowledge\.md/);
+});
+
 test("Markdown rejects compact file citations containing terminal control bytes", async () => {
   const esc = String.fromCharCode(0x1b);
   const c1Osc = String.fromCharCode(0x9d);
