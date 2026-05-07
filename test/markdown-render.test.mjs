@@ -165,6 +165,32 @@ test("Markdown strips C1 control bytes from displayed non-compact hrefs", async 
   assert.doesNotMatch(raw, /\u009c/u);
 });
 
+test("Markdown strips terminal controls from visible rendered content", async () => {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  const payload = `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+  const cases = [
+    ["plain text", `plain ${payload} tail`],
+    ["escaped text", `escaped \\*${payload}\\* tail`],
+    ["link label", `[open ${payload} label](https://safe.example)`],
+    ["inline code", `Use \`npm ${payload} install\` first`],
+    ["fenced code", `\`\`\`txt\ncode ${payload} line\n\`\`\``],
+    ["html", `<span>html ${payload} body</span>`],
+    ["image label fallback", `![image ${payload} alt](https://safe.example/image.png)`],
+  ];
+
+  for (const [name, markdown] of cases) {
+    const raw = await renderMarkdownToRaw(markdown);
+    assert.doesNotMatch(raw, /\u001b\]52;c;SGVsbG8=/u, name);
+    assert.doesNotMatch(raw, /\u0007/u, name);
+    assert.doesNotMatch(raw, /\u009d/u, name);
+    assert.doesNotMatch(raw, /\u009c/u, name);
+    assert.match(stripAnsi(raw), /52;c;SGVsbG8=/, name);
+  }
+});
+
 test("Markdown is fault-tolerant on malformed input", async () => {
   const out = await renderMarkdownToText("```js\nunclosed code block");
   assert.match(out, /unclosed/);

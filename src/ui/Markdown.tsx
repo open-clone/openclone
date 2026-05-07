@@ -25,11 +25,11 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       if (t.tokens && t.tokens.length > 0) {
         return <React.Fragment key={key}>{renderInlineTokens(t.tokens, key)}</React.Fragment>;
       }
-      return <Text key={key}>{decodeEntities(t.text)}</Text>;
+      return <Text key={key}>{sanitizeTerminalText(decodeEntities(t.text))}</Text>;
     }
     case "escape": {
       const t = token as Tokens.Escape;
-      return <Text key={key}>{t.text}</Text>;
+      return <Text key={key}>{sanitizeTerminalText(t.text)}</Text>;
     }
     case "strong": {
       const t = token as Tokens.Strong;
@@ -59,13 +59,13 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       const t = token as Tokens.Codespan;
       return (
         <Text key={key} color="greenBright" backgroundColor="gray">
-          {` ${decodeEntities(t.text)} `}
+          {` ${sanitizeTerminalText(decodeEntities(t.text))} `}
         </Text>
       );
     }
     case "link": {
       const t = token as Tokens.Link;
-      const visibleText = (t.text ?? "").trim();
+      const visibleText = sanitizeTerminalText(t.text ?? "").trim();
       const safeHref = safeTerminalHyperlinkHref(t.href);
       // Footnote-like citations (e.g. \[[1](<url>)\] -> visible text is just a
       // 1-2 digit number) render compact: no inline (URL) appendage. Wrap the
@@ -96,7 +96,7 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       const t = token as Tokens.Image;
       return (
         <Text key={key} color="gray" dimColor>
-          {`[image: ${t.text || t.href}]`}
+          {`[image: ${sanitizeTerminalText(t.text || t.href)}]`}
         </Text>
       );
     }
@@ -107,7 +107,7 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       const fallback = (token as { raw?: string; text?: string }).raw
         ?? (token as { text?: string }).text
         ?? "";
-      return <Text key={key}>{fallback}</Text>;
+      return <Text key={key}>{sanitizeTerminalText(fallback)}</Text>;
     }
   }
 }
@@ -129,6 +129,10 @@ function safeTerminalHyperlinkHref(href: string): string | null {
 
 function stripTerminalControlChars(text: string): string {
   return text.replace(TERMINAL_CONTROL_CHARS_GLOBAL, "");
+}
+
+function sanitizeTerminalText(text: string): string {
+  return stripTerminalControlChars(text);
 }
 
 function decodeEntities(text: string): string {
@@ -230,10 +234,10 @@ function renderCode(token: Tokens.Code, key: string): React.ReactNode {
   return (
     <Box key={key} flexDirection="column" marginBottom={1} borderStyle="round" borderColor="gray" paddingX={1}>
       {token.lang ? (
-        <Text color="gray" dimColor>{token.lang}</Text>
+        <Text color="gray" dimColor>{sanitizeTerminalText(token.lang)}</Text>
       ) : null}
       {lines.map((line, index) => (
-        <Text key={`${key}-l${index}`} color="green">{line || " "}</Text>
+        <Text key={`${key}-l${index}`} color="green">{sanitizeTerminalText(line) || " "}</Text>
       ))}
     </Box>
   );
@@ -272,7 +276,7 @@ function renderBlockToken(token: Token, key: string): React.ReactNode {
       const t = token as Tokens.HTML;
       return (
         <Box key={key} marginBottom={1}>
-          <Text color="gray" dimColor>{t.raw.trim()}</Text>
+          <Text color="gray" dimColor>{sanitizeTerminalText(t.raw.trim())}</Text>
         </Box>
       );
     }
@@ -289,7 +293,7 @@ function renderBlockToken(token: Token, key: string): React.ReactNode {
       if (!text.trim()) return null;
       return (
         <Box key={key} marginBottom={1}>
-          <Text>{text}</Text>
+          <Text>{sanitizeTerminalText(text)}</Text>
         </Box>
       );
     }
@@ -302,7 +306,7 @@ export function Markdown({ text }: { text: string }): React.JSX.Element {
   try {
     tokens = lexer.lexer(text);
   } catch {
-    return <Text>{text}</Text>;
+    return <Text>{sanitizeTerminalText(text)}</Text>;
   }
   return <Box flexDirection="column">{renderBlockTokens(tokens, "md")}</Box>;
 }
