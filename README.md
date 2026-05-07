@@ -160,7 +160,7 @@ openclone chat douglas --resume=$SESSION_ID --prompt "사례 알려줘"
 
 #### B4. Provider 설정
 
-기본 provider는 OpenAI-compatible이고 기본 모델은 `gpt-5.5`입니다. 환경변수로 한 번 세팅하거나 매번 플래그로 지정할 수 있습니다.
+기본 provider는 OpenAI-compatible이고 기본 모델은 `gpt-5.5`입니다. Codex OAuth를 쓸 때의 기본 모델은 `gpt-5.3-codex-spark`입니다. 환경변수로 한 번 세팅하거나 매번 플래그로 지정할 수 있습니다.
 
 **OpenAI-compatible API:**
 
@@ -173,6 +173,8 @@ openclone chat douglas
 **Codex OAuth (이미 Codex CLI에 로그인된 머신):**
 
 ```bash
+openclone chat douglas --use-codex-auth
+# 모델을 바꾸려면:
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 

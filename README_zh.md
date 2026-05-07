@@ -167,7 +167,7 @@ openclone chat douglas --resume=$SESSION_ID --prompt "给我一些具体案例"
 
 #### B4. Provider 配置
 
-默认 provider 是 OpenAI 兼容,默认模型是 `gpt-5.5`。可以通过环境变量一次性配置,也可以每次用命令行参数指定。
+默认 provider 是 OpenAI 兼容,默认模型是 `gpt-5.5`。使用 Codex OAuth 时,默认模型是 `gpt-5.3-codex-spark`。可以通过环境变量一次性配置,也可以每次用命令行参数指定。
 
 **OpenAI 兼容 API:**
 
@@ -180,6 +180,8 @@ openclone chat douglas
 **Codex OAuth(已经在 Codex CLI 中登录的机器):**
 
 ```bash
+openclone chat douglas --use-codex-auth
+# 如需切换模型:
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 

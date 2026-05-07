@@ -8,12 +8,14 @@ Use this when the user wants to reuse a local Codex login instead of managing a 
 - The CLI only uses Codex OAuth when explicitly requested.
 - This path is intended for personal local-machine use, not hosted services or token sharing.
 - It uses the Codex backend transport (`https://chatgpt.com/backend-api/codex`), not the normal OpenAI API base URL.
+- Unless `--model` or `OPENCLONE_MODEL` overrides it, this path defaults to `gpt-5.3-codex-spark`.
 - Codex response item persistence (`store=true`) is **off by default** because the ChatGPT backend currently rejects `store=true` for ChatGPT-tier OAuth tokens with `Store must be set to false` (HTTP 400). The CLI sends every turn's full message array, so multi-turn conversations work without `previous_response_id`.
 
 ## Commands
 
 ```bash
-openclone chat douglas --use-codex-auth --model gpt-5.5 --prompt "짧게 조언해줘"
+openclone chat douglas --use-codex-auth --prompt "짧게 조언해줘"
+openclone chat douglas --use-codex-auth
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 
@@ -21,7 +23,7 @@ Equivalent environment switch:
 
 ```bash
 export OPENCLONE_USE_CODEX_AUTH=1
-export OPENCLONE_MODEL=gpt-5.5
+export OPENCLONE_MODEL=gpt-5.3-codex-spark
 openclone chat douglas
 ```
 

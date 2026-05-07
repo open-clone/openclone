@@ -163,7 +163,7 @@ openclone chat douglas --resume=$SESSION_ID --prompt "Show me concrete examples"
 
 #### B4. Provider configuration
 
-The default provider is OpenAI-compatible and the default model is `gpt-5.5`. Configure once via environment variables, or pass flags every time.
+The default provider is OpenAI-compatible and the default model is `gpt-5.5`. When using Codex OAuth, the default model is `gpt-5.3-codex-spark`. Configure once via environment variables, or pass flags every time.
 
 **OpenAI-compatible API:**
 
@@ -176,6 +176,8 @@ openclone chat douglas
 **Codex OAuth (machine that's already logged into the Codex CLI):**
 
 ```bash
+openclone chat douglas --use-codex-auth
+# To switch models:
 openclone chat douglas --use-codex-auth --model gpt-5.5
 ```
 

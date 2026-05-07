@@ -18,6 +18,10 @@ export interface ProviderOptions extends CliConfig {
   env?: NodeJS.ProcessEnv;
 }
 
+export const DEFAULT_OPENAI_COMPATIBLE_MODEL = "gpt-5.5";
+export const DEFAULT_CODEX_OAUTH_MODEL = "gpt-5.3-codex-spark";
+export const DEFAULT_CLAUDE_CODE_OAUTH_MODEL = "claude-sonnet-4-6";
+export const DEFAULT_OLLAMA_MODEL = "llama3.2";
 export const CLAUDE_CODE_IDENTITY_PROMPT = "You are a Claude agent, built on Anthropic's Claude Agent SDK.";
 const CLAUDE_CODE_REQUIRED_BETAS = "oauth-2025-04-20,interleaved-thinking-2025-05-14";
 const CLAUDE_CODE_USER_AGENT = "claude-cli/2.1.87 (external, cli)";
@@ -225,7 +229,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
   if (providerKind === "claude-code-oauth") {
     const providerName = config.providerName ?? "openclone-claude-code-oauth";
     const baseURL = config.baseURL ?? env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com/v1";
-    const modelId = config.model ?? "claude-sonnet-4-6";
+    const modelId = config.model ?? DEFAULT_CLAUDE_CODE_OAUTH_MODEL;
 
     const credentialEnv = config.claudeCodeAuthFilePath
       ? { ...env, OPENCLONE_CLAUDE_CODE_AUTH_FILE: config.claudeCodeAuthFilePath }
@@ -263,7 +267,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
   if (providerKind === "codex-oauth") {
     const providerName = config.providerName ?? "openclone-codex-oauth";
     const baseURL = config.baseURL ?? "https://chatgpt.com/backend-api/codex";
-    const modelId = config.model ?? "gpt-5.5";
+    const modelId = config.model ?? DEFAULT_CODEX_OAUTH_MODEL;
     const codexStore = config.codexStore ?? false;
     const stripOpenAIResponsesItemIds = !codexStore && env.OPENCLONE_CODEX_STRIP_REASONING !== "0";
     const provider = createOpenAIOAuth({
@@ -289,7 +293,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
   if (providerKind === "ollama") {
     const providerName = config.providerName ?? "openclone-ollama";
     const baseURL = config.baseURL ?? "http://127.0.0.1:11434";
-    const modelId = config.model ?? "llama3.2";
+    const modelId = config.model ?? DEFAULT_OLLAMA_MODEL;
     const provider = createOllama({
       baseURL,
       apiKey: config.apiKey,
@@ -307,7 +311,7 @@ export async function resolveProvider(options: ProviderOptions = {}): Promise<Re
 
   const providerName = config.providerName ?? "openclone-openai-compatible";
   const baseURL = config.baseURL ?? "https://api.openai.com/v1";
-  const modelId = config.model ?? "gpt-5.5";
+  const modelId = config.model ?? DEFAULT_OPENAI_COMPATIBLE_MODEL;
   const apiKey = config.apiKey;
 
   if (!apiKey) {

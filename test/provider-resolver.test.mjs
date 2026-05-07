@@ -4,6 +4,8 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  DEFAULT_CODEX_OAUTH_MODEL,
+  DEFAULT_OPENAI_COMPATIBLE_MODEL,
   resolveProvider,
   normalizeClaudeCodeHeaders,
   splitClaudeCodeSystemBlocks,
@@ -26,15 +28,15 @@ test('provider resolver does not read Codex auth unless OAuth is explicitly requ
   );
 });
 
-test('provider resolver accepts explicit env API key without Codex auth and defaults to gpt-5.5', async () => {
+test('provider resolver accepts explicit env API key without Codex auth and defaults to the OpenAI-compatible model', async () => {
   const resolved = await resolveProvider({ env: { OPENCLONE_API_KEY: 'test-key' } });
   assert.equal(resolved.authSource, 'api-key');
   assert.equal(resolved.provider, 'openai-compatible');
   assert.equal(resolved.baseURL, 'https://api.openai.com/v1');
-  assert.equal(resolved.modelId, 'gpt-5.5');
+  assert.equal(resolved.modelId, DEFAULT_OPENAI_COMPATIBLE_MODEL);
 });
 
-test('provider resolver uses Codex OAuth provider only when explicitly requested and defaults codexStore to false', async () => {
+test('provider resolver uses Codex OAuth provider only when explicitly requested and defaults to the Spark Codex model', async () => {
   const home = await mkdtemp(join(tmpdir(), 'openclone-provider-'));
   await mkdir(join(home, '.codex'), { recursive: true });
   await writeFile(join(home, '.codex', 'auth.json'), JSON.stringify({ auth_mode: 'chatgpt', tokens: { access_token: fakeJwt(4102444800), account_id: 'acct' } }));
@@ -42,6 +44,7 @@ test('provider resolver uses Codex OAuth provider only when explicitly requested
   assert.equal(resolved.authSource, 'codex-oauth');
   assert.equal(resolved.provider, 'codex-oauth');
   assert.equal(resolved.baseURL, 'https://chatgpt.com/backend-api/codex');
+  assert.equal(resolved.modelId, DEFAULT_CODEX_OAUTH_MODEL);
   assert.equal(resolved.codexStore, false);
   assert.equal(resolved.stripOpenAIResponsesItemIds, true);
 });
