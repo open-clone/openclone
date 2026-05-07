@@ -153,7 +153,7 @@ openclone chat <slug> --resume=<SESSION_ID> --prompt "..."    # 继续指定 ID 
 openclone chat <slug> --no-persist                            # 本次会话不写入磁盘
 ```
 
-当传入 `--prompt` 时,CLI 只处理一轮就立刻退出。响应正文写到 `stdout`,会话标识符以 `[session: <id>]` 形式写到 `stderr`,这样代理就能在没有交互式终端的环境下也轻松串起多轮对话:
+当传入 `--prompt` 时,CLI 只处理一轮就立刻退出。移除终端控制字符后的显示用响应正文写到 `stdout`,会话标识符以 `[session: <id>]` 形式写到 `stderr`,这样代理就能在没有交互式终端的环境下也轻松串起多轮对话。原始模型响应会保存在会话 JSON 中:
 
 ```bash
 # 第一轮 — 捕获 stderr 拿到新的 sessionId

@@ -49,7 +49,7 @@ When `--prompt` (or piped stdin) is provided, openclone processes one turn and e
 
 Stream split:
 
-- `stdout` — only the assistant's response text, terminated by `\n`. Capture with `RESPONSE=$(openclone chat ...)`.
+- `stdout` — only the terminal-safe display form of the assistant response text, terminated by `\n`. Capture with `RESPONSE=$(openclone chat ...)`. Raw model text is preserved in the saved session JSON.
 - `stderr` — `[session: <id>]` line after a successful turn, plus `[auto-compacted N older message(s)]` if compaction triggered.
 
 Patterns:

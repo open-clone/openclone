@@ -149,7 +149,7 @@ openclone chat <slug> --resume=<SESSION_ID> --prompt "..."    # Resume a specifi
 openclone chat <slug> --no-persist                            # Run this session without writing to disk
 ```
 
-When `--prompt` is supplied the CLI runs a single turn and exits immediately. The response body goes to `stdout`; the session identifier is printed to `stderr` as `[session: <id>]`, which makes it easy for agents to chain multi-turn conversations without an interactive terminal:
+When `--prompt` is supplied the CLI runs a single turn and exits immediately. The terminal-safe display response body goes to `stdout`; the session identifier is printed to `stderr` as `[session: <id>]`, which makes it easy for agents to chain multi-turn conversations without an interactive terminal. The raw model response is preserved in the saved session JSON.
 
 ```bash
 # First turn — capture stderr to learn the new sessionId

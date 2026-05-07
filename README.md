@@ -144,7 +144,7 @@ openclone chat <slug> --resume=<SESSION_ID> --prompt "..."    # 특정 세션 �
 openclone chat <slug> --no-persist                            # 이번 세션은 디스크에 저장 안 함
 ```
 
-`--prompt`를 함께 쓰면 한 턴만 처리하고 즉시 종료합니다. 응답 본문은 `stdout`, 세션 식별자는 `stderr`에 `[session: <id>]` 형태로 출력되어 에이전트가 멀티턴 대화를 짤 때 깔끔하게 캡처할 수 있습니다.
+`--prompt`를 함께 쓰면 한 턴만 처리하고 즉시 종료합니다. 터미널 제어 문자가 제거된 표시용 응답 본문은 `stdout`, 세션 식별자는 `stderr`에 `[session: <id>]` 형태로 출력되어 에이전트가 멀티턴 대화를 짤 때 깔끔하게 캡처할 수 있습니다. 원본 모델 응답은 저장되는 세션 JSON에 보존됩니다.
 
 ```bash
 # 첫 턴

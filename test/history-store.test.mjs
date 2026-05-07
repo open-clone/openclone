@@ -334,6 +334,47 @@ test('load rejects non filename-safe session ids before building a path', async 
   }
 });
 
+test('public history paths reject non-canonical clone slugs before joining paths', async () => {
+  const { store, cleanup } = await makeStore();
+  try {
+    assert.throws(() => store.cloneDir('../alice'), /Invalid clone slug/);
+    assert.throws(() => store.sessionPath('../alice', '2026-04-28T14-32-19-487Z'), /Invalid clone slug/);
+    await assert.rejects(() => store.ensureCloneDir('../alice'), /Invalid clone slug/);
+    await assert.rejects(() => store.list('../alice'), /Invalid clone slug/);
+    await assert.rejects(() => store.findLatest('../alice'), /Invalid clone slug/);
+    await assert.rejects(
+      () => store.save(sampleRecord({ cloneSlug: '../alice' })),
+      /Invalid clone slug/,
+    );
+    await assert.rejects(
+      () => store.load('../alice', '2026-04-28T14-32-19-487Z'),
+      /Invalid clone slug/,
+    );
+  } finally {
+    await cleanup();
+  }
+});
+
+test('cross-clone listing ignores non-canonical history directories', async () => {
+  const { store, baseDir, cleanup } = await makeStore();
+  try {
+    await store.save(sampleRecord({ cloneSlug: 'alice', sessionId: '2026-04-27T10-00-00-000Z' }));
+    await mkdir(join(baseDir, 'bad_slug'), { recursive: true });
+    await writeFile(
+      join(baseDir, 'bad_slug', '2026-04-28T10-00-00-000Z.json'),
+      JSON.stringify(sampleRecord({ cloneSlug: 'bad_slug', sessionId: '2026-04-28T10-00-00-000Z' })),
+      'utf8',
+    );
+
+    assert.deepEqual(await store.listClonesWithSessions(), ['alice']);
+    const all = await store.listAllSessions();
+    assert.equal(all.length, 1);
+    assert.equal(all[0].cloneSlug, 'alice');
+  } finally {
+    await cleanup();
+  }
+});
+
 test('load canonicalizes sessionId to the requested filename-safe id', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'openclone-history-'));
   const store = new HistoryStore({ baseDir: dir });

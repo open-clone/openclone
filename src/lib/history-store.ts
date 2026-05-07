@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ModelMessage } from "ai";
 import { opencloneHome } from "./paths.js";
+import { assertValidSlug, isValidSlug } from "./slug.js";
 
 export interface ConversationSessionRecord {
   schemaVersion: 1;
@@ -51,6 +52,7 @@ export class HistoryStore {
   }
 
   cloneDir(slug: string): string {
+    assertValidSlug(slug);
     return join(this.baseDir, slug);
   }
 
@@ -128,7 +130,7 @@ export class HistoryStore {
     let names: string[];
     try {
       names = await readdir(this.baseDir, { withFileTypes: true }).then((entries) =>
-        entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name),
+        entries.filter((entry) => entry.isDirectory() && isValidSlug(entry.name)).map((entry) => entry.name),
       );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
