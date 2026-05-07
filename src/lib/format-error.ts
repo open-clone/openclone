@@ -1,4 +1,5 @@
 import { APICallError, LoadAPIKeyError } from "ai";
+import { sanitizeTerminalText } from "./terminal-safety.js";
 
 export interface NormalizedError {
   title: string;
@@ -84,11 +85,14 @@ export interface FormatBlockOptions {
 
 export function formatErrorBlock(error: unknown, options: FormatBlockOptions = {}): string {
   const normalized = normalizeError(error);
+  const title = sanitizeTerminalText(normalized.title);
+  const message = sanitizeTerminalText(normalized.message);
+  const hint = normalized.hint ? sanitizeTerminalText(normalized.hint) : undefined;
   const useColor = options.color ?? false;
   const width = clampWidth(options.width);
   const paint = (code: string, text: string) => (useColor ? `${code}${text}${ANSI.reset}` : text);
 
-  const titleText = `⚠ ${normalized.title}`;
+  const titleText = `⚠ ${title}`;
   const titleLine = (() => {
     const dashesEach = Math.max(3, Math.floor((width - visibleLength(titleText) - 2) / 2));
     const left = "─".repeat(dashesEach);
@@ -96,8 +100,8 @@ export function formatErrorBlock(error: unknown, options: FormatBlockOptions = {
     const right = "─".repeat(Math.max(3, remaining));
     return paint(`${ANSI.yellow}${ANSI.bold}`, `${left} ${titleText} ${right}`);
   })();
-  const messageLine = `  ${normalized.message}`;
-  const hintLine = normalized.hint ? paint(ANSI.dim, `  ↳ ${normalized.hint}`) : undefined;
+  const messageLine = `  ${message}`;
+  const hintLine = hint ? paint(ANSI.dim, `  ↳ ${hint}`) : undefined;
   const closeLine = paint(ANSI.yellow, "─".repeat(width));
 
   const lines = [titleLine, messageLine];

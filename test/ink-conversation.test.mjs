@@ -520,3 +520,26 @@ test("ink: resumed replay strips terminal controls without mutating raw history"
   assert.ok(chatCalls[0].system.includes(initialSummary), "raw summary still seeds the model context");
   assert.deepEqual(chatCalls[0].messages.slice(0, 2), initialMessages, "raw messages still seed the model context");
 });
+
+test("ink: error banners strip terminal controls from thrown stream errors", async () => {
+  const payload = terminalControlPayload();
+  const io = makeIO();
+  const run = startInk({
+    cloneLabel: "Alice (alice)",
+    model: {},
+    system: "system",
+    tools: {},
+    stream: async () => {
+      throw new Error(`provider failed ${payload} text`);
+    },
+  }, io);
+  await tick(5);
+  await submitLine(io.stdin, "hello");
+  await tick(8);
+  await submitLine(io.stdin, "/bye");
+  await run;
+
+  const raw = joinedFrames(io.stdout);
+  assertNoTerminalControls(raw);
+  assert.match(raw, /provider failed \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+});
