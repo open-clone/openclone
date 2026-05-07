@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { render } from "ink";
 import { Markdown } from "../dist/ui/Markdown.js";
-import { FakeStdin, FakeStdout, joinedFrames, stripAnsi, tick } from "./ink-render.mjs";
+import { cleanupInkInstance, FakeStdin, FakeStdout, joinedFrames, stripAnsi, tick } from "./ink-render.mjs";
 
 async function renderMarkdownToText(text) {
   const raw = await renderMarkdownToRaw(text);
@@ -23,8 +23,7 @@ async function renderMarkdownToRaw(text) {
     debug: true,
   });
   await tick(3);
-  instance.unmount();
-  await instance.waitUntilExit();
+  await cleanupInkInstance(instance);
   return joinedFrames(stdout);
 }
 

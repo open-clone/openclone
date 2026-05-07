@@ -74,6 +74,12 @@ export function lastFrameStripped(stdout) {
   return stripAnsi(stdout.lastFrame);
 }
 
+export async function cleanupInkInstance(instance) {
+  const exited = instance.waitUntilExit();
+  instance.unmount();
+  await exited;
+}
+
 export async function tick(times = 1) {
   for (let i = 0; i < times; i += 1) {
     await new Promise((resolve) => setImmediate(resolve));
