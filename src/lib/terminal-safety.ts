@@ -1,5 +1,5 @@
 const TERMINAL_CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/u;
-const TERMINAL_CONTROL_CHARS_GLOBAL = /[\u0000-\u001f\u007f-\u009f]/gu;
+const TERMINAL_TEXT_CONTROL_CHARS_GLOBAL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/gu;
 const TERMINAL_HYPERLINK_PROTOCOLS = new Set(["http:", "https:", "file:"]);
 
 export function safeTerminalHyperlinkHref(href: string): string | null {
@@ -14,7 +14,7 @@ export function safeTerminalHyperlinkHref(href: string): string | null {
 }
 
 export function stripTerminalControlChars(text: string): string {
-  return text.replace(TERMINAL_CONTROL_CHARS_GLOBAL, "");
+  return text.replace(TERMINAL_TEXT_CONTROL_CHARS_GLOBAL, "");
 }
 
 export function sanitizeTerminalText(text: string): string {

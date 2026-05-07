@@ -4,6 +4,7 @@ import type { Readable, Writable } from "node:stream";
 import type { LanguageModel, ModelMessage, ToolSet } from "ai";
 import { streamChat } from "./stream-chat.js";
 import { formatErrorBlock } from "./format-error.js";
+import { sanitizeTerminalText } from "./terminal-safety.js";
 
 export interface InteractiveDecisionInput {
   explicitPrompt?: string;
@@ -175,7 +176,7 @@ export async function runConversation(options: ConversationOptions): Promise<voi
       await onPersist({ reason, messages, conversationSummary });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      output.write(`[openclone: failed to persist conversation: ${message}]\n`);
+      output.write(`[openclone: failed to persist conversation: ${sanitizeTerminalText(message)}]\n`);
     }
   }
 
@@ -202,16 +203,16 @@ export async function runConversation(options: ConversationOptions): Promise<voi
 
   if (conversationSummary) {
     output.write("--- prior summary ---\n");
-    output.write(`${conversationSummary}\n`);
+    output.write(`${sanitizeTerminalText(conversationSummary)}\n`);
     output.write("--- end summary ---\n\n");
   }
   if (messages.length > 0) {
     for (const message of messages) {
       const text = messageContentText(message.content);
       if (message.role === "user") {
-        output.write(`>>> ${text}\n`);
+        output.write(`>>> ${sanitizeTerminalText(text)}\n`);
       } else {
-        output.write(`${text}\n`);
+        output.write(`${sanitizeTerminalText(text)}\n`);
       }
     }
     output.write("--- continuing conversation ---\n\n");
@@ -259,7 +260,7 @@ export async function runConversation(options: ConversationOptions): Promise<voi
           system: systemWithConversationSummary(options.system, conversationSummary),
           messages,
           tools: options.tools,
-          onText: (chunk) => output.write(chunk),
+          onText: (chunk) => output.write(sanitizeTerminalText(chunk)),
           stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
         });
         output.write("\n");

@@ -9,6 +9,7 @@ import {
 import { HistoryStore, newSessionId, type ConversationSessionRecord } from "./history-store.js";
 import { streamChat } from "./stream-chat.js";
 import { formatErrorBlock, markErrorFormatted } from "./format-error.js";
+import { sanitizeTerminalText } from "./terminal-safety.js";
 import type { Writable } from "node:stream";
 
 export interface SingleShotOptions {
@@ -93,7 +94,7 @@ export async function runSingleShot(options: SingleShotOptions): Promise<SingleS
       system: systemWithConversationSummary(options.system, summary),
       messages,
       tools: options.tools,
-      onText: (chunk) => stdout.write(chunk),
+      onText: (chunk) => stdout.write(sanitizeTerminalText(chunk)),
       stripOpenAIResponsesItemIds: options.stripOpenAIResponsesItemIds,
     });
   } catch (error) {

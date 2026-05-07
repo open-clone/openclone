@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Marked, type Token, type Tokens } from "marked";
-import { safeTerminalHyperlinkHref, sanitizeTerminalText, stripTerminalControlChars } from "./terminal-safety.js";
+import { safeTerminalHyperlinkHref, sanitizeTerminalText, stripTerminalControlChars } from "../lib/terminal-safety.js";
 
 const lexer = new Marked({ gfm: true, breaks: false });
 
@@ -66,10 +66,10 @@ function renderInlineToken(token: Token, key: string): React.ReactNode {
       const visibleText = sanitizeTerminalText(t.text ?? "").trim();
       const safeHref = safeTerminalHyperlinkHref(t.href);
       // Footnote-like citations (e.g. \[[1](<url>)\] -> visible text is just a
-      // 1-2 digit number) render compact: no inline (URL) appendage. Wrap the
+      // citation number) render compact: no inline (URL) appendage. Wrap the
       // number in an OSC 8 hyperlink so terminals that support it keep the URL
       // clickable while terminals that don't just show plain "[1]".
-      if (/^\d{1,2}$/.test(visibleText)) {
+      if (/^\d+$/.test(visibleText)) {
         if (!safeHref) {
           return (
             <Text key={key} color="blueBright" underline>

@@ -20,6 +20,22 @@ function makeIO() {
   return { stdin, stdout, stderr };
 }
 
+
+function terminalControlPayload() {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+}
+
+function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
+  assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u009d/u);
+  assert.doesNotMatch(text, /\u009c/u);
+}
+
 function captured(stdout) {
   return stripAnsi(joinedFrames(stdout));
 }
@@ -463,4 +479,44 @@ test("ink: empty input does not call stream", async () => {
   await submitLine(io.stdin, "/bye");
   await run;
   assert.equal(called, 0);
+});
+
+test("ink: resumed replay strips terminal controls without mutating raw history", async () => {
+  const payload = terminalControlPayload();
+  const chatCalls = [];
+  const io = makeIO();
+  const initialMessages = [
+    { role: "user", content: `prior user ${payload} text` },
+    { role: "assistant", content: `prior assistant ${payload} text` },
+  ];
+  const initialSummary = `summary ${payload} text`;
+  const run = startInk({
+    cloneLabel: "Alice (alice)",
+    model: {},
+    system: "system",
+    tools: {},
+    initialMessages,
+    initialSummary,
+    stream: async (options) => {
+      chatCalls.push({
+        system: options.system,
+        messages: options.messages.map((m) => ({ role: m.role, content: m.content })),
+      });
+      options.onText?.("ok");
+      return "ok";
+    },
+  }, io);
+  await tick(5);
+  await submitLine(io.stdin, "follow up");
+  await tick(8);
+  await submitLine(io.stdin, "/bye");
+  await run;
+
+  const raw = joinedFrames(io.stdout);
+  assertNoTerminalControls(raw);
+  assert.match(raw, /summary \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.match(raw, /prior user \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.match(raw, /prior assistant \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.ok(chatCalls[0].system.includes(initialSummary), "raw summary still seeds the model context");
+  assert.deepEqual(chatCalls[0].messages.slice(0, 2), initialMessages, "raw messages still seed the model context");
 });

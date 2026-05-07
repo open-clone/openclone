@@ -18,6 +18,7 @@ import { MessageView, type MessageItem } from "./MessageView.js";
 import { InputBox } from "./InputBox.js";
 import { HeaderBar } from "./HeaderBar.js";
 import { useStateAndRef } from "./hooks/useStateAndRef.js";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 export interface AppProps {
   cloneLabel: string;
@@ -232,7 +233,7 @@ export function App(props: AppProps): React.JSX.Element {
         messages: messagesRef.current,
         tools: props.tools,
         onText: (chunk) => {
-          streamingBufferRef.current += chunk;
+          streamingBufferRef.current += sanitizeTerminalText(chunk);
           scheduleStreamFlush();
         },
         stripOpenAIResponsesItemIds: props.stripOpenAIResponsesItemIds,

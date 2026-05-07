@@ -28,6 +28,22 @@ async function withTempStore(callback) {
   }
 }
 
+
+function terminalControlPayload() {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+}
+
+function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
+  assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u009d/u);
+  assert.doesNotMatch(text, /\u009c/u);
+}
+
 function makeStreamFn(responses) {
   let i = 0;
   const calls = [];
@@ -282,5 +298,29 @@ test("single-shot: persisted record carries forward conversationSummary on resum
     const after = await store.load(cloneSlug, sessionId);
     assert.equal(after.messages.length, 4);
     assert.equal(after.conversationSummary, "previously discussed onboarding");
+  });
+});
+
+test("single-shot: terminal output strips model control bytes without mutating persisted history", async () => {
+  await withTempStore(async ({ store }) => {
+    const payload = terminalControlPayload();
+    const response = `line one\nmalicious ${payload} tail`;
+    const stdout = new CaptureStream();
+
+    const result = await runSingleShot({
+      cloneSlug: "alice",
+      cloneLabel: "Alice (alice)",
+      model: {}, system: "system", prompt: "q", tools: {},
+      historyStore: store,
+      stream: makeStreamFn([response]),
+      stdout, stderr: new CaptureStream(),
+    });
+
+    assertNoTerminalControls(stdout.text);
+    assert.match(stdout.text, /line one\nmalicious \]?52;c;SGVsbG8=52;c;SGVsbG8= tail\n/);
+    assert.equal(result.response, response, "returned model response stays raw for history semantics");
+
+    const record = await store.load("alice", result.sessionId);
+    assert.equal(record.messages[1].content, response, "persisted assistant content must not be display-sanitized");
   });
 });

@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Text } from "ink";
 import { Markdown } from "./Markdown.js";
 import { ErrorBanner } from "./ErrorBanner.js";
+import { sanitizeTerminalText } from "../lib/terminal-safety.js";
 
 export type MessageItem =
   | { kind: "user"; text: string }
@@ -19,7 +20,7 @@ export function MessageView({ item }: { item: MessageItem }): React.JSX.Element 
           <Text color="gray" dimColor>›</Text>
         </Box>
         <Box paddingLeft={2}>
-          <Text>{item.text}</Text>
+          <Text>{sanitizeTerminalText(item.text)}</Text>
         </Box>
       </Box>
     );
@@ -41,7 +42,7 @@ export function MessageView({ item }: { item: MessageItem }): React.JSX.Element 
   if (item.kind === "system-banner") {
     return (
       <Box marginBottom={1}>
-        <Text color="yellow" dimColor>{item.text}</Text>
+        <Text color="yellow" dimColor>{sanitizeTerminalText(item.text)}</Text>
       </Box>
     );
   }
@@ -50,7 +51,7 @@ export function MessageView({ item }: { item: MessageItem }): React.JSX.Element 
   }
   return (
     <Box>
-      <Text color="gray" dimColor>{item.text}</Text>
+      <Text color="gray" dimColor>{sanitizeTerminalText(item.text)}</Text>
     </Box>
   );
 }

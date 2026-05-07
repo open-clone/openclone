@@ -21,6 +21,22 @@ class CaptureOutput extends Writable {
   }
 }
 
+
+function terminalControlPayload() {
+  const esc = String.fromCharCode(0x1b);
+  const bel = String.fromCharCode(0x07);
+  const c1Osc = String.fromCharCode(0x9d);
+  const c1St = String.fromCharCode(0x9c);
+  return `${esc}]52;c;SGVsbG8=${bel}${c1Osc}52;c;SGVsbG8=${c1St}`;
+}
+
+function assertNoTerminalControls(text) {
+  assert.doesNotMatch(text, /\u001b\]52;c;SGVsbG8=/u);
+  assert.doesNotMatch(text, /\u0007/u);
+  assert.doesNotMatch(text, /\u009d/u);
+  assert.doesNotMatch(text, /\u009c/u);
+}
+
 function fakeReadline(lines) {
   const queue = [...lines];
   return {
@@ -415,4 +431,56 @@ test('runConversation does not announce resume when starting fresh', async () =>
     stream: async () => 'ok',
   });
   assert.doesNotMatch(output.text, /\[resumed:/);
+});
+
+test('runConversation strips terminal controls from streamed display while keeping raw history', async () => {
+  const payload = terminalControlPayload();
+  const response = `line one\nmalicious ${payload} tail`;
+  const output = new CaptureOutput();
+  const persisted = [];
+
+  await runConversation({
+    cloneLabel: 'Alice (alice)',
+    model: {},
+    system: 'system',
+    tools: {},
+    output,
+    readline: fakeReadline(['hello', '/bye']),
+    onPersist: async (event) => {
+      persisted.push(event.messages.map((message) => ({ role: message.role, content: message.content })));
+    },
+    stream: async (options) => {
+      options.onText?.(response);
+      return response;
+    },
+  });
+
+  assertNoTerminalControls(output.text);
+  assert.match(output.text, /line one\nmalicious \]?52;c;SGVsbG8=52;c;SGVsbG8= tail/);
+  assert.equal(persisted[0][1].content, response, 'persisted assistant content must stay raw');
+});
+
+test('runConversation strips terminal controls from resumed summary and message replay', async () => {
+  const payload = terminalControlPayload();
+  const output = new CaptureOutput();
+
+  await runConversation({
+    cloneLabel: 'Alice (alice)',
+    model: {},
+    system: 'system',
+    tools: {},
+    output,
+    readline: fakeReadline(['/bye']),
+    initialSummary: `summary ${payload} text`,
+    initialMessages: [
+      { role: 'user', content: `prior user ${payload} text` },
+      { role: 'assistant', content: `prior assistant ${payload} text` },
+    ],
+    stream: async () => 'unused',
+  });
+
+  assertNoTerminalControls(output.text);
+  assert.match(output.text, /summary \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.match(output.text, /prior user \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
+  assert.match(output.text, /prior assistant \]?52;c;SGVsbG8=52;c;SGVsbG8= text/);
 });

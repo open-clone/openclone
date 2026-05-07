@@ -109,6 +109,16 @@ test("Markdown renders 2-digit citations as compact [12]", async () => {
   assert.doesNotMatch(out, /example\.org/);
 });
 
+test("Markdown renders 3+ digit citations as compact OSC 8 links", async () => {
+  const esc = String.fromCharCode(0x1b);
+  const href = "https://example.org/source-100";
+  const raw = await renderMarkdownToRaw(`Claim. \\[[100](${href})\\] tail.`);
+
+  assert.match(stripAnsi(raw), /\[100\]/);
+  assert.ok(raw.includes(`${esc}]8;;${href}${esc}\\100${esc}]8;;${esc}\\`));
+  assert.doesNotMatch(stripAnsi(raw), /example\.org\/source-100/);
+});
+
 test("Markdown keeps safe file citations clickable with compact OSC 8 links", async () => {
   const fileHref = "file:///tmp/openclone-knowledge.md";
   const raw = await renderMarkdownToRaw(`Local fact. \\[[1](${fileHref})\\] tail.`);
