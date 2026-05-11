@@ -24,7 +24,7 @@ Choose a provider before chatting. If none is configured, use one of:
 
 ```bash
 openclone chat <clone-slug> --provider ollama --model llama3.2
-openclone chat <clone-slug> --use-codex-auth --model gpt-5.5
+openclone chat <clone-slug> --use-codex-auth
 OPENCLONE_API_KEY="..." openclone chat <clone-slug> --model gpt-5.5
 ```
 

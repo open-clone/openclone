@@ -7,6 +7,7 @@ export interface NormalizedError {
 }
 
 const FORMATTED_MARKER = Symbol.for("openclone.formattedByCli");
+const OBJECT_OBJECT_PATTERN = /\[object Object\]/;
 
 export function markErrorFormatted(value: unknown): void {
   if (value && typeof value === "object") {
@@ -35,13 +36,87 @@ function firstLine(text: string): string {
   return newline === -1 ? trimmed : trimmed.slice(0, newline).trim();
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object");
+}
+
+function cleanMessage(value: string | undefined): string | undefined {
+  const text = firstLine(value ?? "");
+  if (!text || OBJECT_OBJECT_PATTERN.test(text)) return undefined;
+  return text;
+}
+
+function parseJsonString(value: string): unknown {
+  const trimmed = value.trim();
+  if (!trimmed || (trimmed[0] !== "{" && trimmed[0] !== "[")) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
+function stringifyFallback(value: unknown): string | undefined {
+  if (!isRecord(value) && !Array.isArray(value)) return undefined;
+  try {
+    const text = JSON.stringify(value);
+    if (!text || text === "{}" || text === "[]") return undefined;
+    return text.length > 500 ? `${text.slice(0, 500)}...` : text;
+  } catch {
+    return undefined;
+  }
+}
+
+function structuredMessage(value: unknown, seen = new WeakSet<object>()): string | undefined {
+  if (typeof value === "string") {
+    const parsed = parseJsonString(value);
+    if (parsed !== undefined) return structuredMessage(parsed, seen) ?? cleanMessage(value);
+    return cleanMessage(value);
+  }
+  if (!isRecord(value)) return undefined;
+  if (seen.has(value)) return undefined;
+  seen.add(value);
+
+  if (value instanceof Error) {
+    const ownMessage = cleanMessage(value.message);
+    if (ownMessage) return ownMessage;
+  }
+
+  for (const key of ["message", "error", "detail", "details", "reason", "cause", "data", "responseBody"]) {
+    const nested = value[key];
+    const message = structuredMessage(nested, seen);
+    if (message) return message;
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value.map((item) => structuredMessage(item, seen)).filter((item): item is string => Boolean(item));
+    if (parts.length) return parts.join("; ");
+  }
+
+  return stringifyFallback(value);
+}
+
+function apiCallMessage(error: APICallError): string {
+  const direct = cleanMessage(error.message);
+
+  const record = error as unknown as Record<string, unknown>;
+  for (const key of ["data", "responseBody", "cause"]) {
+    const message = structuredMessage(record[key]);
+    if (message && (!direct || direct === "Bad Request" || direct === "Unauthorized" || direct === "Forbidden")) {
+      return message;
+    }
+  }
+
+  return direct ?? "알 수 없는 API 오류";
+}
+
 export function normalizeError(error: unknown): NormalizedError {
   if (APICallError.isInstance(error)) {
     const status = error.statusCode;
     const titleSuffix = status ? ` (${status})` : "";
     return {
       title: `API 오류${titleSuffix}`,
-      message: firstLine(error.message) || "알 수 없는 API 오류",
+      message: apiCallMessage(error),
       hint: statusHint(status),
     };
   }
@@ -53,9 +128,9 @@ export function normalizeError(error: unknown): NormalizedError {
     };
   }
   if (error instanceof Error) {
-    return { title: "오류", message: firstLine(error.message) || error.name };
+    return { title: "오류", message: structuredMessage(error) ?? error.name };
   }
-  return { title: "오류", message: firstLine(String(error)) || "알 수 없는 오류" };
+  return { title: "오류", message: structuredMessage(error) ?? (firstLine(String(error)) || "알 수 없는 오류") };
 }
 
 const ANSI = {

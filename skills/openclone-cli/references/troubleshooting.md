@@ -45,7 +45,7 @@ openclone chat douglas --provider ollama --model llama3.2
 Or choose local Codex OAuth:
 
 ```bash
-openclone chat douglas --use-codex-auth --model gpt-5.5
+openclone chat douglas --use-codex-auth
 ```
 
 ## Persona feels weak
