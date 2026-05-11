@@ -7,6 +7,12 @@ allowed-tools: Bash, Read, Write, Glob, WebFetch, WebSearch
 
 openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했거나 자연어("alice로 전환", "새 클론 만들어" 등)로 의도를 밝힌 경우 모두 이 스킬이 처리합니다.
 
+## 호스트별 실행
+
+- **Claude Code** — 설치 위치는 `~/.claude/skills/openclone/`이며 `${CLAUDE_SKILL_DIR}`가 이 디렉터리로 해석됩니다. `./setup --host claude`가 `UserPromptSubmit`/`SessionStart` 훅과 statusline을 등록합니다.
+- **Codex** — 설치 위치는 `~/.codex/skills/openclone/`입니다. Codex에서 이 문서를 읽을 때 `${CLAUDE_SKILL_DIR}`라고 적힌 경로는 이 `SKILL.md`가 있는 스킬 루트(보통 `~/.codex/skills/openclone`)로 바꿔 해석하세요. `./setup --host codex`는 훅 대신 `~/.codex/AGENTS.md`에 관리 블록을 추가하고, 활성 클론/방 컨텍스트는 `scripts/codex-context.sh`가 plain text로 출력합니다.
+- **공통 상태** — 두 호스트 모두 활성 클론·방·사용자 클론은 `~/.openclone/` 아래 같은 파일을 공유합니다.
+
 ## 두 출처의 클론
 
 - **빌트인 클론** — `${CLAUDE_SKILL_DIR}/clones/<name>/` (읽기 전용, 저장소와 함께 배포). `persona.md`는 항상 존재하고 `knowledge/`는 활성화 시점에 sparse-checkout으로 가져옵니다.
@@ -21,14 +27,16 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
 
 1. `~/.openclone/room`이 비어있지 않으면 **room 모드** — 모든 멤버 페르소나와 라우팅 규칙 주입, 턴당 가장 적절한 한두 명이 응답.
 2. `~/.openclone/active-clone`이 존재하면 **single-clone 모드** — 그 클론이 매 턴 응답.
-3. 둘 다 없으면 기본 Claude.
+3. 둘 다 없으면 기본 호스트 에이전트.
+
+Codex에서는 `UserPromptSubmit` 훅이 없으므로, `./setup --host codex`가 추가한 `~/.codex/AGENTS.md` 관리 블록이 매 턴 `scripts/codex-context.sh`를 호출하도록 지시합니다. Codex에서 openclone이 활성화되어 있는데 다음 일반 메시지에 페르소나가 적용되지 않는다면 새 Codex 세션을 시작해 AGENTS.md를 다시 읽게 하세요.
 
 ## 호출 맥락 해석
 
 - **슬래시로 호출** (`/openclone <args>`): `$ARGUMENTS`의 첫 토큰(`$1`)을 읽어 아래 분기표대로 실행.
 - **자연어로 호출**: 유저 메시지에서 의도를 뽑아 가장 적절한 서브 액션으로 라우팅. 가능하면 실제 `/openclone <sub>` 형태의 명령을 보여주고 그 분기를 실행해서 유저가 무엇이 일어나는지 볼 수 있게 합니다.
 
-**이 스킬을 쓰지 말아야 할 때**: 이미 활성 클론·방 안이라면 다음 메시지는 `UserPromptSubmit` 훅이 자동 처리합니다 — 매 턴 스킬을 재호출하지 마세요.
+**이 스킬을 쓰지 말아야 할 때**: 이미 활성 클론·방 안이라면 다음 메시지는 Claude Code 훅 또는 Codex의 `scripts/codex-context.sh` 런타임 지침이 자동 처리합니다 — 매 턴 스킬을 재호출하지 마세요.
 
 ## 분기 규칙
 
@@ -110,7 +118,7 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
    ```
 
 3. 어느 상태가 정리됐는지 한 줄로 보고. 예:
-   > 활성 클론(**douglas**)과 방(douglas, alice)을 모두 종료했어요. 다음 메시지부터 기본 Claude가 응답.
+   > 활성 클론(**douglas**)과 방(douglas, alice)을 모두 종료했어요. 다음 메시지부터 기본 에이전트가 응답.
 
 ---
 
@@ -124,7 +132,7 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
   - `${CLAUDE_SKILL_DIR}/clones/$2/persona.md` 존재 → 사용자 클론이 내장을 가린다고 경고 후 진행/이름 변경/취소 택1 요청.
 
 실행:
-- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` 를 로드해 정확히 따르세요. 이 워크플로는 먼저 **Chrome MCP preflight**를 돌리고, 타겟이 실제 인물이면 **Stage 0 자동 발굴**(소셜 링크 검색 → Chrome MCP로 LinkedIn/Threads/X/Instagram 스크랩 → YouTube는 `scripts/fetch-youtube.sh`로 자막 추출)로 페르소나·첫 지식 파일을 자동 작성합니다. 자동 발굴이 성공하면 문답 스테이지 1–5는 스킵, 유저에게 한 번만 확인받습니다. 실패하거나 공개 프레즌스가 없으면 기존 문답 모드로 fallback.
+- `${CLAUDE_SKILL_DIR}/references/interview-workflow.md` 를 로드해 정확히 따르세요. 이 워크플로는 먼저 **브라우저 자동화 preflight**를 돌리고, 타겟이 실제 인물이면 **Stage 0 자동 발굴**(소셜 링크 검색 → 호스트 브라우저 도구로 LinkedIn/Threads/X/Instagram 스크랩 → YouTube는 `scripts/fetch-youtube.sh`로 자막 추출)로 페르소나·첫 지식 파일을 자동 작성합니다. 자동 발굴이 성공하면 문답 스테이지 1–5는 스킵, 유저에게 한 번만 확인받습니다. 실패하거나 공개 프레즌스가 없으면 기존 문답 모드로 fallback.
 - 카테고리는 최소 1개 필수 (vc, tech, founder, expert, influencer, politician, celebrity 중).
 - 인터뷰 종료 시:
 
@@ -190,7 +198,7 @@ openclone의 단일 진입점. 유저가 `/openclone <args>`로 직접 호출했
   한 줄 안내 후 진행.
 
 실행:
-- `${CLAUDE_SKILL_DIR}/references/update-workflow.md` 를 로드해 그대로 따르세요. 이 워크플로는 먼저 **Chrome MCP preflight**를 돌리고, 사용자 사본의 knowledge/ 최신 파일 날짜를 cutoff로 잡은 뒤 persona.md `## Links`의 각 URL을 Chrome MCP / `scripts/fetch-youtube.sh`로 수집, cutoff 이후 게시물만 `refine-workflow.md`로 dated 파일에 append 합니다.
+- `${CLAUDE_SKILL_DIR}/references/update-workflow.md` 를 로드해 그대로 따르세요. 이 워크플로는 먼저 **브라우저 자동화 preflight**를 돌리고, 사용자 사본의 knowledge/ 최신 파일 날짜를 cutoff로 잡은 뒤 persona.md `## Links`의 각 URL을 호스트 브라우저 도구 / `scripts/fetch-youtube.sh`로 수집, cutoff 이후 게시물만 `refine-workflow.md`로 dated 파일에 append 합니다.
 - 자연어 호출("douglas 최신 정보로 업데이트해줘", "update kyunghun with the latest")도 같은 분기로 라우팅 — 유저에게는 `/openclone update <name>`을 보여주고 실행.
 
 ---
@@ -267,7 +275,7 @@ rm -f ~/.openclone/room
 
 ## 공통 규칙
 
-- 커맨드 응답 안에서 클론을 **연기하지 않음**. 활성화·새 클론·ingest·room 등은 시스템 수준 확인만. 페르소나 주입은 다음 턴부터 훅이 담당.
+- 커맨드 응답 안에서 클론을 **연기하지 않음**. 활성화·새 클론·ingest·room 등은 시스템 수준 확인만. 페르소나 주입은 다음 턴부터 Claude Code 훅 또는 Codex `scripts/codex-context.sh`가 담당.
 - 이모지 없음.
 - 질문/응답 언어는 유저가 사용한 언어를 그대로 따라갑니다 (한국어면 한국어, 영어면 영어).
 

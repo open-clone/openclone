@@ -13,7 +13,7 @@ Report drift or translation errors via a GitHub issue.
 [![Status](https://img.shields.io/badge/Status-v0.3.0-brightgreen)](CHANGELOG.md)
 ![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)
 
-> **A Claude Code skill — and a standalone CLI — for talking with AI persona clones.**
+> **A Claude Code skill, Codex skill, and standalone CLI for talking with AI persona clones.**
 
 ## Introduction
 
@@ -48,12 +48,13 @@ These are the preset clones shipped in this repository. A ✅ in the **Official*
 
 ## Install
 
-openclone offers **two install paths**. Pick the one that matches your environment.
+openclone offers **three install paths**. Pick the one that matches your environment.
 
 | Path | When to use | Host |
 |---|---|---|
 | **A. Claude Code skill** | You want to talk with clones inside Claude Code through the `/openclone` slash command | Claude Code |
 | **B. Standalone CLI** | You want to talk with clones from any terminal using OpenAI / Ollama / Codex models | macOS / Linux / WSL2 |
+| **C. Codex skill** | You want to activate clones inside Codex sessions through openclone state files and skill instructions | Codex |
 
 ---
 
@@ -216,35 +217,54 @@ node dist/cli/index.js chat douglas
 
 ---
 
-### C. Codex CLI (experimental)
+### C. Install as a Codex skill
 
-> ⚠️ **Currently a file-reference-level experimental support.** `./setup` touches Claude Code-specific paths, hooks, and the statusline, so **do not run `./setup` in a Codex environment.** The `/openclone` slash command, `UserPromptSubmit`/`SessionStart` hook-driven auto-injection, the statusline, and background auto-update do not work yet — at this point you can only place `clones/<slug>/persona.md` and `knowledge/` files where Codex can read them. A native `--host=codex` installer is planned for a future release. If all you want is to talk with clones using your Codex token, the `--use-codex-auth` flag in **B. Standalone CLI** above is simpler.
+Codex does not expose Claude Code's `UserPromptSubmit` / `SessionStart` hooks or statusline, so Codex support uses a separate runtime path. `./setup --host codex` writes an openclone-managed block to `~/.codex/AGENTS.md`; when an active clone or room is set, Codex reads the plain-text runtime context emitted by `scripts/codex-context.sh` and applies it to the next response.
 
-Sparse-clone the repo into the Codex skills path only.
+#### C1. Install
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
   https://github.com/open-clone/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
-  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
+  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
+  && ./setup --host codex
 ```
 
-Then drop the snippet below into the `AGENTS.md` (or project instructions) of your Codex session so Codex references those files based on conversation context.
+Start a new Codex session after install so Codex reloads the managed block in `~/.codex/AGENTS.md`.
+
+#### C2. Use it
 
 ```text
-The openclone personas and knowledge live under `~/.codex/skills/openclone/clones/<slug>/`. When the user
-asks "talk like <name>" or says "openclone <slug>", read `persona.md` and follow that tone and viewpoint.
-For the list of available clones, see the "Default clones" section of `~/.codex/skills/openclone/README.md`.
+openclone                    # home panel
+openclone douglas            # activate by name
+/openclone room douglas ethan # group room
+openclone panel vc "question" # category panel
+openclone stop               # clear active clone / room
 ```
 
-When you need a specific clone's knowledge files, lazy-fetch them on demand:
+Codex may not expose slash commands as native UI commands the way Claude Code does. If `/openclone douglas` is not treated specially, ask in plain text as `openclone douglas`.
+
+When you need a built-in clone's knowledge files, lazy-fetch them on activation or right before reading them:
 
 ```bash
 cd ~/.codex/skills/openclone && git sparse-checkout add clones/<slug>/knowledge/
 ```
 
-**Updates**: There is no auto-update hook on this path, so refresh manually with `git pull --ff-only`. **Removal**: deleting the directory (`rm -rf ~/.codex/skills/openclone`) is enough — unlike Claude Code, this path does not touch `settings.json`.
+#### C3. Update and remove
+
+Codex has no session-start auto-update hook, so refresh manually:
+
+```bash
+cd ~/.codex/skills/openclone && git pull --ff-only
+```
+
+Remove from the install directory. This removes the managed `~/.codex/AGENTS.md` block and the skill directory, while preserving user data under `~/.openclone/`.
+
+```bash
+cd ~/.codex/skills/openclone && ./uninstall --host codex
+```
 
 ### npm release
 
@@ -268,7 +288,7 @@ The workflow extracts the version from the tag, applies it to `package.json` / `
 | Windows (Git Bash) | ⚠️ Unsupported | Hook execution is environment-dependent. The background detach in `session-update.sh` and `ln -sfn` in `dev-link.sh` are particularly fragile |
 | Windows (cmd / PowerShell native) | ❌ Unsupported | Hooks and scripts are entirely bash-based. Not feasible with the current architecture |
 
-`setup` and `uninstall` automatically follow `~/.claude` if you've moved it via the `CLAUDE_CONFIG_DIR` environment variable. Codex CLI host support is currently experimental — see the "Codex CLI (experimental)" section above.
+`setup` and `uninstall` automatically follow `~/.claude` if you've moved it via `CLAUDE_CONFIG_DIR`. For Codex installs, set `CODEX_HOME` to use a directory other than `~/.codex`.
 
 <details>
 <summary>Updates, removal, and turning auto-update off</summary>
@@ -299,7 +319,7 @@ Clones you created and knowledge you ingested (under `~/.openclone/`) are preser
 <details>
 <summary id="install-troubleshooting">Install troubleshooting (cleaning up v1, reinstalling)</summary>
 
-**If you're upgrading from the plugin install (pre-0.2.0)** — that path was `~/.claude/plugins/marketplaces/openclone`. Clean it up first, then run option A or B above.
+**If you're upgrading from the plugin install (pre-0.2.0)** — that path was `~/.claude/plugins/marketplaces/openclone`. Clean it up first, then run option A, B, or C above.
 
 ```bash
 cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
@@ -314,12 +334,14 @@ Your user data under `~/.openclone/` is preserved.
 ```bash
 cd ~/.claude/skills/openclone && ./uninstall
 rm -f ~/.openclone/no-auto-update
-# Then re-run option A or B above
+# Then re-run option A, B, or C above
 ```
 
 </details>
 
 ## Usage
+
+In Claude Code, run these as slash commands. In a Codex skill install, the same requests can be sent as plain text, for example `openclone douglas`.
 
 ```text
 /openclone                              # Home panel — clones grouped by category

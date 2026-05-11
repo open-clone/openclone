@@ -17,7 +17,7 @@ reviewer. Please verify phrasing and terminology before removing this marker.
 [![Status](https://img.shields.io/badge/Status-v0.3.0-brightgreen)](CHANGELOG.md)
 ![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)
 
-> **在 Claude Code 内使用,以及作为独立 CLI 使用,与 AI 人格克隆对话的技能。**
+> **在 Claude Code、Codex 内使用,也可作为独立 CLI 使用,与 AI 人格克隆对话。**
 
 ## 简介
 
@@ -52,12 +52,13 @@ reviewer. Please verify phrasing and terminology before removing this marker.
 
 ## 安装
 
-openclone 提供**两种安装路径**。请根据你的环境选择对应的章节。
+openclone 提供**三种安装路径**。请根据你的环境选择对应的章节。
 
 | 路径 | 何时使用 | 宿主 |
 |---|---|---|
 | **A. Claude Code 技能** | 想要在 Claude Code 中通过 `/openclone` 斜杠命令与克隆对话 | Claude Code |
 | **B. 独立 CLI** | 想要在任意终端中通过 `openclone` 命令使用 OpenAI / Ollama / Codex 模型与克隆对话 | macOS / Linux / WSL2 |
+| **C. Codex 技能** | 想要在 Codex 会话中通过 openclone 状态文件与技能指令激活克隆 | Codex |
 
 ---
 
@@ -220,35 +221,54 @@ node dist/cli/index.js chat douglas
 
 ---
 
-### C. Codex CLI(实验性)
+### C. 作为 Codex 技能安装
 
-> ⚠️ **当前仅是文件引用层面的实验性支持。** `./setup` 会修改 Claude Code 专用路径、钩子与 statusline,因此**在 Codex 环境中请不要执行 `./setup`**。`/openclone` 斜杠命令、`UserPromptSubmit` / `SessionStart` 钩子驱动的自动注入、statusline、后台自动更新等都还无法工作 — 目前只能把 `clones/<slug>/persona.md` 与 `knowledge/` 文件放到 Codex 能读取到的位置。原生的 `--host=codex` 安装器计划在后续版本中实现。如果你只是想用 Codex token 与克隆对话,使用上面 **B. 独立 CLI** 的 `--use-codex-auth` 更简单。
+Codex 不提供 Claude Code 的 `UserPromptSubmit` / `SessionStart` 钩子或 statusline,因此 Codex 支持使用另一套运行路径。`./setup --host codex` 会在 `~/.codex/AGENTS.md` 中写入 openclone 管理区块;当存在已激活克隆或房间时,Codex 会读取 `scripts/codex-context.sh` 输出的纯文本运行上下文,并应用到下一次回答。
 
-仅把仓库以稀疏 clone 方式放到 Codex 的技能路径下。
+#### C1. 安装
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
   https://github.com/open-clone/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
-  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
+  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
+  && ./setup --host codex
 ```
 
-之后,把下面这段加入 Codex 会话的 `AGENTS.md`(或项目说明)中,Codex 就会根据对话上下文参考这些文件。
+安装后请启动新的 Codex 会话,让 Codex 重新读取 `~/.codex/AGENTS.md` 中的管理区块。
+
+#### C2. 使用
 
 ```text
-openclone 的人格与知识位于 `~/.codex/skills/openclone/clones/<slug>/` 下。
-当用户说 "像 <名字> 一样说话" 或 "openclone <slug>" 时,请阅读 `persona.md` 并遵循对应的语气与视角。
-可用克隆列表请参考 `~/.codex/skills/openclone/README.md` 的 "Default clones" 一节。
+openclone                    # 首页面板
+openclone douglas            # 按名称激活
+/openclone room douglas ethan # 群聊房间
+openclone panel vc "问题"    # 类别面板
+openclone stop               # 退出激活克隆/房间
 ```
 
-需要某个克隆的知识文件时再按需 lazy-fetch:
+Codex 可能不会像 Claude Code 那样把斜杠命令暴露为原生 UI 命令。如果 `/openclone douglas` 没有被特殊处理,可以用普通文本 `openclone douglas` 请求。
+
+需要内置克隆的知识文件时,可在激活时或读取前按需 lazy-fetch:
 
 ```bash
 cd ~/.codex/skills/openclone && git sparse-checkout add clones/<slug>/knowledge/
 ```
 
-**更新**:由于此路径没有自动更新钩子,请用 `git pull --ff-only` 手动更新。**移除**:删除该目录(`rm -rf ~/.codex/skills/openclone`)即可 — 与 Claude Code 不同,这条路径不会动 `settings.json`。
+#### C3. 更新与移除
+
+Codex 没有会话启动自动更新钩子,请手动更新:
+
+```bash
+cd ~/.codex/skills/openclone && git pull --ff-only
+```
+
+移除请在安装目录中执行。它会删除 `~/.codex/AGENTS.md` 中的管理区块和技能目录,但保留 `~/.openclone/` 下的用户数据。
+
+```bash
+cd ~/.codex/skills/openclone && ./uninstall --host codex
+```
 
 ### npm 发布
 
@@ -272,7 +292,7 @@ cd ~/.codex/skills/openclone && git sparse-checkout add clones/<slug>/knowledge/
 | Windows (Git Bash) | ⚠️ 不支持 | 钩子运行依赖具体环境。`session-update.sh` 的后台 detach、`dev-link.sh` 的 `ln -sfn` 等尤其脆弱 |
 | Windows (cmd / PowerShell 原生) | ❌ 不支持 | 钩子与脚本全部基于 bash,当前架构下无法实现 |
 
-如果你通过 `CLAUDE_CONFIG_DIR` 环境变量改变了 `~/.claude` 的位置,`setup` / `uninstall` 也会自动跟随。Codex CLI 的宿主支持目前仍处于实验阶段,详见上方 "Codex CLI(实验性)" 一节。
+如果你通过 `CLAUDE_CONFIG_DIR` 环境变量改变了 `~/.claude` 的位置,Claude Code 用的 `setup` / `uninstall` 也会自动跟随。Codex 安装可通过 `CODEX_HOME` 使用 `~/.codex` 以外的目录。
 
 <details>
 <summary>更新、移除以及关闭自动更新</summary>
@@ -303,7 +323,7 @@ cd ~/.claude/skills/openclone && ./uninstall
 <details>
 <summary id="安装故障排查">安装故障排查(清理 v1、重新安装)</summary>
 
-**如果你是从插件版(0.2.0 之前)升级而来** — 当时的路径是 `~/.claude/plugins/marketplaces/openclone`。先清理再执行上面的方案 A 或 B。
+**如果你是从插件版(0.2.0 之前)升级而来** — 当时的路径是 `~/.claude/plugins/marketplaces/openclone`。先清理再执行上面的方案 A、B 或 C。
 
 ```bash
 cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
@@ -318,12 +338,14 @@ rm -f ~/.openclone/no-auto-update
 ```bash
 cd ~/.claude/skills/openclone && ./uninstall
 rm -f ~/.openclone/no-auto-update
-# 然后重新执行上面的方案 A 或 B
+# 然后重新执行上面的方案 A、B 或 C
 ```
 
 </details>
 
 ## 使用方法
+
+在 Claude Code 中,下面这些示例作为斜杠命令执行。在 Codex 技能安装中,同样的请求也可以作为普通文本发送,例如 `openclone douglas`。
 
 ```text
 /openclone                              # 主页面板 — 按类别列出克隆

@@ -1,28 +1,100 @@
 #!/usr/bin/env bash
-# openclone uninstall — remove skill registration and delete this checkout.
+# openclone uninstall — remove host registration and delete this checkout.
 #
-# Removes openclone-managed hooks and statusline from ~/.claude/settings.json
-# (identified by `_openclone_managed: true`) and deletes
-# ~/.claude/skills/openclone. Leaves ~/.openclone (user data: active-clone,
-# user clones, user knowledge) untouched.
+# Claude Code: removes openclone-managed hooks/statusline from settings.json.
+# Codex: removes the openclone-managed block from ~/.codex/AGENTS.md.
+#
+# User data under ~/.openclone is intentionally preserved.
 
 set -eu
 
-# Honor Claude Code's CLAUDE_CONFIG_DIR override (falls back to ~/.claude).
+usage() {
+  cat <<'USAGE'
+Usage: ./uninstall [--host claude|codex]
+
+When --host is omitted, uninstall auto-detects the host from the current path:
+  ~/.claude/skills/openclone  -> Claude Code
+  ~/.codex/skills/openclone   -> Codex
+USAGE
+}
+
+host="auto"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --host=*)
+      host="${1#*=}"
+      ;;
+    --host)
+      shift
+      if [ "$#" -eq 0 ]; then
+        printf '오류: --host 값이 필요합니다 (claude 또는 codex)\n' >&2
+        exit 1
+      fi
+      host="$1"
+      ;;
+    --claude)
+      host="claude"
+      ;;
+    --codex)
+      host="codex"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf '오류: 알 수 없는 인자: %s\n' "$1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+case "$host" in
+  auto|claude|codex) ;;
+  *)
+    printf '오류: --host는 claude 또는 codex 여야 합니다 (입력: %s)\n' "$host" >&2
+    exit 1
+    ;;
+esac
+
 claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-expected_dir="$claude_config_dir/skills/openclone"
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+claude_expected_dir="$claude_config_dir/skills/openclone"
+codex_expected_dir="$codex_home/skills/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ "$host" = "auto" ]; then
+  if [ "$here" = "$claude_expected_dir" ]; then
+    host="claude"
+  elif [ "$here" = "$codex_expected_dir" ]; then
+    host="codex"
+  else
+    printf '경고: uninstall 실행 위치로 host를 자동 판별할 수 없습니다.\n' >&2
+    printf '      현재 위치: %s\n' "$here" >&2
+    printf '      설정 정리를 원하면 ./uninstall --host claude 또는 ./uninstall --host codex 를 지정하세요.\n' >&2
+    exit 1
+  fi
+fi
+
+if [ "$host" = "claude" ]; then
+  expected_dir="$claude_expected_dir"
+else
+  expected_dir="$codex_expected_dir"
+fi
 
 if [ "$here" != "$expected_dir" ]; then
   printf '경고: uninstall이 %s 에서 실행되었습니다 (예상 위치: %s)\n' "$here" "$expected_dir" >&2
   printf '      설정 정리는 계속 진행합니다. 수동 rm -rf가 필요할 수 있습니다.\n' >&2
 fi
 
-settings_file="$claude_config_dir/settings.json"
+remove_claude_settings() {
+  settings_file="$claude_config_dir/settings.json"
 
-if [ -f "$settings_file" ] && command -v python3 >/dev/null 2>&1; then
-  python3 - "$settings_file" <<'PY'
-import json, os, sys
+  if [ -f "$settings_file" ] && command -v python3 >/dev/null 2>&1; then
+    python3 - "$settings_file" <<'PY'
+import json, sys
 
 path = sys.argv[1]
 try:
@@ -56,7 +128,6 @@ if isinstance(hooks, dict):
             if cleaned:
                 group["hooks"] = cleaned
                 new_entries.append(group)
-            # else: drop the whole group (was only ours)
         if new_entries:
             hooks[event_name] = new_entries
         else:
@@ -87,6 +158,38 @@ with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
 PY
+  fi
+}
+
+remove_codex_agents_block() {
+  agents_file="$codex_home/AGENTS.md"
+  if [ -f "$agents_file" ] && command -v python3 >/dev/null 2>&1; then
+    python3 - "$agents_file" <<'PY'
+import re, sys
+
+path = sys.argv[1]
+start = "<!-- openclone-managed:start -->"
+end = "<!-- openclone-managed:end -->"
+try:
+    with open(path, "r") as f:
+        raw = f.read()
+except FileNotFoundError:
+    sys.exit(0)
+
+pattern = re.compile(re.escape(start) + r".*?" + re.escape(end) + r"\n?", re.S)
+next_body = pattern.sub("", raw).rstrip()
+if next_body:
+    next_body += "\n"
+with open(path, "w") as f:
+    f.write(next_body)
+PY
+  fi
+}
+
+if [ "$host" = "claude" ]; then
+  remove_claude_settings
+else
+  remove_codex_agents_block
 fi
 
 # Remove the checkout last (this script lives inside it).
@@ -95,12 +198,24 @@ if [ "$here" = "$expected_dir" ]; then
   rm -rf "$expected_dir"
 fi
 
-cat <<MSG
-openclone 제거 완료.
+if [ "$host" = "claude" ]; then
+  cat <<MSG
+openclone 제거 완료. (host: Claude Code)
 
-Claude Code 훅 및 상태줄 등록이 ${settings_file} 에서 제거되었습니다.
+Claude Code 훅 및 상태줄 등록이 ${claude_config_dir}/settings.json 에서 제거되었습니다.
 스킬 디렉터리가 삭제되었습니다 (${expected_dir}).
 
-사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, 사용자 클론, 사용자 지식).
+사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, room, 사용자 클론, 사용자 지식).
 사용자 데이터까지 삭제하려면: rm -rf ~/.openclone
 MSG
+else
+  cat <<MSG
+openclone 제거 완료. (host: Codex)
+
+Codex 전역 지침의 openclone 관리 블록이 ${codex_home}/AGENTS.md 에서 제거되었습니다.
+스킬 디렉터리가 삭제되었습니다 (${expected_dir}).
+
+사용자 데이터는 ~/.openclone/ 에 보존됩니다 (활성 클론 포인터, room, 사용자 클론, 사용자 지식).
+사용자 데이터까지 삭제하려면: rm -rf ~/.openclone
+MSG
+fi

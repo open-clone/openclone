@@ -6,20 +6,21 @@ Guidance for AI coding agents (Claude Code, OpenAI Codex, Cursor, etc.) working 
 
 A Claude Code **standalone skill** named `openclone`. The repo root **is** the skill — `SKILL.md` at the root declares the `/openclone` slash command and owns its dispatch logic.
 
-Distribution has two paths and they coexist:
+Distribution has three paths and they coexist:
 
-1. **Claude Code skill** — direct `git clone` (with non-cone sparse-checkout) into `~/.claude/skills/openclone/`, not `/plugin install`, not a marketplace. Then `./setup` registers hooks + statusline in `~/.claude/settings.json`. Claude Code auto-discovers the skill on next session start. The skill itself is bash + markdown — no Node.js needed.
-2. **Standalone Node.js CLI** — published as `@openclone/openclone` on npm (`npm install -g @openclone/openclone`, exposing the `openclone` bin). The CLI shares the same `clones/<slug>/persona.md` and `knowledge/*.md` files and renders them through the Vercel AI SDK (`src/cli/`, `src/lib/`, `src/ui/`). Has its own `package.json`, `tsconfig.json`, `dist/` build output, `test/` test runner, and `npm` workflows. Existing Claude Code setup must continue to work without requiring the CLI.
+1. **Claude Code skill** — direct `git clone` (with non-cone sparse-checkout) into `~/.claude/skills/openclone/`, not `/plugin install`, not a marketplace. Then `./setup --host claude` (or auto-detected `./setup`) registers hooks + statusline in `~/.claude/settings.json`. Claude Code auto-discovers the skill on next session start. The skill itself is bash + markdown — no Node.js needed.
+2. **Codex skill** — direct `git clone` (same sparse-checkout) into `~/.codex/skills/openclone/`. Then `./setup --host codex` adds an openclone-managed block to `~/.codex/AGENTS.md`; Codex uses `scripts/codex-context.sh` to materialize active-clone/room instructions because Codex has no Claude-style UserPromptSubmit/SessionStart hooks or statusline.
+3. **Standalone Node.js CLI** — published as `@openclone/openclone` on npm (`npm install -g @openclone/openclone`, exposing the `openclone` bin). The CLI shares the same `clones/<slug>/persona.md` and `knowledge/*.md` files and renders them through the Vercel AI SDK (`src/cli/`, `src/lib/`, `src/ui/`). Has its own `package.json`, `tsconfig.json`, `dist/` build output, `test/` test runner, and `npm` workflows. Existing Claude Code and Codex skill setup must continue to work without requiring the CLI.
 
 The `.github/workflows/publish-npm.yml` workflow auto-publishes on GitHub Release: it reads the semver from the release tag, picks `next` dist-tag for prereleases (anything containing `-` or marked as prerelease) and `latest` otherwise, runs the full validate + build + audit + shellcheck + markdownlint pipeline, then `npm publish --provenance --access public`.
 
 ## Commands
 
-Claude Code skill support remains bash and markdown, but the repository also includes an additive Node.js CLI for standalone API-based chat with the same markdown clones. Existing Claude Code setup must continue to work without requiring the CLI.
+Claude Code and Codex skill support remains bash and markdown, but the repository also includes an additive Node.js CLI for standalone API-based chat with the same markdown clones. Existing Claude Code/Codex setup must continue to work without requiring the CLI.
 
 ```bash
-./setup                                   # register UserPromptSubmit + SessionStart hooks + statusline in ~/.claude/settings.json (idempotent)
-./uninstall                               # strip every _openclone_managed entry, delete ~/.claude/skills/openclone (keeps ~/.openclone)
+./setup [--host claude|codex]             # Claude: hooks + statusline; Codex: ~/.codex/AGENTS.md managed block
+./uninstall [--host claude|codex]         # remove host registration + installed skill dir (keeps ~/.openclone)
 ./scripts/dev-link.sh <rel-path> [...]    # symlink workspace file(s) into installed skill — edits flow live
 ./scripts/dev-unlink.sh <rel-path> [...]  # remove dev-link; if the path is tracked, restore shipped version from git
 touch ~/.openclone/no-auto-update         # disable SessionStart git pull (use while dev-linking)
@@ -29,6 +30,7 @@ node .github/scripts/validate-clones.ts   # CI: clones/*/persona.md schema + FIX
 npm install && npm run validate           # CLI: typecheck + build + test + smoke-hook in one shot (CI uses this)
 npm test                                  # CLI: just the Node test runner specs (test/*.test.mjs)
 bash .github/scripts/smoke-hook.sh        # CI: hook JSON output across 5 states (no state, active, missing, room, force-push)
+bash .github/scripts/smoke-host-setup.sh  # CI: Claude/Codex setup-uninstall + codex-context active/room smoke
 shellcheck hooks/*.sh scripts/*.sh setup uninstall  # CI shellcheck (severity: error; setup/uninstall also covered)
 npx markdownlint-cli2 "**/*.md"           # CI markdownlint (config: .markdownlint-cli2.jsonc)
 ```
@@ -45,8 +47,8 @@ README_zh.md                   # Simplified Chinese translation (carries REVIEW 
 CLAUDE.md                      # this file — AI-agent guide
 CONTRIBUTING.md                # human contributor guide (Korean) — PR process, local dev loop, schema how-to
 CHANGELOG.md · LICENSE · SECURITY.md · CODE_OF_CONDUCT.md
-setup                          # bash; registers hooks + statusline in ~/.claude/settings.json + self-heals old installs
-uninstall                      # bash; strips managed entries + removes install dir + cleans legacy plugin keys
+setup                          # bash; Claude registers hooks/statusline, Codex writes ~/.codex/AGENTS.md block; self-heals old installs
+uninstall                      # bash; strips host-managed entries + removes install dir + cleans legacy plugin keys
 package.json · tsconfig.json · package-lock.json    # Node CLI build config (scripts: build, typecheck, test, validate, clean)
 .markdownlint-cli2.jsonc       # markdownlint config — ignores clones/*/knowledge/, node_modules/, .context/, .omx/
 test/                          # Node test runner specs for the CLI — *.test.mjs (history-store, conversation, clone-tools, ink-conversation, provider-resolver, etc.)
@@ -80,6 +82,7 @@ scripts/
   session-update.sh            # SessionStart hook: fork-to-bg, throttled git pull --ff-only + cone→non-cone migration
   fetch-clone-knowledge.sh     # git sparse-checkout add clones/<slug>/knowledge — called by SKILL.md on activation
   statusline.sh                # renders "[display_name - role] 클론으로 대화중" or "[a, b, c +N] 클론들과 대화중"
+  codex-context.sh             # Codex runtime context emitter: active-clone/room plain text (no hook JSON)
   fetch-url.sh                 # curl + pandoc/html2text fallback when WebFetch is unavailable (ingest)
   fetch-youtube.sh             # yt-dlp transcript extractor (ingest; requires yt-dlp on PATH)
   dev-link.sh / dev-unlink.sh  # workspace → installed-skill symlink overlay for iteration
@@ -89,7 +92,7 @@ references/
   home-workflow.md             # /openclone (no arg) — home panel render + menu-context write
   interview-workflow.md        # /openclone new <slug>
   refine-workflow.md           # /openclone ingest <source>
-  update-workflow.md           # /openclone update <name> — Chrome MCP-gated incremental refresh from persona.md ## Links
+  update-workflow.md           # /openclone update <name> — browser-automation-gated incremental refresh from persona.md ## Links
   panel-workflow.md            # /openclone panel <category> "<question>" — broadcast + per-clone consolidation
   room-workflow.md             # /openclone room — roster management + runtime routing rules
 assets/clone-template.md       # copy-pasteable starting persona.md for hand-authoring
@@ -102,6 +105,7 @@ skills/openclone-cli/          # nested Claude Code skill — usage help for the
   scripts/validate-clones.ts   # CI: persona.md schema + FIXED_CATEGORIES cross-file mentions (6 files)
   scripts/validate-readme-i18n.ts  # CI: README_ko/en/zh language-picker, sync-comment SHA, clone-slug drift, install fragment, ZH REVIEW NEEDED
   scripts/smoke-hook.sh        # CI: isolated-$HOME fixture — runs the hook across 5 states, asserts valid JSON + expected tags
+  scripts/smoke-host-setup.sh  # CI: isolated HOME/CLAUDE_CONFIG_DIR/CODEX_HOME fixture — setup/uninstall + context smoke
   workflows/validate.yml       # runs validators + smoke-hook + shellcheck + markdownlint-cli2 on push/PR
   workflows/publish-npm.yml    # GitHub Release → npm publish with provenance; tag-driven version + dist-tag (latest|next)
   ISSUE_TEMPLATE/              # bug, feature, clone_add, clone_update, opt_in_request, config.yml
@@ -127,7 +131,7 @@ Rules:
 
 - **Persona is user-OR-built-in; user wins.** Same `<name>` on both sides → user shadows built-in everywhere (hook, statusline, home panel, activation).
 - **Knowledge is user-AND-built-in; both layer.** The hook tells Claude to read from both directories and weight newer dates more heavily, with user-ingested files preferred over built-in on the same topic.
-- `${CLAUDE_SKILL_DIR}` resolves to `~/.claude/skills/openclone` at the installed location. `SKILL.md` uses the variable — Claude Code expands it. **Scripts must not rely on the env var** (not guaranteed to reach child processes); they self-locate with `install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"`.
+- `${CLAUDE_SKILL_DIR}` resolves to `~/.claude/skills/openclone` inside Claude Code. In Codex, the root `SKILL.md` instructs the agent to treat `${CLAUDE_SKILL_DIR}` as the skill root (`~/.codex/skills/openclone`). **Scripts must not rely on the env var** (not guaranteed to reach child processes); they self-locate with `install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"`.
 
 ## Architecture
 
@@ -135,11 +139,11 @@ Rules:
 
 The root `SKILL.md` is the sole entry point for both `/openclone` and natural-language requests that match its `description` triggers. Its body parses `$ARGUMENTS` into a sub-action (`<empty>` → home panel, `<N>` → menu selection, `stop`, `new`, `ingest`, `update`, `room`, `panel`, `<clone-name>` → activate) and delegates to the matching reference under `references/`. Frontmatter keys required: `name`, `description`, `allowed-tools` (enforced by `validate-skill.ts`); `argument-hint` is optional. When adding a sub-action, extend the dispatch table in `SKILL.md` and put the logic in a new `references/<name>-workflow.md` — **never** add `commands/*.md` files; standalone skills do not have a `commands/` directory.
 
-`new`, `ingest`, and `update` all have a hard preflight gate on `claude-in-chrome` (Chrome MCP) — login-walled / JS-rendered sources (LinkedIn, Threads, X, Instagram, Facebook) cannot be reached with plain `curl`/`WebFetch`. The reference files abort with a Korean error message instructing the user to enable the extension; do not propose curl workarounds.
+`new`, `ingest`, and `update` all have a hard preflight gate on host browser automation — Claude Code uses `claude-in-chrome`; Codex uses the browser automation tool available in that session. Login-walled / JS-rendered sources (LinkedIn, Threads, X, Instagram, Facebook) cannot be reached with plain `curl`/`WebFetch`. The reference files abort with a Korean error message instructing the user to enable a browser tool; do not propose curl workarounds.
 
 ### Standalone Node CLI
 
-The CLI is additive. It must not replace the Claude Code hook path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible` with default model `gpt-5.5`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path, with `OPENCLONE_BASE_URL`, `OPENCLONE_PROVIDER`, `OPENCLONE_PROVIDER_NAME` overriding via env. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth (with `OPENCLONE_CODEX_ENSURE_FRESH` / `OPENCLONE_CODEX_STORE` / `OPENCLONE_CODEX_AUTH_FILE` knobs). `--use-claude-code-auth` (alias `--use-claude-auth`, env `OPENCLONE_USE_CLAUDE_CODE_AUTH=1` / `OPENCLONE_USE_CLAUDE_AUTH=1`) switches to `@ai-sdk/anthropic` against `https://api.anthropic.com/v1` (default model `claude-sonnet-4-6`) using the Claude Code subscription OAuth token from macOS keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json`; the resolver injects `anthropic-beta: oauth-2025-04-20,interleaved-thinking-2025-05-14`, force-overrides `User-Agent` to `claude-cli/<ver> (external, cli)` (any AI SDK self-identifying UA leaks → generic 429), strips `x-stainless-*`, splits the system prompt into a two-block array `[{identity}, {persona}]` (single merged block also fails OAuth validation), rewrites `/v1/messages` to add `?beta=true`, and refreshes near-expiry tokens via `https://console.anthropic.com/v1/oauth/token` (client_id `9d1c250a-e61b-44d9-88ed-5944d1962f5e`). `OPENCLONE_DEBUG_HTTP=1` logs URL/headers/body/response to stderr for diagnosing OAuth-shape regressions. `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`, and do not route Claude Code OAuth through `x-api-key` (the Bearer token is rejected with the API-key header).
+The CLI is additive. It must not replace the Claude Code hook path or the Codex skill path. It reads the same `clones/<slug>/persona.md` and `knowledge/*.md` files and sends a rendered system prompt through Vercel AI SDK. Provider defaults use `@ai-sdk/openai-compatible` with default model `gpt-5.5`; `OPENCLONE_API_KEY`/`OPENAI_API_KEY` are the stable credential path, with `OPENCLONE_BASE_URL`, `OPENCLONE_PROVIDER`, `OPENCLONE_PROVIDER_NAME` overriding via env. `--use-codex-auth` switches to the `openai-oauth-provider` Codex backend transport (`https://chatgpt.com/backend-api/codex`) using local Codex/ChatGPT auth (with `OPENCLONE_CODEX_ENSURE_FRESH` / `OPENCLONE_CODEX_STORE` / `OPENCLONE_CODEX_AUTH_FILE` knobs). `--use-claude-code-auth` (alias `--use-claude-auth`, env `OPENCLONE_USE_CLAUDE_CODE_AUTH=1` / `OPENCLONE_USE_CLAUDE_AUTH=1`) switches to `@ai-sdk/anthropic` against `https://api.anthropic.com/v1` (default model `claude-sonnet-4-6`) using the Claude Code subscription OAuth token from macOS keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json`; the resolver injects `anthropic-beta: oauth-2025-04-20,interleaved-thinking-2025-05-14`, force-overrides `User-Agent` to `claude-cli/<ver> (external, cli)` (any AI SDK self-identifying UA leaks → generic 429), strips `x-stainless-*`, splits the system prompt into a two-block array `[{identity}, {persona}]` (single merged block also fails OAuth validation), rewrites `/v1/messages` to add `?beta=true`, and refreshes near-expiry tokens via `https://console.anthropic.com/v1/oauth/token` (client_id `9d1c250a-e61b-44d9-88ed-5944d1962f5e`). `OPENCLONE_DEBUG_HTTP=1` logs URL/headers/body/response to stderr for diagnosing OAuth-shape regressions. `--provider ollama` uses `ai-sdk-ollama` for local Ollama. Do not route Codex OAuth through plain `api.openai.com/v1`, and do not route Claude Code OAuth through `x-api-key` (the Bearer token is rejected with the API-key header).
 
 The CLI exposes four AI SDK tools (`src/lib/clone-tools.ts`) so the model can fetch primary sources at conversation time: `list_knowledge_files` and `read_knowledge_file` (built-in + user knowledge) plus best-effort `web_fetch` and `web_search`. The same inline citation contract from the hook (`\[[N](<target>)\]` with `source_url` priority) applies to tool outputs.
 
@@ -186,11 +190,17 @@ Both modes emit the **same inline citation contract**: `\[[N](<target>)\]` after
 
 If `~/.openclone/force-push-detected` exists (written by `session-update.sh` when origin/main diverged), the hook prepends an `<openclone-upgrade-needed>` banner to every injection — so stuck installs surface recovery instructions regardless of mode.
 
-The hook is the **only** mechanism that makes an active clone or room "alive." `/openclone <name>` writes `active-clone` and (for built-in clones) calls `fetch-clone-knowledge.sh` to materialize the knowledge directory. `/openclone room <a> <b> ...` writes `room`. The dispatcher does not re-inject persona itself.
+In Claude Code, the hook is the mechanism that makes an active clone or room "alive." `/openclone <name>` writes `active-clone` and (for built-in clones) calls `fetch-clone-knowledge.sh` to materialize the knowledge directory. `/openclone room <a> <b> ...` writes `room`. The dispatcher does not re-inject persona itself; Codex uses `scripts/codex-context.sh` for the equivalent runtime injection.
+
+### Codex runtime context
+
+Codex has no hook API equivalent to Claude Code's `UserPromptSubmit`. `./setup --host codex` instead writes a managed `<!-- openclone-managed:start --> ... <!-- openclone-managed:end -->` block to `~/.codex/AGENTS.md`. That block tells Codex to run `bash ~/.codex/skills/openclone/scripts/codex-context.sh` when `~/.openclone/room` or `~/.openclone/active-clone` is set.
+
+`scripts/codex-context.sh` mirrors the hook's lookup and precedence rules but emits plain text `<openclone-room>` / `<openclone-active-clone>` blocks instead of Claude hook JSON. It must always exit 0 and emit nothing when no state is active. Keep its citation contract and room/active instructions in sync with `hooks/inject-active-clone.sh` when changing persona behavior.
 
 ### Auto-update via SessionStart hook
 
-`scripts/session-update.sh` is registered as a `SessionStart` hook by `./setup`. On every session start it **immediately forks to background via `nohup "$0" __bg` and exits 0**, so the session never blocks. The background branch:
+`scripts/session-update.sh` is registered as a `SessionStart` hook by Claude Code setup. On every session start it **immediately forks to background via `nohup "$0" __bg` and exits 0**, so the session never blocks. The background branch:
 
 1. Skips if `~/.openclone/no-auto-update` exists (user opt-out).
 2. Throttles via `~/.openclone/last-update-check` mtime (1 hour).
@@ -202,7 +212,7 @@ The hook is the **only** mechanism that makes an active clone or room "alive." `
 
 The same script runs a **one-shot migration** for pre-v0.3 installs that used cone-mode sparse-checkout with a top-level `knowledge/`: detects `core.sparseCheckoutCone = true`, rewrites the sparse config to non-cone with `/*` + `!/clones/*/knowledge/`, and re-materializes the currently active clone's knowledge if any. Idempotent.
 
-`./setup` on re-run also self-heals: it performs the same cone → non-cone migration if needed, and warns to stderr (without resetting) when origin/main has been rewritten. The setup script hard-stops if `~/.claude/plugins/marketplaces/openclone` (the v1 plugin install path) exists — users must run the old uninstall first before re-running the new install.
+`./setup` on re-run also self-heals: it performs the same cone → non-cone migration if needed, and warns to stderr (without resetting) when origin/main has been rewritten. The setup script hard-stops on the Claude host if `~/.claude/plugins/marketplaces/openclone` (the v1 plugin install path) exists — users must run the old uninstall first before re-running the new Claude install. Codex has no auto-update hook; users update that install with `git pull --ff-only`.
 
 ### Statusline
 
@@ -263,9 +273,9 @@ Source code is MIT (`LICENSE`). Content under `clones/**` is CC BY-NC-SA 4.0 (`c
 
 - **`references/clone-schema.md` is canonical** for persona.md frontmatter (`name`, `display_name`, `tagline`, `categories`, `created`, `voice_traits` required; `primary_category` optional), required body sections (`## Persona` → `## Speaking style` → `## Guidelines` → `## Background`), optional `## Category-specific framing`, and the knowledge filename convention. Keep it in sync with `clones/douglas/persona.md` as the worked example. `validate-clones.ts` enforces the frontmatter keys, category enum, and body sections.
 - **Nested skill `skills/openclone-cli/`** — a separate Claude Code skill that surfaces standalone-CLI usage help (npm install, provider choice, `--resume`, conversation persistence, troubleshooting). It auto-loads in Claude Code sessions when a user asks about CLI topics; treat it as a sibling to root `SKILL.md` rather than a reference of it. `validate-skill.ts` validates nested skills as well — every reference its `SKILL.md` mentions must exist.
-- **Helper scripts live in `scripts/`** and are invoked from `SKILL.md` via `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`. Scripts exit 0 with output on stdout; the dispatcher is responsible for capturing. Scripts executed from **hooks** must also exit 0 on failure paths — never let a hook cascade into the session.
-- **`setup` and `uninstall` are executable shell scripts** at the repo root (no `.sh` extension). They edit `~/.claude/settings.json` via an inline `python3` block, tagging every inserted entry with `_openclone_managed: true` so uninstall can strip exactly those and leave user-authored hooks/statuslines intact. Preserve all unrelated keys when editing these scripts.
-- **CI runs on every push and PR** (`.github/workflows/validate.yml`): three TypeScript validators (`validate-skill.ts` cross-checks that every `${CLAUDE_SKILL_DIR}/references/<slug>.md` mentioned in `SKILL.md` exists, including for nested skills; `validate-clones.ts` verifies that every `FIXED_CATEGORIES` token is mentioned in each of the six downstream files; `validate-readme-i18n.ts` enforces the README ko/en/zh translation set — language picker, sync-comment SHA header, 12-clone slug list parity, install one-liner verbatim, ZH `REVIEW NEEDED` marker), the `smoke-hook.sh` fixture (runs `hooks/inject-active-clone.sh` under an isolated temp `$HOME` across 5 states and asserts valid JSON + expected tags), `npm ci && npm run build && npm test` for the CLI, `shellcheck` at `severity: error` (action detects shebang+executable files, so root `setup`/`uninstall` are covered too), and `markdownlint-cli2` with knowledge directories ignored (`.markdownlint-cli2.jsonc`).
+- **Helper scripts live in `scripts/`** and are invoked from `SKILL.md` via `${CLAUDE_SKILL_DIR}/scripts/<name>.sh` (Codex interprets that variable as the skill root). Scripts exit 0 with output on stdout; the dispatcher is responsible for capturing. Scripts executed from **hooks** or Codex runtime context must also exit 0 on failure paths — never let openclone cascade into the host session.
+- **`setup` and `uninstall` are executable shell scripts** at the repo root (no `.sh` extension). `--host claude` edits `~/.claude/settings.json` via an inline `python3` block, tagging inserted entries with `_openclone_managed: true`. `--host codex` edits `~/.codex/AGENTS.md` between `openclone-managed` HTML markers. Preserve all unrelated keys/content when editing these scripts.
+- **CI runs on every push and PR** (`.github/workflows/validate.yml`): three TypeScript validators (`validate-skill.ts` cross-checks that every `${CLAUDE_SKILL_DIR}/references/<slug>.md` mentioned in `SKILL.md` exists, including for nested skills; `validate-clones.ts` verifies that every `FIXED_CATEGORIES` token is mentioned in each of the six downstream files; `validate-readme-i18n.ts` enforces the README ko/en/zh translation set — language picker, sync-comment SHA header, clone-slug drift, install fragment, ZH `REVIEW NEEDED` marker), the `smoke-hook.sh` fixture (runs `hooks/inject-active-clone.sh` under an isolated temp `$HOME` across 5 states and asserts valid JSON + expected tags), the `smoke-host-setup.sh` fixture (isolated `$HOME`/`$CLAUDE_CONFIG_DIR`/`$CODEX_HOME`, setup/uninstall idempotency, active/room context), `npm ci && npm run build && npm test` for the CLI, `shellcheck` at `severity: error` (action detects shebang+executable files, so root `setup`/`uninstall` are covered too), and `markdownlint-cli2` with knowledge directories ignored (`.markdownlint-cli2.jsonc`).
 
 ## Gotchas
 
@@ -273,7 +283,7 @@ Source code is MIT (`LICENSE`). Content under `clones/**` is CC BY-NC-SA 4.0 (`c
 - **`fetch-clone-knowledge.sh` is a no-op** when the repo is not a git checkout (e.g., a dev machine where files were symlinked in). Knowledge is expected to already be on disk in that case.
 - **Apostrophes in the hook's heredoc body break shell parsing.** Bash parses `$(...)` substitutions inside heredocs and gets confused by unmatched single quotes in the content. Avoid contractions like `clone's` in the heredoc body — use "this clone" or typographic `'`.
 - **The hook has two JSON-escaping paths**: `python3` (preferred) and `sed/awk` (fallback). macOS always hits the python3 path by default, so the fallback is not exercised there — test both branches if you touch the escaping code.
-- **Hook script edits apply live.** Paths are re-resolved on every invocation. But if you change **hook registration** (the `setup` script itself), re-run `./setup` and restart Claude Code so the new settings.json entries take effect.
+- **Hook and Codex context script edits apply live.** Paths are re-resolved on every invocation. But if you change **host registration** (the `setup` script itself), re-run `./setup --host claude` or `./setup --host codex` and restart the relevant host session so settings/AGENTS.md changes take effect.
 - **`session-update.sh` re-execs itself with `__bg`** as the first arg to detach. Do not remove the `"${1:-}" != "__bg"` gate — it is what keeps the foreground hook from blocking on `git pull`.
 - **Room cap is 8 members** (`references/room-workflow.md`); extras are dropped with a warning.
 - **CI expects Node ≥ 22.6** for the `.ts` validators. Node 24+ is zero-config; 22.6–23.5 needs `NODE_OPTIONS=--experimental-strip-types`.

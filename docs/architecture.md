@@ -4,13 +4,14 @@
 
 ## 한눈에 보기
 
-openclone은 **Claude Code standalone skill**입니다. 빌드 시스템은 없고, 저장소 자체가 스킬 디렉터리(`~/.claude/skills/openclone/`)에 그대로 매핑됩니다. 플러그인 매니페스트(`.claude-plugin/`)나 마켓플레이스 등록은 없으며, Claude Code가 `~/.claude/skills/<name>/SKILL.md`를 자동 탐지해 `/openclone` 슬래시 커맨드로 노출합니다(standalone skill은 플러그인 커맨드와 달리 네임스페이스 prefix가 붙지 않습니다).
+openclone은 **Claude Code와 Codex에서 동작하는 standalone skill**입니다. 빌드 시스템은 없고, 저장소 자체가 스킬 디렉터리에 그대로 매핑됩니다. Claude Code는 `~/.claude/skills/openclone/`, Codex는 `~/.codex/skills/openclone/` 경로를 사용합니다. 플러그인 매니페스트(`.claude-plugin/`)나 마켓플레이스 등록은 없으며, Claude Code가 `~/.claude/skills/<name>/SKILL.md`를 자동 탐지해 `/openclone` 슬래시 커맨드로 노출합니다(standalone skill은 플러그인 커맨드와 달리 네임스페이스 prefix가 붙지 않습니다). Codex에서는 `/openclone`이 네이티브 UI 명령으로 노출되지 않을 수 있으므로 일반 텍스트 `openclone <sub>` 요청도 같은 스킬 진입점으로 취급합니다.
 
-런타임은 세 가지 조각으로 이루어집니다.
+런타임은 네 가지 조각으로 이루어집니다.
 
 1. **단일 디스패처 `SKILL.md`** (루트) — `/openclone` 슬래시 커맨드와 자연어 진입점을 겸합니다. 사용자가 명시적으로 호출하거나 description의 트리거 문구에 매칭되면 실행됩니다.
-2. **UserPromptSubmit 훅** (`hooks/inject-active-clone.sh`) — 매 메시지마다 실행되어, "활성 클론" 또는 "room"이 있으면 페르소나를 Claude의 컨텍스트에 주입. **이 훅이 클론을 "살아 있게" 만드는 유일한 메커니즘입니다.**
-3. **레퍼런스** (`references/*.md`) — 디스패처가 필요할 때 lazy-load 하는 워크플로우 문서.
+2. **UserPromptSubmit 훅** (`hooks/inject-active-clone.sh`) — Claude Code에서 매 메시지마다 실행되어, "활성 클론" 또는 "room"이 있으면 페르소나를 Claude의 컨텍스트에 주입. Claude Code에서는 이 훅이 클론을 "살아 있게" 만드는 메커니즘입니다.
+3. **Codex 런타임 컨텍스트 스크립트** (`scripts/codex-context.sh`) — Codex에는 훅 API가 없으므로 `~/.codex/AGENTS.md` 관리 블록의 지시에 따라 실행되어 active-clone/room 컨텍스트를 plain text로 출력합니다.
+4. **레퍼런스** (`references/*.md`) — 디스패처가 필요할 때 lazy-load 하는 워크플로우 문서.
 
 사용자 데이터(활성 클론 포인터, 사용자 클론, 인제스트한 지식)는 전부 `~/.openclone/` 아래 로컬 파일시스템에 있습니다. 서버도, DB도, 네트워크 API도 없습니다(지식 인제스트 시 원문 URL/YouTube 가져오기는 예외).
 
@@ -47,7 +48,7 @@ Claude가 additionalContext를 받아 그 클론으로 응답
 
 두 루트가 **읽을 때 병합**됩니다. 내장과 사용자 레이아웃은 **구조가 동일**하고(둘 다 `clones/<name>/{persona.md, knowledge/}`), 내장 쪽만 sparse-checkout non-cone 모드(`/*` + `!/clones/*/knowledge/`)로 각 클론의 `knowledge/` 서브폴더를 기본 제외하여 lazy-fetch 합니다.
 
-`${CLAUDE_SKILL_DIR}`는 `SKILL.md` 안에서 Claude Code가 치환하는 심볼이며, 실제 경로는 설치 위치(`~/.claude/skills/openclone`)입니다. 스크립트 내부에서는 이 심볼 대신 `install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"` 패턴으로 자기 위치를 해석합니다(훅이나 자식 프로세스로 전달된다는 보장이 없기 때문).
+`${CLAUDE_SKILL_DIR}`는 `SKILL.md` 안에서 Claude Code가 치환하는 심볼이며, 실제 경로는 설치 위치(`~/.claude/skills/openclone`)입니다. Codex에서는 이 변수가 없으므로 루트 `SKILL.md`가 "이 파일이 있는 스킬 루트(`~/.codex/skills/openclone`)로 해석하라"고 지시합니다. 스크립트 내부에서는 이 심볼 대신 `install_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"` 패턴으로 자기 위치를 해석합니다(훅이나 자식 프로세스로 전달된다는 보장이 없기 때문).
 
 | 목적 | 내장 (read-only, 배포) | 사용자 (writable) |
 | --- | --- | --- |
@@ -90,6 +91,24 @@ Active-clone 분기
 2. `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}` 형태로 stdout에 방출.
 
 파일 [hooks/inject-active-clone.sh](../hooks/inject-active-clone.sh)의 주석, [references/clone-schema.md](../references/clone-schema.md)의 "Injection format" 섹션, [references/room-workflow.md](../references/room-workflow.md)의 "Runtime routing" 섹션이 공식 사양입니다.
+
+### Codex 런타임 컨텍스트
+
+Codex에는 Claude Code의 `UserPromptSubmit`/`SessionStart` 훅이나 statusline이 없습니다. 그래서 `./setup --host codex`는 `~/.codex/settings.json`을 건드리지 않고, `~/.codex/AGENTS.md`에 다음 HTML 마커로 감싼 관리 블록을 삽입합니다.
+
+```text
+<!-- openclone-managed:start -->
+...
+<!-- openclone-managed:end -->
+```
+
+이 블록은 Codex에게 매 일반 응답 전에 `~/.openclone/room` 또는 `~/.openclone/active-clone` 상태를 확인하고, 상태가 있으면 `bash ~/.codex/skills/openclone/scripts/codex-context.sh`를 실행하라고 지시합니다. `codex-context.sh`는 훅과 같은 우선순위(room > active-clone), user-first persona 해석, knowledge 디렉터리 병합 규칙을 사용하지만 출력은 JSON이 아니라 `<openclone-room>` / `<openclone-active-clone>` plain text 블록입니다.
+
+수정 시 주의:
+
+- 훅과 `codex-context.sh`의 citation contract, room routing, active-clone 지침은 같은 의미를 유지해야 합니다.
+- `codex-context.sh`는 상태가 없으면 빈 출력, 오류 경로에서도 exit 0이어야 합니다.
+- Codex 설치에는 자동 업데이트 훅이 없으므로 사용자가 `git pull --ff-only`로 수동 갱신합니다.
 
 ### 훅 편집 시 주의
 
@@ -224,8 +243,8 @@ clones/<name>/knowledge/YYYY-MM-DD-<topic-slug>.md
 변경을 배포하는 흐름은 이렇게 단순합니다.
 
 1. main 브랜치에 커밋·푸시.
-2. 사용자 머신에서는 세션이 시작될 때마다 `scripts/session-update.sh`가 백그라운드로 `git pull --ff-only`를 돌려 최신 main으로 맞춰둡니다(1시간 쓰로틀, 네트워크 실패 시 조용히 skip).
-3. main이 force-push된 경우 자동 업데이트는 멈추고 force-push 배너가 표시됩니다 — 사용자는 재설치 one-liner를 돌려야 합니다.
+2. Claude Code 사용자 머신에서는 세션이 시작될 때마다 `scripts/session-update.sh`가 백그라운드로 `git pull --ff-only`를 돌려 최신 main으로 맞춰둡니다(1시간 쓰로틀, 네트워크 실패 시 조용히 skip). Codex 설치는 훅이 없으므로 사용자가 `git pull --ff-only`로 수동 갱신합니다.
+3. main이 force-push된 경우 Claude Code 자동 업데이트는 멈추고 force-push 배너가 표시됩니다 — 사용자는 재설치 one-liner를 돌려야 합니다. Codex도 `codex-context.sh`가 같은 marker를 발견하면 복구 안내를 출력합니다.
 
 빌드·번들·게시 단계는 없습니다. 저장소가 곧 스킬입니다.
 

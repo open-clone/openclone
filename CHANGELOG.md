@@ -10,6 +10,9 @@
 
 - 본인 옵트아웃 요청에 따라 내장 클론 `chester`(노정석)·`jojoldu`(이동욱/향로) 페르소나와 지식 파일을 제거. 기본 클론 수: 14 → 12.
 
+### Added
+
+- Add first-class Codex skill install support via `./setup --host codex`, a managed `~/.codex/AGENTS.md` block, `scripts/codex-context.sh` runtime persona context, and Codex setup smoke tests.
 - Improve standalone CLI persona parity with Claude Code by adding AI SDK tools for local knowledge file reads plus best-effort `web_search`/`web_fetch`.
 - Default the OpenAI-compatible CLI provider model to `gpt-5.5`.
 - Add Ollama-run-like interactive conversation mode for `openclone chat <slug>` when no prompt/stdin is provided.
