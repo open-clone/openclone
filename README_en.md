@@ -34,14 +34,12 @@ These are the preset clones shipped in this repository. A ✅ in the **Official*
 | Official | Name | Categories | Intro |
 | :---: | --- | --- | --- |
 | ✅ | [장동욱 (Brian)](clones/brian/persona.md) | `vc` | Director at Kakao Ventures. Backed 60+ early-stage teams including Daangn, Korea Credit Data, and Queenit |
-|  | [노정석 (Chester Roh)](clones/chester/persona.md) | `founder`, `vc` | First Asian founder acquired by Google. 25 years of 6 consecutive startups, angel investing, and company building |
 | ✅ | [김철우](clones/chulwukim/persona.md) | `vc`, `founder` | CEO of The Ventures. Founder-turned-VC with Sellit→Kakao exit and Bungaejangter PEF exit |
 | ✅ | [권도균](clones/douglas/persona.md) | `founder`, `vc` | CEO of Primer. Korea's #1 accelerator, 300+ portfolio companies over 16 years |
 | ✅ | [조여준 (Ethan Cho)](clones/ethan/persona.md) | `vc` | CIO of The Ventures. Alumnus of Google, Qualcomm Ventures, KB Investment; early validator of Dunamu and Toss |
 | ✅ | [정구봉](clones/gbjeong/persona.md) | `tech`, `founder` | CEO of Team Attention. Self-acknowledged Claude Code expert, AI agent and automation engineer |
 | ✅ | [김동현 (이드)](clones/iid/persona.md) | `expert` | HR Director at T-order. Execution-focused HR partner with Toss, Yanolja, Class101 experience |
 | ✅ | [신재명 (Jay Shin)](clones/jayshin/persona.md) | `founder` | Founder of Delight Room. Alarmy with 100M+ global downloads, wellness app generating 34B KRW revenue |
-|  | [이동욱 (향로)](clones/jojoldu/persona.md) | `tech` | CTO of Inflab. The recording developer — "record over remember" · "Gaebaldak" |
 | ✅ | [조쉬](clones/josh/persona.md) | `founder`, `expert` | Builder Josh · Josh's Newsletter · Author of "I Am a Solopreneur" |
 | ✅ | [이경훈](clones/kyunghun/persona.md) | `founder`, `vc` | Vice President & CAIO at Channel Corporation. Former Korea head of Global Brain; AI and Japan-market expert |
 |  | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | CEO of Kim Yonghoon Growth Lab. Growth marketing for 160+ startups; CMO with M&A and IPO experience |
@@ -100,7 +98,7 @@ A single npm install gives you the `openclone` binary that runs in any terminal.
 npm install -g @openclone/openclone
 ```
 
-This adds `openclone` to your `PATH`. The 14 built-in clones and all of their knowledge files ship inside the package, so you can use it right away.
+This adds `openclone` to your `PATH`. The 12 built-in clones and all of their knowledge files ship inside the package, so you can use it right away.
 
 ```bash
 openclone list

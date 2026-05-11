@@ -38,14 +38,12 @@ reviewer. Please verify phrasing and terminology before removing this marker.
 | Official | 姓名 | 类别 | 简介 |
 | :---: | --- | --- | --- |
 | ✅ | [장동욱 (Brian)](clones/brian/persona.md) | `vc` | Kakao Ventures 董事。投资了 Daangn、Korea Credit Data、Queenit 等 60 多支早期团队 |
-|  | [노정석 (Chester Roh)](clones/chester/persona.md) | `founder`, `vc` | 亚洲首位被谷歌收购的创业者。25 年连续创业 6 次,天使投资与 company-builder 经历 |
 | ✅ | [김철우](clones/chulwukim/persona.md) | `vc`, `founder` | The Ventures 代表。Sellit 卖给 Kakao、Bungaejangter PEF 退出经历的创业者出身 VC |
 | ✅ | [권도균](clones/douglas/persona.md) | `founder`, `vc` | Primer 代表。16 年投资 300 余家公司,韩国排名第一的加速器 |
 | ✅ | [조여준 (Ethan Cho)](clones/ethan/persona.md) | `vc` | The Ventures 首席投资官(CIO)。出身 Google、高通风投、KB 投资,Dunamu 与 Toss 早期验证者 |
 | ✅ | [정구봉](clones/gbjeong/persona.md) | `tech`, `founder` | Team Attention 代表。公认的 Claude Code 专家,AI 代理与自动化工程师 |
 | ✅ | [김동현 (이드)](clones/iid/persona.md) | `expert` | T-order HR Director。经历过 Toss、Yanolja、Class101 的实战型 HR 合伙人 |
 | ✅ | [신재명 (Jay Shin)](clones/jayshin/persona.md) | `founder` | Delight Room 创始人。全球 1 亿次下载量的 Alarmy,营收 340 亿韩元的健康应用 |
-|  | [이동욱 (향로)](clones/jojoldu/persona.md) | `tech` | Inflab CTO。坚持记录的开发者,"记录胜过记忆" · "개발바닥(Gaebaldak)" |
 | ✅ | [조쉬](clones/josh/persona.md) | `founder`, `expert` | Builder Josh · Josh 的新闻邮件 · 《我是独立创业者(나는 솔로프리너다)》作者 |
 | ✅ | [이경훈](clones/kyunghun/persona.md) | `founder`, `vc` | Channel Corporation 副社长兼 CAIO。曾任 Global Brain 韩国代表,AI 与日本市场专家 |
 |  | [김용훈 (Levi)](clones/levi/persona.md) | `expert` | Kim Yonghoon Growth Lab 代表。为 160 多家创业公司做过增长营销,有 M&A 与 IPO 经验的 CMO |
@@ -104,7 +102,7 @@ git clone --filter=blob:none --sparse --depth=1 \
 npm install -g @openclone/openclone
 ```
 
-安装后 `openclone` 命令会被加入 `PATH`。14 个内置克隆与全部知识文件都已包含在该 npm 包中,可直接使用。
+安装后 `openclone` 命令会被加入 `PATH`。12 个内置克隆与全部知识文件都已包含在该 npm 包中,可直接使用。
 
 ```bash
 openclone list
