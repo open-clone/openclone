@@ -6,12 +6,7 @@
 
 ## [Unreleased]
 
-### Removed
-
-- 본인 옵트아웃 요청에 따라 내장 클론 `chester`(노정석)·`jojoldu`(이동욱/향로) 페르소나와 지식 파일을 제거. 기본 클론 수: 14 → 12.
-
-### Added
-
+- GitHub 저장소가 `open-clone/openclone` → `team-attention/openclone`으로 이전. README 설치 one-liner, npm 메타데이터(`repository`/`homepage`/`bugs`), `clones/NOTICE.md` attribution, 이슈 템플릿, CLI User-Agent, setup 첫 설치 메시지를 모두 새 URL로 갱신. 기존 설치는 `scripts/session-update.sh`에 추가된 일회성 origin URL 마이그레이션 로직이 다음 세션 시작 시 자동으로 `git remote set-url` 처리. README 후원 표기를 "주관·유지(Maintained by/维护方)"로 정리.
 - Add first-class Codex skill install support via `./setup --host codex`, a managed `~/.codex/AGENTS.md` block, `scripts/codex-context.sh` runtime persona context, and Codex setup smoke tests.
 - Improve standalone CLI persona parity with Claude Code by adding AI SDK tools for local knowledge file reads plus best-effort `web_search`/`web_fetch`.
 - Default the OpenAI-compatible CLI provider model to `gpt-5.5`.
@@ -23,6 +18,10 @@
 - 루트 `CLAUDE.md`를 `AGENTS.md`로 이동해 Codex/Cursor 등 비-Claude 에이전트도 같은 컨트리뷰팅 가이드를 읽도록 함. 루트 `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 Claude Code 네이티브 임포트 스텁으로 유지(SSOT — 본문은 `AGENTS.md`에서만 편집).
 
 - Add experimental Node.js CLI for Vercel AI SDK/OpenAI-compatible chat over existing markdown clones while preserving Claude Code support.
+
+### Removed
+
+- 본인 옵트아웃 요청에 따라 내장 클론 `chester`(노정석)·`jojoldu`(이동욱/향로) 페르소나와 지식 파일을 제거. 기본 클론 수: 14 → 12.
 
 ### Changed (breaking)
 

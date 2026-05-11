@@ -68,7 +68,7 @@ Paste the prompt below into a Claude Code session.
 
 ```text
 Install openclone: run
-  git clone --filter=blob:none --sparse --depth=1 https://github.com/open-clone/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
+  git clone --filter=blob:none --sparse --depth=1 https://github.com/team-attention/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
 then restart Claude Code (or start a new session) so the skill's hooks are picked up. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, tech, founder, expert, influencer, politician, celebrity). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the skill loaded by running /openclone and show me the output.
 ```
 
@@ -78,7 +78,7 @@ Claude Code performs the install for you and adds a usage note to `~/.claude/CLA
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.claude/skills/openclone \
   && cd ~/.claude/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -111,7 +111,7 @@ openclone chat douglas
 This repo also ships a [Vercel Agent Skill](https://vercel.com/docs/agent-resources/skills) that 18+ AI coding agents — Claude Code, Cursor, Copilot, Codex, Cline, Gemini, and more — can recognize. Once installed, your agent will walk you through CLI install, provider selection, session management, and troubleshooting on demand.
 
 ```bash
-npx skills add open-clone/openclone --skill openclone-cli
+npx skills add team-attention/openclone --skill openclone-cli
 ```
 
 Then ask your agent in natural language:
@@ -207,7 +207,7 @@ When a conversation grows past about 350,000 characters (`OPENCLONE_COMPACT_MAX_
 #### B6. Run from a local checkout (developers)
 
 ```bash
-git clone https://github.com/open-clone/openclone.git
+git clone https://github.com/team-attention/openclone.git
 cd openclone
 npm install
 npm run build
@@ -225,7 +225,7 @@ Codex does not expose Claude Code's `UserPromptSubmit` / `SessionStart` hooks or
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -369,7 +369,7 @@ If you are one of those people, you can request any of the following at any time
 - Corrections to surface-level fields (`display_name`, `tagline`, affiliation, etc.)
 - Removal of the entire persona
 
-**How to reach us** — public requests via the [opt-in issue template](https://github.com/open-clone/openclone/issues/new?template=opt_in_request.md); for cases that need private verification, email `hayun@rapidstudio.dev`.
+**How to reach us** — public requests via the [opt-in issue template](https://github.com/team-attention/openclone/issues/new?template=opt_in_request.md); for cases that need private verification, email `hayun@rapidstudio.dev`.
 
 **Response goal** — Initial response within 7 days of receipt. Removal requests are reflected in the repository as soon as identity is confirmed, and reach users locally on the next auto-update.
 
@@ -379,5 +379,5 @@ If you are one of those people, you can request any of the following at any time
 - [references/clone-schema.md](references/clone-schema.md) — Clone file specification
 - [references/categories.md](references/categories.md) — Category lens and tone guide
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)
-- Sponsor: [Team Attention](https://www.team-attention.com/)
+- Maintained by: [Team Attention](https://www.team-attention.com/)
 - License: MIT — [LICENSE](LICENSE)

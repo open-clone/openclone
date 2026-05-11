@@ -72,7 +72,7 @@ openclone 提供**三种安装路径**。请根据你的环境选择对应的章
 
 ```text
 Install openclone: run
-  git clone --filter=blob:none --sparse --depth=1 https://github.com/open-clone/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
+  git clone --filter=blob:none --sparse --depth=1 https://github.com/team-attention/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
 then restart Claude Code (or start a new session) so the skill's hooks are picked up. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, tech, founder, expert, influencer, politician, celebrity). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the skill loaded by running /openclone and show me the output.
 ```
 
@@ -82,7 +82,7 @@ Claude Code 会代为执行安装,并向 `~/.claude/CLAUDE.md` 追加使用备�
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.claude/skills/openclone \
   && cd ~/.claude/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -115,7 +115,7 @@ openclone chat douglas
 本仓库同时附带一个 [Vercel Agent Skill](https://vercel.com/docs/agent-resources/skills),18+ 种 AI 编程代理(Claude Code、Cursor、Copilot、Codex、Cline、Gemini 等)都能识别。安装后,你正在使用的代理会按需指引你完成 CLI 安装、provider 选择、会话管理与故障排查。
 
 ```bash
-npx skills add open-clone/openclone --skill openclone-cli
+npx skills add team-attention/openclone --skill openclone-cli
 ```
 
 安装完成后,用自然语言向你的代理提问即可:
@@ -211,7 +211,7 @@ openclone chat douglas --provider ollama --model llama3.2
 #### B6. 从本地仓库运行(开发者)
 
 ```bash
-git clone https://github.com/open-clone/openclone.git
+git clone https://github.com/team-attention/openclone.git
 cd openclone
 npm install
 npm run build
@@ -229,7 +229,7 @@ Codex 不提供 Claude Code 的 `UserPromptSubmit` / `SessionStart` 钩子或 st
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -373,7 +373,7 @@ openclone 中作为默认克隆分发的人物人格,只基于**公开的访谈�
 - 修正表面字段(`display_name`、`tagline`、所属机构等)
 - 移除整个人格
 
-**联系方式** — 公开请求请使用[选择加入 issue 模板](https://github.com/open-clone/openclone/issues/new?template=opt_in_request.md);需要私下证明身份的请发送邮件至 `hayun@rapidstudio.dev`。
+**联系方式** — 公开请求请使用[选择加入 issue 模板](https://github.com/team-attention/openclone/issues/new?template=opt_in_request.md);需要私下证明身份的请发送邮件至 `hayun@rapidstudio.dev`。
 
 **响应目标** — 收件后 7 天内做出初次回应。移除请求一经身份确认即写入仓库,会通过下一次自动更新到达用户本地。
 
@@ -383,5 +383,5 @@ openclone 中作为默认克隆分发的人物人格,只基于**公开的访谈�
 - [references/clone-schema.md](references/clone-schema.md) — 克隆文件规范
 - [references/categories.md](references/categories.md) — 类别镜头与语气指南
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)
-- 赞助:[Team Attention](https://www.team-attention.com/)
+- 维护方:[Team Attention](https://www.team-attention.com/)
 - 许可证:MIT — [LICENSE](LICENSE)
