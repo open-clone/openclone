@@ -64,7 +64,7 @@ Claude Code 세션에 아래 문단을 붙여넣으세요.
 
 ```text
 Install openclone: run
-  git clone --filter=blob:none --sparse --depth=1 https://github.com/open-clone/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
+  git clone --filter=blob:none --sparse --depth=1 https://github.com/team-attention/openclone.git ~/.claude/skills/openclone && cd ~/.claude/skills/openclone && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' && ./setup
 then restart Claude Code (or start a new session) so the skill's hooks are picked up. Add an "openclone" section to ~/.claude/CLAUDE.md briefly explaining what openclone is: a single slash command `/openclone` that opens a home panel of AI persona clones grouped by category (vc, tech, founder, expert, influencer, politician, celebrity). Subcommands: `/openclone <name|N>` activates a clone, `/openclone room <A> <B> ...` opens a group chat where the most relevant clone auto-responds, `/openclone panel <category> "..."` broadcasts to all clones in that category, `/openclone new` creates a clone, `/openclone ingest <url|path>` feeds knowledge, `/openclone stop` exits. Knowledge for a built-in clone is lazy-fetched on first activation. Finally, confirm the skill loaded by running /openclone and show me the output.
 ```
 
@@ -74,7 +74,7 @@ Claude Code가 설치를 대신 수행하고, `~/.claude/CLAUDE.md`에 사용법
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.claude/skills/openclone \
   && cd ~/.claude/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
@@ -107,7 +107,7 @@ openclone chat douglas
 이 저장소는 Claude Code·Cursor·Copilot·Codex·Cline·Gemini 등 18+ AI 코딩 에이전트가 인식할 수 있는 [Vercel Agent Skill](https://vercel.com/docs/agent-resources/skills)을 함께 제공합니다. 설치하면 사용 중인 에이전트가 openclone CLI 사용법(설치, provider 선택, 세션 관리, 트러블슈팅)을 직접 안내해 줍니다.
 
 ```bash
-npx skills add open-clone/openclone --skill openclone-cli
+npx skills add team-attention/openclone --skill openclone-cli
 ```
 
 설치 후 에이전트에게 자연어로 물어보세요.
@@ -214,7 +214,7 @@ openclone chat douglas --provider ollama --model llama3.2
 #### B6. 로컬 체크아웃에서 개발자로 실행
 
 ```bash
-git clone https://github.com/open-clone/openclone.git
+git clone https://github.com/team-attention/openclone.git
 cd openclone
 npm install
 npm run build
@@ -232,7 +232,7 @@ node dist/cli/index.js chat douglas
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
-  https://github.com/open-clone/openclone.git \
+  https://github.com/team-attention/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
   && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
@@ -355,7 +355,7 @@ openclone에 기본 클론으로 배포되는 인물 페르소나는 **공개된
 - 표기 정정 (`display_name`, `tagline`, 소속 등)
 - 페르소나 전체 제거
 
-**문의 경로** — 공개 요청은 [옵트인 이슈 템플릿](https://github.com/open-clone/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`로 부탁드립니다.
+**문의 경로** — 공개 요청은 [옵트인 이슈 템플릿](https://github.com/team-attention/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`로 부탁드립니다.
 
 **응답 목표** — 접수 후 7일 이내 초기 응답. 제거 요청은 본인 확인 즉시 저장소에 반영하며, 사용자 로컬에는 다음 자동 업데이트 때 전달됩니다.
 
@@ -365,7 +365,7 @@ openclone에 기본 클론으로 배포되는 인물 페르소나는 **공개된
 - [references/clone-schema.md](references/clone-schema.md) — 클론 파일 스펙
 - [references/categories.md](references/categories.md) — 카테고리 렌즈·톤 가이드
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)
-- 후원: [팀어텐션 (Team Attention)](https://www.team-attention.com/)
+- 주관·유지: [팀어텐션 (Team Attention)](https://www.team-attention.com/)
 
 ## 라이선스
 

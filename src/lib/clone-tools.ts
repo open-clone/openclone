@@ -163,7 +163,7 @@ export function createCloneTools(clone: LoadedClone, options: CloneToolOptions =
         }
         const response = await fetchImpl(parsed, {
           headers: {
-            "user-agent": "openclone-cli/0.3 (+https://github.com/open-clone/openclone)",
+            "user-agent": "openclone-cli/0.3 (+https://github.com/team-attention/openclone)",
             accept: "text/html,text/plain,application/json;q=0.9,*/*;q=0.8",
           },
         });
@@ -196,7 +196,7 @@ export function createCloneTools(clone: LoadedClone, options: CloneToolOptions =
         url.searchParams.set("q", query);
         const response = await fetchImpl(url, {
           headers: {
-            "user-agent": "openclone-cli/0.3 (+https://github.com/open-clone/openclone)",
+            "user-agent": "openclone-cli/0.3 (+https://github.com/team-attention/openclone)",
             accept: "text/html,*/*;q=0.8",
           },
         });

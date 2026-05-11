@@ -46,6 +46,21 @@ cd "$install_dir" 2>/dev/null || exit 0
 # Must be a git checkout to update.
 [ -d ".git" ] || exit 0
 
+# One-shot origin URL migration: open-clone/openclone -> team-attention/openclone.
+# Idempotent (case match fails after first run or on user forks). Runs before
+# fetch so the new URL is used immediately instead of relying on GitHub's 301.
+current_origin=$(git config --get remote.origin.url 2>/dev/null || echo "")
+case "$current_origin" in
+  *open-clone/openclone*)
+    new_origin="${current_origin//open-clone\/openclone/team-attention\/openclone}"
+    if git remote set-url origin "$new_origin" 2>/dev/null; then
+      printf '[%s] openclone: migrated origin URL %s -> %s\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" "$current_origin" "$new_origin" \
+        >> "$log_file" 2>/dev/null || true
+    fi
+    ;;
+esac
+
 old_head=$(git rev-parse HEAD 2>/dev/null || true)
 force_push_marker="$state_dir/force-push-detected"
 

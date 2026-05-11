@@ -12,7 +12,7 @@
 
 ## 저작권자
 
-`clones/` 콘텐츠의 저작권자는 **openclone contributors** (본 저장소의 git history에 기록된 모든 기여자)입니다. 저장소 URL: <https://github.com/open-clone/openclone>
+`clones/` 콘텐츠의 저작권자는 **openclone contributors** (본 저장소의 git history에 기록된 모든 기여자)입니다. 저장소 URL: <https://github.com/team-attention/openclone>
 
 ## 콘텐츠 분류
 
@@ -42,21 +42,21 @@ published_at: YYYY-MM-DD
 ---
 ```
 
-`source_url`이 없는 파일은 (a) openclone contributors가 직접 작성한 노트이거나 (b) 원출처 추적이 누락된 경우입니다. 후자는 [이슈](https://github.com/open-clone/openclone/issues)로 알려주시면 보완하겠습니다.
+`source_url`이 없는 파일은 (a) openclone contributors가 직접 작성한 노트이거나 (b) 원출처 추적이 누락된 경우입니다. 후자는 [이슈](https://github.com/team-attention/openclone/issues)로 알려주시면 보완하겠습니다.
 
 ## 표기 방법
 
 `clones/` 콘텐츠를 비상업적 용도로 재사용할 때는 다음을 모두 표기해 주세요.
 
 1. **저작권자**: "openclone contributors"
-2. **저장소 링크**: <https://github.com/open-clone/openclone>
+2. **저장소 링크**: <https://github.com/team-attention/openclone>
 3. **라이센스**: "CC BY-NC-SA 4.0" (가능하면 <https://creativecommons.org/licenses/by-nc-sa/4.0/> 링크)
 4. **수정 여부**: 원본을 수정·각색했다면 그 사실을 명시
 5. **개별 출처(knowledge 파일을 인용하는 경우)**: 해당 파일 frontmatter의 `source_url`을 함께 표기. 원저작자가 명시되어 있다면 원저작자도 함께 표기
 
 표기 예:
 
-> "openclone contributors, 'Douglas (권도균) persona', CC BY-NC-SA 4.0, <https://github.com/open-clone/openclone>. 인용된 발언 출처: <원 source_url>"
+> "openclone contributors, 'Douglas (권도균) persona', CC BY-NC-SA 4.0, <https://github.com/team-attention/openclone>. 인용된 발언 출처: <원 source_url>"
 
 ## 비상업적(NonCommercial) 사용
 
@@ -81,7 +81,7 @@ CC BY-NC-SA 4.0의 NC 조항에 따라, `clones/` 콘텐츠를 **상업적 이�
 - 표기 정정 (`display_name`, `tagline`, 소속 등)
 - 페르소나 전체 제거
 
-**문의 경로**: 공개 요청은 [옵트인 이슈 템플릿](https://github.com/open-clone/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`. 자세한 내용은 README의 ["옵트인 (실존 인물 클론)"](../README.md#옵트인-실존-인물-클론) 섹션 참고.
+**문의 경로**: 공개 요청은 [옵트인 이슈 템플릿](https://github.com/team-attention/openclone/issues/new?template=opt_in_request.md), 사적 증빙이 필요한 경우는 `hayun@rapidstudio.dev`. 자세한 내용은 README의 ["옵트인 (실존 인물 클론)"](../README.md#옵트인-실존-인물-클론) 섹션 참고.
 
 ## 새 콘텐츠 추가 시
 
