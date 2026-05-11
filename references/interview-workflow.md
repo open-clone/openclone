@@ -1,10 +1,10 @@
 # Interview workflow
 
-How Claude conducts a clone-creation interview and consolidates the transcript into a clone file. Loaded by `/openclone new`.
+How the host agent conducts a clone-creation interview and consolidates the transcript into a clone file. Loaded by `/openclone new`.
 
 ## Overall shape
 
-0. **Preflight — Chrome MCP required** (always runs first; aborts if unavailable)
+0. **Preflight — browser automation required** (always runs first; aborts if unavailable)
 0b. **Stage 0 — Person discovery** (runs when the target is a publicly identifiable person; may skip Stages 1–5 entirely)
 1. Category selection (at least one required; multiple allowed)
 2. Core identity block (5–7 questions)
@@ -15,18 +15,20 @@ How Claude conducts a clone-creation interview and consolidates the transcript i
 
 The user can stop at any time by saying "done", "끝", "저장해" or similar. Consolidate with whatever has been captured.
 
-## Preflight — Chrome MCP required
+## Preflight — browser automation required
 
-Both the auto-discovery path (Stage 0) and the hand-authored interview path produce better clones when Chrome MCP is available, because LinkedIn, Threads, X, Instagram, Facebook, and most personal sites hide content behind login walls or render the body via JS. Plain WebFetch sees partial/broken HTML — partial data is worse than no data.
+Both the auto-discovery path (Stage 0) and the hand-authored interview path produce better clones when browser automation is available, because LinkedIn, Threads, X, Instagram, Facebook, and most personal sites hide content behind login walls or render the body via JS. Plain WebFetch sees partial/broken HTML — partial data is worse than no data.
 
 Before any stage runs:
 
-1. Verify the `claude-in-chrome` MCP tools are loaded. If their schemas are not already in context, load them now:
+1. Use the browser automation surface for the current host:
+   - Claude Code: verify the `claude-in-chrome` MCP tools are loaded. If their schemas are not already in context, load them now:
    ```text
    ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__find,mcp__claude-in-chrome__read_console_messages
    ```
-2. If the ToolSearch result does NOT include these tool schemas (Chrome extension disconnected or not installed), **abort** with this message and do nothing else — do not propose `curl`/WebFetch workarounds:
-   > `/openclone new`는 Chrome MCP(claude-in-chrome)가 필요해요. Chrome extension이 연결돼 있어야 LinkedIn·Threads·X·Instagram·YouTube 같은 소스를 제대로 수집할 수 있어요. extension을 켠 뒤 다시 시도해 주세요. (순수 텍스트로 직접 페르소나를 쓰고 싶다면 `${CLAUDE_SKILL_DIR}/assets/clone-template.md`를 복사해 `~/.openclone/clones/<name>/persona.md`로 두세요.)
+   - Codex: use the available Codex/browser automation tool for opening pages, reading rendered text, scrolling, and inspecting logged-in surfaces. If no browser automation tool is available in this Codex session, the preflight fails.
+2. If the host browser automation surface is unavailable, **abort** with this message and do nothing else — do not propose `curl`/WebFetch workarounds:
+   > `/openclone new`는 브라우저 자동화가 필요해요. LinkedIn·Threads·X·Instagram·YouTube 같은 소스를 제대로 수집하려면 Claude Code의 claude-in-chrome 또는 Codex의 브라우저 도구처럼 로그인/JS 렌더링 페이지를 읽을 수 있는 도구가 연결돼 있어야 해요. 브라우저 도구를 켠 뒤 다시 시도해 주세요. (순수 텍스트로 직접 페르소나를 쓰고 싶다면 `${CLAUDE_SKILL_DIR}/assets/clone-template.md`를 복사해 `~/.openclone/clones/<name>/persona.md`로 두세요.)
 3. If the user explicitly asks to bypass the gate for a one-off hand-authored persona (e.g. "그냥 내가 직접 써서 저장할게"), don't auto-bypass — tell them to copy the template manually (same sentence as above).
 
 ## Stage 0 — Person discovery (auto-harvest)
@@ -42,8 +44,8 @@ Before any stage runs:
    - Confirm the identity before scraping — if ambiguous (multiple people with the same name), ask the user one disambiguating question ("둘 중 누구인가요?" with 2–3 candidate links) before continuing.
    - Always use the full URL as displayed; never follow shortlinks without first verifying the real destination.
 
-2. **Scrape profile surfaces with Chrome MCP.**
-   - Open each canonical URL with `mcp__claude-in-chrome__navigate`, then `read_page` or `get_page_text` to harvest bio, headline, about section, recent posts, pinned tweets, etc.
+2. **Scrape profile surfaces with browser automation.**
+   - Open each canonical URL with the host browser navigation tool, then read the rendered page text to harvest bio, headline, about section, recent posts, pinned tweets, etc. In Claude Code this means `mcp__claude-in-chrome__navigate` plus `read_page` or `get_page_text`; in Codex use the equivalent browser tool available in the session.
    - For LinkedIn/Threads/X/Instagram posts: scroll and collect **up to 30 recent items** with timestamps. Preserve the real post URL for each item — that becomes the `source_url` in the knowledge frontmatter.
    - If a surface is behind auth, the page body will show a login wall — don't pretend you scraped it; mark that source as "requires login, skipped" in the confirm message.
    - Respect the two-minute rule of thumb: if a single page takes more than ~2 minutes of scrolling/clicking, stop and record what you have.

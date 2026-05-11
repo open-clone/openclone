@@ -8,7 +8,7 @@
 [![Status](https://img.shields.io/badge/Status-v0.3.0-brightgreen)](CHANGELOG.md)
 ![Made in Korea](https://img.shields.io/badge/Made%20in-Korea-blue)
 
-> **Claude Code 안에서 AI 페르소나 클론과 대화하는 스킬.**
+> **Claude Code·Codex 안에서, 또는 독립 CLI로 AI 페르소나 클론과 대화하는 도구.**
 
 ## 소개
 
@@ -43,12 +43,13 @@
 
 ## 설치
 
-openclone은 **두 가지 사용 경로**를 제공합니다. 본인 환경에 맞는 섹션을 따라가세요.
+openclone은 **세 가지 사용 경로**를 제공합니다. 본인 환경에 맞는 섹션을 따라가세요.
 
 | 경로 | 어떨 때 쓰나 | 호스트 |
 |---|---|---|
 | **A. Claude Code 스킬** | Claude Code에서 `/openclone` 슬래시 명령으로 클론과 대화하고 싶을 때 | Claude Code |
 | **B. Standalone CLI** | 어떤 터미널에서든 `openclone` 명령어로 OpenAI/Ollama/Codex 모델을 써서 클론과 대화하고 싶을 때 | macOS/Linux/WSL2 |
+| **C. Codex 스킬** | Codex 세션 안에서 openclone 상태 파일과 스킬 지침으로 클론을 활성화하고 싶을 때 | Codex |
 
 ---
 
@@ -222,35 +223,54 @@ node dist/cli/index.js chat douglas
 
 ---
 
-### C. Codex CLI (실험적)
+### C. Codex 스킬로 설치
 
-> ⚠️ **현재는 파일 참조 수준의 실험 지원입니다.** `./setup`이 Claude Code 전용 경로·훅·statusline을 건드리므로 **Codex 환경에서는 `./setup`을 실행하지 마세요.** 슬래시 커맨드 `/openclone`, `UserPromptSubmit`/`SessionStart` 훅 기반 자동 주입, statusline, 백그라운드 자동 업데이트는 아직 동작하지 않으며, 현재는 `clones/<slug>/persona.md`·`knowledge/` 파일을 Codex가 읽도록 배치하는 정도만 가능합니다. 네이티브 `--host=codex` 인스톨러는 추후 릴리스 예정입니다. 단순히 OpenAI Codex 토큰으로 클론과 대화만 하고 싶다면 위 **B. Standalone CLI**의 `--use-codex-auth`를 쓰는 것이 더 간단합니다.
+Codex는 Claude Code의 `UserPromptSubmit`/`SessionStart` 훅이나 statusline을 제공하지 않으므로, Codex 지원은 별도 방식으로 동작합니다. `./setup --host codex`가 `~/.codex/AGENTS.md`에 openclone 관리 블록을 추가하고, Codex는 활성 클론이나 방이 있을 때 `scripts/codex-context.sh`가 출력하는 런타임 컨텍스트를 읽어 다음 응답에 적용합니다.
 
-레포만 Codex 스킬 경로에 sparse clone합니다.
+#### C1. 설치
 
 ```bash
 git clone --filter=blob:none --sparse --depth=1 \
   https://github.com/team-attention/openclone.git \
   ~/.codex/skills/openclone \
   && cd ~/.codex/skills/openclone \
-  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/'
+  && git sparse-checkout set --no-cone '/*' '!/clones/*/knowledge/' \
+  && ./setup --host codex
 ```
 
-이후 Codex 세션의 `AGENTS.md`(또는 프로젝트 지침)에 아래 문단을 붙여두면, Codex가 대화 맥락에 따라 해당 파일을 참조합니다.
+설치 후 새 Codex 세션을 시작해 `~/.codex/AGENTS.md`의 관리 블록을 다시 읽게 하세요.
+
+#### C2. 사용
 
 ```text
-openclone 페르소나·지식이 `~/.codex/skills/openclone/clones/<slug>/` 아래에 있습니다. 사용자가
-"<이름>처럼 말해봐" 또는 "openclone <slug>"라고 요청하면 `persona.md`를 읽고 해당 톤·관점을 따르세요.
-사용 가능한 클론 목록은 `~/.codex/skills/openclone/README.md`의 "기본 클론" 섹션을 참고합니다.
+openclone                    # 홈 패널
+openclone douglas            # 이름으로 활성화
+/openclone room douglas ethan # 단체 대화방
+openclone panel vc "질문"    # 카테고리 패널
+openclone stop               # 활성 클론·방 종료
 ```
 
-특정 클론의 지식 파일이 필요하면 그때그때 lazy-fetch:
+Codex는 슬래시 커맨드를 Claude Code처럼 네이티브 UI 명령으로 노출하지 않을 수 있습니다. 그런 경우 `/openclone douglas` 대신 `openclone douglas`처럼 일반 텍스트로 요청해도 됩니다.
+
+특정 내장 클론의 지식 파일이 필요하면 활성화 시 또는 답변 직전에 lazy-fetch합니다.
 
 ```bash
 cd ~/.codex/skills/openclone && git sparse-checkout add clones/<slug>/knowledge/
 ```
 
-**업데이트**: 자동 업데이트 훅이 없으므로 `git pull --ff-only`로 수동 갱신합니다. **제거**: 디렉터리 삭제(`rm -rf ~/.codex/skills/openclone`)로 충분합니다 — Claude Code처럼 settings.json을 건드리지 않기 때문입니다.
+#### C3. 업데이트·제거
+
+Codex에는 세션 시작 자동 업데이트 훅이 없으므로 수동으로 갱신합니다.
+
+```bash
+cd ~/.codex/skills/openclone && git pull --ff-only
+```
+
+제거는 설치 디렉터리에서 실행합니다. `~/.codex/AGENTS.md`의 openclone 관리 블록과 스킬 디렉터리만 제거하고, 사용자 데이터(`~/.openclone/`)는 보존합니다.
+
+```bash
+cd ~/.codex/skills/openclone && ./uninstall --host codex
+```
 
 ### npm 배포
 
@@ -274,7 +294,7 @@ GitHub Release를 `published` 상태로 만들면 `.github/workflows/publish-npm
 | Windows (Git Bash) | ⚠️ 미지원 | 훅 실행이 환경 의존적. `session-update.sh`의 백그라운드 detach와 `dev-link.sh`의 `ln -sfn`이 특히 취약 |
 | Windows (cmd / PowerShell 네이티브) | ❌ 미지원 | 훅·스크립트가 전부 bash 기반. 현재 구조로는 불가능 |
 
-`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 `setup`/`uninstall`이 자동으로 따라갑니다. Codex CLI 호스트 지원은 현재 실험 단계이며, 위 "Codex CLI (실험적)" 섹션을 참고하세요.
+`CLAUDE_CONFIG_DIR` 환경변수로 `~/.claude` 위치를 옮긴 경우에도 Claude Code용 `setup`/`uninstall`이 자동으로 따라갑니다. Codex는 `CODEX_HOME`을 지정하면 `~/.codex` 대신 해당 경로를 사용합니다.
 
 <details>
 <summary>업데이트·제거·자동 업데이트 끄기</summary>
@@ -305,7 +325,7 @@ cd ~/.claude/skills/openclone && ./uninstall
 <details>
 <summary id="설치-트러블슈팅">설치 트러블슈팅 (v1 정리, 재설치)</summary>
 
-**플러그인(0.2.0 이전) 설치에서 올라오는 경우** — 경로가 `~/.claude/plugins/marketplaces/openclone`이었습니다. 먼저 정리하고 위 옵션 A 또는 B를 실행하세요.
+**플러그인(0.2.0 이전) 설치에서 올라오는 경우** — 경로가 `~/.claude/plugins/marketplaces/openclone`이었습니다. 먼저 정리하고 위 옵션 A, B 또는 C를 실행하세요.
 
 ```bash
 cd ~/.claude/plugins/marketplaces/openclone && ./uninstall
@@ -320,12 +340,14 @@ rm -f ~/.openclone/no-auto-update
 ```bash
 cd ~/.claude/skills/openclone && ./uninstall
 rm -f ~/.openclone/no-auto-update
-# 이후 위 옵션 A 또는 B 재실행
+# 이후 위 옵션 A, B 또는 C 재실행
 ```
 
 </details>
 
 ## 이용 방법
+
+Claude Code에서는 아래 예시를 슬래시 커맨드로 실행합니다. Codex 스킬 설치에서는 같은 요청을 일반 텍스트(`openclone douglas`)로 보내도 됩니다.
 
 ```text
 /openclone                              # 홈 패널 — 카테고리별 클론 목록

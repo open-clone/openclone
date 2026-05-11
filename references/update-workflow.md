@@ -1,19 +1,21 @@
 # Update workflow
 
-How Claude refreshes a clone's knowledge with the latest material from its canonical sources. Loaded by `/openclone update` and by natural-language requests like "권도균 클론 최신 정보로 업데이트해줘".
+How the host agent refreshes a clone's knowledge with the latest material from its canonical sources. Loaded by `/openclone update` and by natural-language requests like "권도균 클론 최신 정보로 업데이트해줘".
 
-The short version: find the most recent knowledge date, read `## Links` from `persona.md`, re-scrape each canonical source with Chrome MCP / yt-dlp, keep only items newer than the last date, and append them as fresh dated topic files. **No file is ever overwritten** — the append-only invariant from `refine-workflow.md` holds.
+The short version: find the most recent knowledge date, read `## Links` from `persona.md`, re-scrape each canonical source with browser automation / yt-dlp, keep only items newer than the last date, and append them as fresh dated topic files. **No file is ever overwritten** — the append-only invariant from `refine-workflow.md` holds.
 
-## Preflight — Chrome MCP required
+## Preflight — browser automation required
 
 Same gate as `/openclone new` and `/openclone ingest`. LinkedIn / Threads / X / Instagram / Facebook personal feeds are all login-walled or JS-rendered; `curl` and plain `WebFetch` produce partial data that is worse than no data.
 
-1. Verify `claude-in-chrome` tools are loaded; load them if not:
+1. Use the browser automation surface for the current host:
+   - Claude Code: verify `claude-in-chrome` tools are loaded; load them if not:
    ```text
    ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__find,mcp__claude-in-chrome__read_console_messages
    ```
-2. If the ToolSearch result does NOT contain these schemas, abort with:
-   > `/openclone update`는 Chrome MCP가 필요해요. LinkedIn·Threads·X 같은 소스를 제대로 가져오려면 claude-in-chrome extension이 연결돼 있어야 해요. extension을 켠 뒤 다시 시도해 주세요.
+   - Codex: use the available Codex/browser automation tool for opening pages, reading rendered text, scrolling, and inspecting logged-in surfaces. If no browser automation tool is available in this Codex session, the preflight fails.
+2. If the host browser automation surface is unavailable, abort with:
+   > `/openclone update`는 브라우저 자동화가 필요해요. LinkedIn·Threads·X 같은 소스를 제대로 가져오려면 Claude Code의 claude-in-chrome 또는 Codex의 브라우저 도구처럼 로그인/JS 렌더링 페이지를 읽을 수 있는 도구가 연결돼 있어야 해요. 브라우저 도구를 켠 뒤 다시 시도해 주세요.
 3. Do not propose `curl` / WebFetch workarounds. If the user explicitly wants a one-off hand-written update, tell them to run `/openclone ingest <source>` per source instead.
 
 ## Steps
@@ -82,9 +84,9 @@ Rules:
 - If the section is missing or empty, abort with: `persona.md에 \`## Links\` 섹션이 없어서 자동 업데이트 대상이 없어요. \`/openclone ingest <url>\`로 소스를 직접 알려주세요.`
 - Classify each URL:
   - `youtube.com`, `youtu.be` → YouTube (use `fetch-youtube.sh`)
-  - `linkedin.com`, `threads.net`, `twitter.com`, `x.com`, `instagram.com`, `facebook.com` → social feed (Chrome MCP scrape)
+  - `linkedin.com`, `threads.net`, `twitter.com`, `x.com`, `instagram.com`, `facebook.com` → social feed (browser automation scrape)
   - Static application/landing pages (`*/apply`, `*/about`) → skip; they aren't a content feed.
-  - Everything else (blog, personal site, Substack, news) → general web (Chrome MCP scrape)
+  - Everything else (blog, personal site, Substack, news) → general web (browser automation scrape)
 - If a URL needs disambiguation ("which YouTube playlist?"), ask once before scraping.
 
 ### 5. Harvest per source, keeping only items newer than the cutoff
@@ -93,20 +95,20 @@ For each retained URL:
 
 **Social feeds (LinkedIn / Threads / X / Instagram / Facebook):**
 
-- `mcp__claude-in-chrome__navigate` to the profile/feed.
-- `read_page` / `get_page_text` to get rendered body. Scroll as needed, but cap at ~30 posts or when you hit a post older than the cutoff (whichever first).
+- Use the host browser navigation tool to open the profile/feed. In Claude Code this is `mcp__claude-in-chrome__navigate`; in Codex use the equivalent browser tool available in the session.
+- Read the rendered body (`read_page` / `get_page_text` in Claude Code, equivalent in Codex). Scroll as needed, but cap at ~30 posts or when you hit a post older than the cutoff (whichever first).
 - For each candidate post, extract: post URL, publication date, text, and any embedded media captions. Discard items dated ≤ cutoff. If dates are fuzzy ("2일 전"), resolve to an absolute date using today's date and cross-check against the post URL when possible.
 - Record the real post URL — that becomes `source_url` in the knowledge frontmatter, not the profile URL.
 
 **YouTube:**
 
-- Call `${CLAUDE_SKILL_DIR}/scripts/fetch-youtube.sh <video-url>` per video. For a channel URL, list the channel's recent videos with Chrome MCP (or `yt-dlp --flat-playlist` if available), filter to publication dates > cutoff, then fetch each transcript.
+- Call `${CLAUDE_SKILL_DIR}/scripts/fetch-youtube.sh <video-url>` per video. For a channel URL, list the channel's recent videos with browser automation (or `yt-dlp --flat-playlist` if available), filter to publication dates > cutoff, then fetch each transcript.
 - yt-dlp missing → don't fail the whole flow; log "yt-dlp not installed, skipped YouTube" and continue.
 - Subtitles unavailable for a specific video → skip that video with a note in the final summary, don't abort.
 
 **General web:**
 
-- `mcp__claude-in-chrome__navigate` + `read_page`. For feed-like pages (blog index, Substack archive), extract the list, filter by date, then fetch each post body individually. For single articles, check the article's publish date before harvesting.
+- Use host browser navigation + rendered-page reading. For feed-like pages (blog index, Substack archive), extract the list, filter by date, then fetch each post body individually. For single articles, check the article's publish date before harvesting.
 
 **Login walls / rate limits:** don't pretend — record the source as "requires login, skipped" in the summary and move on.
 
@@ -136,6 +138,6 @@ If M = 0 (no new material since cutoff), say so in one line instead and skip the
 
 - **Append-only.** Every file is new; no merges, no overwrites. Older entries stay valid background per the hook's recency-weighting guidance.
 - **Fork-on-write for built-in clones.** `${CLAUDE_SKILL_DIR}/clones/<name>/` is read-only at runtime.
-- **Chrome MCP required.** Do not fall back to `curl` / `WebFetch` for social surfaces. Abort cleanly and tell the user to connect the extension.
+- **Browser automation required.** Do not fall back to `curl` / `WebFetch` for social surfaces. Abort cleanly and tell the user to connect the host browser tool.
 - **No emojis.** Same as every other openclone surface.
 - **Match the user's language.** If the user asked in Korean, keep summaries in Korean; English → English.

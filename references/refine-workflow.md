@@ -1,19 +1,21 @@
 # Refine workflow
 
-How Claude turns ingested material (scraped URL, YouTube transcript, pasted text, document) into dated topic files under the clone's `knowledge/` directory.
+How the host agent turns ingested material (scraped URL, YouTube transcript, pasted text, document) into dated topic files under the clone's `knowledge/` directory.
 
 Loaded by `/openclone ingest` and called by `/openclone new` (Stage 0) and `/openclone update` after they harvest raw material.
 
-## Preflight — Chrome MCP required (ingest only)
+## Preflight — browser automation required (ingest only)
 
-When this workflow is loaded by `/openclone ingest` directly — i.e. the user named a single URL/path/text to refine — require `claude-in-chrome` MCP to be connected. `new`/`update` do their own preflight before harvesting, so when they call into this workflow the gate has already passed.
+When this workflow is loaded by `/openclone ingest` directly — i.e. the user named a single URL/path/text to refine — require host browser automation to be connected. `new`/`update` do their own preflight before harvesting, so when they call into this workflow the gate has already passed.
 
-1. Verify `claude-in-chrome` tool schemas are loaded; load them if not:
+1. Use the browser automation surface for the current host:
+   - Claude Code: verify `claude-in-chrome` tool schemas are loaded; load them if not:
    ```text
    ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text
    ```
-2. If the result does NOT contain these schemas, abort with:
-   > `/openclone ingest`는 Chrome MCP가 필요해요. LinkedIn·Threads·X 같은 소스를 제대로 가져오려면 claude-in-chrome extension이 연결돼 있어야 해요. extension을 켠 뒤 다시 시도해 주세요. (로컬 파일이나 직접 붙여넣은 텍스트만 처리하고 싶더라도 gate는 유지 — 소스 타입을 일관되게 다루기 위함.)
+   - Codex: use the available Codex/browser automation tool for opening pages and reading rendered text. If no browser automation tool is available in this Codex session, the preflight fails.
+2. If the host browser automation surface is unavailable, abort with:
+   > `/openclone ingest`는 브라우저 자동화가 필요해요. LinkedIn·Threads·X 같은 소스를 제대로 가져오려면 Claude Code의 claude-in-chrome 또는 Codex의 브라우저 도구처럼 로그인/JS 렌더링 페이지를 읽을 수 있는 도구가 연결돼 있어야 해요. 브라우저 도구를 켠 뒤 다시 시도해 주세요. (로컬 파일이나 직접 붙여넣은 텍스트만 처리하고 싶더라도 gate는 유지 — 소스 타입을 일관되게 다루기 위함.)
 3. Don't propose `curl` / WebFetch workarounds. For a pure one-off hand-authored knowledge entry, tell the user to drop a file at `~/.openclone/clones/<name>/knowledge/YYYY-MM-DD-<topic>.md` directly.
 
 ## Target path

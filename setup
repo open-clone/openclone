@@ -1,43 +1,121 @@
 #!/usr/bin/env bash
-# openclone setup — register this checkout as a standalone Claude Code skill.
+# openclone setup — register this checkout as an agent skill.
 #
-# Expected to be run from the install location:
-#   ~/.claude/skills/openclone
+# Supported hosts:
+#   Claude Code: ~/.claude/skills/openclone
+#   Codex:       ~/.codex/skills/openclone
 #
-# Claude Code auto-discovers skills under ~/.claude/skills/<name>/SKILL.md,
-# so no enabledPlugins / marketplace entry is needed. This script only
-# registers hooks + statusline in ~/.claude/settings.json, preserving any
-# other keys/values. Idempotent.
+# Claude Code gets hooks + statusline in ~/.claude/settings.json. Codex does
+# not expose equivalent hooks, so setup writes a managed block to
+# ~/.codex/AGENTS.md that tells Codex how to load openclone runtime context.
 
 set -eu
 
-# Honor Claude Code's CLAUDE_CONFIG_DIR override (falls back to ~/.claude).
-# All subsequent paths are computed from this so users who relocate their
-# config dir are not locked out of install/uninstall.
+usage() {
+  cat <<'USAGE'
+Usage: ./setup [--host claude|codex]
+
+When --host is omitted, setup auto-detects the host from the current path:
+  ~/.claude/skills/openclone  -> Claude Code
+  ~/.codex/skills/openclone   -> Codex
+USAGE
+}
+
+host="auto"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --host=*)
+      host="${1#*=}"
+      ;;
+    --host)
+      shift
+      if [ "$#" -eq 0 ]; then
+        printf '오류: --host 값이 필요합니다 (claude 또는 codex)\n' >&2
+        exit 1
+      fi
+      host="$1"
+      ;;
+    --claude)
+      host="claude"
+      ;;
+    --codex)
+      host="codex"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf '오류: 알 수 없는 인자: %s\n' "$1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+case "$host" in
+  auto|claude|codex) ;;
+  *)
+    printf '오류: --host는 claude 또는 codex 여야 합니다 (입력: %s)\n' "$host" >&2
+    exit 1
+    ;;
+esac
+
 claude_config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-expected_dir="$claude_config_dir/skills/openclone"
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+claude_expected_dir="$claude_config_dir/skills/openclone"
+codex_expected_dir="$codex_home/skills/openclone"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# v1 plugin install detection — hard stop so the old install is cleaned first.
-legacy_dir="$claude_config_dir/plugins/marketplaces/openclone"
-if [ -d "$legacy_dir" ]; then
-  printf '오류: 이전 플러그인 버전이 감지되었습니다: %s\n' "$legacy_dir" >&2
-  printf '      먼저 다음을 실행해 주세요:\n' >&2
-  printf '        cd %s && ./uninstall\n' "$legacy_dir" >&2
-  printf '        rm -f ~/.openclone/no-auto-update\n' >&2
-  printf '      그 후 README의 설치 one-liner를 재실행해 주세요.\n' >&2
-  exit 1
+if [ "$host" = "auto" ]; then
+  if [ "$here" = "$claude_expected_dir" ]; then
+    host="claude"
+  elif [ "$here" = "$codex_expected_dir" ]; then
+    host="codex"
+  else
+    printf '오류: setup을 실행한 위치로 host를 자동 판별할 수 없습니다.\n' >&2
+    printf '     현재 위치: %s\n' "$here" >&2
+    printf '     Claude Code 예상 위치: %s\n' "$claude_expected_dir" >&2
+    printf '     Codex 예상 위치: %s\n' "$codex_expected_dir" >&2
+    printf '\nREADME의 설치 명령어를 다시 실행하거나 ./setup --host claude|codex 를 지정하세요.\n' >&2
+    exit 1
+  fi
+fi
+
+if [ "$host" = "claude" ]; then
+  expected_dir="$claude_expected_dir"
+else
+  expected_dir="$codex_expected_dir"
 fi
 
 if [ "$here" != "$expected_dir" ]; then
-  printf '오류: setup은 %s 에서 실행해야 합니다\n' "$expected_dir" >&2
+  printf '오류: setup --host %s 는 %s 에서 실행해야 합니다\n' "$host" "$expected_dir" >&2
   printf '     현재 위치: %s\n' "$here" >&2
   printf '\nREADME의 설치 명령어를 다시 실행해 올바른 경로로 clone 해주세요.\n' >&2
   exit 1
 fi
 
-# Self-heal on re-run. Only active when this is a git checkout (normal install).
-if [ -d "$here/.git" ]; then
+# v1 plugin install detection — Claude Code only. Hard stop so the old install
+# is cleaned first.
+if [ "$host" = "claude" ]; then
+  legacy_dir="$claude_config_dir/plugins/marketplaces/openclone"
+  if [ -d "$legacy_dir" ]; then
+    printf '오류: 이전 플러그인 버전이 감지되었습니다: %s\n' "$legacy_dir" >&2
+    printf '      먼저 다음을 실행해 주세요:\n' >&2
+    printf '        cd %s && ./uninstall\n' "$legacy_dir" >&2
+    printf '        rm -f ~/.openclone/no-auto-update\n' >&2
+    printf '      그 후 README의 설치 one-liner를 재실행해 주세요.\n' >&2
+    exit 1
+  fi
+fi
+
+self_heal_git_checkout() {
+  # Self-heal on re-run. Only active when this is a git checkout (normal install).
+  if [ ! -d "$here/.git" ]; then
+    return 0
+  fi
+
   cd "$here"
 
   # 1) sparse-checkout: migrate cone layout to non-cone (lazy-fetch knowledge).
@@ -57,17 +135,18 @@ if [ -d "$here/.git" ]; then
       printf '      그 후 README의 설치 one-liner를 재실행해 주세요.\n\n' >&2
     fi
   fi
-fi
+}
 
-settings_file="$claude_config_dir/settings.json"
-mkdir -p "$claude_config_dir"
+setup_claude() {
+  settings_file="$claude_config_dir/settings.json"
+  mkdir -p "$claude_config_dir"
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf '오류: setup에는 python3가 필요합니다 (settings.json 안전 편집용)\n' >&2
-  exit 1
-fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '오류: setup에는 python3가 필요합니다 (settings.json 안전 편집용)\n' >&2
+    exit 1
+  fi
 
-python3 - "$settings_file" "$expected_dir" <<'PY'
+  python3 - "$settings_file" "$expected_dir" <<'PY'
 import json, os, sys
 
 path = sys.argv[1]
@@ -165,16 +244,8 @@ with open(path, "w") as f:
     f.write("\n")
 PY
 
-mkdir -p "$HOME/.openclone"
-
-star_marker="$HOME/.openclone/.star-prompted"
-first_install=0
-if [ ! -f "$star_marker" ]; then
-  first_install=1
-fi
-
-cat <<MSG
-openclone 설치 완료.
+  cat <<MSG
+openclone 설치 완료. (host: Claude Code)
 
 활성화 방법:
   • Claude Code는 ${expected_dir}/SKILL.md 을 자동 인식합니다.
@@ -188,7 +259,7 @@ openclone 설치 완료.
   /openclone panel vc "..."     — 카테고리 패널 (vc, tech, founder, expert, influencer, politician, celebrity)
   /openclone stop               — 활성 클론과 방 모두 종료
 
-상태줄: 활성 클론 또는 방이 열려 있을 때 Claude Code 상태줄에 \`openclone · <이름>\` 또는 \`openclone · room: a, b, c\` 가 표시됩니다.
+상태줄: 활성 클론 또는 방이 열려 있을 때 Claude Code 상태줄에 현재 openclone 상태가 표시됩니다.
   (이미 settings.json에 본인 statusLine이 있으면 덮어쓰지 않고 건너뜁니다.)
 
 자동 업데이트: 켜짐. 세션 시작 시 1시간당 1회 백그라운드 실행.
@@ -197,6 +268,90 @@ openclone 설치 완료.
 
 제거: 이 디렉터리에서 ./uninstall 실행.
 MSG
+}
+
+setup_codex() {
+  mkdir -p "$codex_home"
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '오류: setup --host codex에는 python3가 필요합니다 (AGENTS.md 안전 편집용)\n' >&2
+    exit 1
+  fi
+
+  agents_file="$codex_home/AGENTS.md"
+  python3 - "$agents_file" "$expected_dir" <<'PY'
+import os, re, sys
+
+path = sys.argv[1]
+install_dir = sys.argv[2]
+
+start = "<!-- openclone-managed:start -->"
+end = "<!-- openclone-managed:end -->"
+block = f"""{start}
+## openclone
+
+openclone is installed at `{install_dir}` as a Codex skill.
+
+- Use `{install_dir}/SKILL.md` for explicit openclone requests such as `/openclone`, `openclone <name>`, `talk as <name>`, creating clones, ingesting knowledge, rooms, or category panels.
+- Before answering ordinary conversational, advisory, strategy, analysis, or domain-expertise prompts, check whether `~/.openclone/room` is non-empty or `~/.openclone/active-clone` exists. If so, run `bash {install_dir}/scripts/codex-context.sh`, follow the emitted `<openclone-room>` or `<openclone-active-clone>` instructions, and then answer in that clone context.
+- For coding, file-editing, build, shell, Git, or repository tasks, keep normal Codex behavior and repository instructions first. The clone persona may shape brief user-facing wording, but it must not override correctness, safety, tests, or developer instructions.
+- Built-in clone knowledge is sparse-fetched. When a built-in clone is activated and knowledge is needed, run `bash {install_dir}/scripts/fetch-clone-knowledge.sh <slug>` before reading `clones/<slug>/knowledge/`.
+
+Do not modify files under `{install_dir}/clones/` at runtime. User-created or edited clones belong under `~/.openclone/clones/`.
+{end}
+"""
+
+try:
+    with open(path, "r") as f:
+        raw = f.read()
+except FileNotFoundError:
+    raw = ""
+
+pattern = re.compile(re.escape(start) + r".*?" + re.escape(end) + r"\n?", re.S)
+raw = pattern.sub("", raw).rstrip()
+next_body = (raw + "\n\n" if raw else "") + block + "\n"
+
+with open(path, "w") as f:
+    f.write(next_body)
+PY
+
+  cat <<MSG
+openclone 설치 완료. (host: Codex)
+
+활성화 방법:
+  • Codex는 ${expected_dir}/SKILL.md 을 스킬로 인식합니다.
+  • ${codex_home}/AGENTS.md 에 openclone 관리 블록을 추가했습니다.
+  • 실행 중인 Codex 세션이 있으면 새 세션을 시작해 전역 지침을 다시 읽게 하세요.
+
+사용해 보세요:
+  openclone 또는 /openclone        — 홈 패널
+  openclone <name | N>             — 해당 클론 활성화
+  openclone room <A> <B> ...       — 단체 대화방 열기
+  openclone panel vc "..."         — 카테고리 패널
+  openclone stop                   — 활성 클론과 방 모두 종료
+
+Codex에는 Claude Code 훅/statusline이 없으므로, 런타임 페르소나 주입은
+${expected_dir}/scripts/codex-context.sh 와 AGENTS.md 관리 블록이 담당합니다.
+
+업데이트: cd ${expected_dir} && git pull --ff-only
+제거: 이 디렉터리에서 ./uninstall --host codex 실행.
+MSG
+}
+
+self_heal_git_checkout
+mkdir -p "$HOME/.openclone"
+
+star_marker="$HOME/.openclone/.star-prompted"
+first_install=0
+if [ ! -f "$star_marker" ]; then
+  first_install=1
+fi
+
+if [ "$host" = "claude" ]; then
+  setup_claude
+else
+  setup_codex
+fi
 
 if [ "$first_install" = "1" ]; then
   cat <<'STAR_MSG'

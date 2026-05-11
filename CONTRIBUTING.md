@@ -4,16 +4,16 @@ openclone에 기여해 주셔서 감사합니다. 이 문서는 로컬 개발 �
 
 ## 로컬 개발 루프
 
-openclone은 빌드 시스템도, 패키지 매니저도 없습니다. 저장소 자체가 **standalone Claude Code skill**이며, `~/.claude/skills/openclone/`에 설치되면 `SKILL.md`가 자동 인식됩니다.
+openclone은 스킬 런타임 기준으로 빌드 시스템도, 패키지 매니저도 없습니다. 저장소 자체가 **standalone agent skill**이며, Claude Code는 `~/.claude/skills/openclone/`, Codex는 `~/.codex/skills/openclone/`에 설치되면 `SKILL.md`를 인식합니다. 별도로 standalone Node.js CLI는 npm 패키지 빌드/테스트 흐름을 갖습니다.
 
 설치 방법은 [README의 설치 섹션](README.md#설치)을 참고하세요. 개발 머신에서도 동일하게 설치해 두고 작업합니다.
 
 편집 후:
 
 - **SKILL.md·레퍼런스·클론 파일(`.md`)** 편집은 Claude Code에서 즉시 반영됩니다.
-- **훅 스크립트(`hooks/*.sh`, `scripts/*.sh`)** 는 매 호출마다 경로가 새로 해석되므로 재시작 없이 바로 반영됩니다. 단, `setup`의 **훅 등록 자체를 바꿨다면** `./setup` 재실행이 필요하고, 첫 설치 직후에는 한 번의 Claude Code 세션 재시작이 필요합니다.
+- **훅·런타임 스크립트(`hooks/*.sh`, `scripts/*.sh`)** 는 매 호출마다 경로가 새로 해석되므로 재시작 없이 바로 반영됩니다. 단, `setup`의 **호스트 등록 자체를 바꿨다면** `./setup --host claude` 또는 `./setup --host codex` 재실행이 필요하고, 첫 설치 직후에는 해당 호스트 세션 재시작이 필요합니다.
 
-배포는 "main 브랜치에 커밋 → 사용자 머신에서 백그라운드 `git pull --ff-only`"가 전부입니다(`scripts/session-update.sh`가 세션 시작 시 자동 실행).
+배포는 "main 브랜치에 커밋 → 설치본이 `git pull --ff-only`"가 전부입니다. Claude Code 설치본은 `scripts/session-update.sh`가 세션 시작 시 자동 실행하고, Codex 설치본은 사용자가 수동으로 `git pull --ff-only`를 실행합니다.
 
 ### 워크스페이스에서 작업할 때 (dev-link 오버레이)
 
@@ -36,13 +36,13 @@ openclone은 빌드 시스템도, 패키지 매니저도 없습니다. 저장소
 
 ```text
 SKILL.md                 단일 디스패처 — 슬래시 커맨드 + 자연어 진입점
-hooks/                   UserPromptSubmit 훅 (inject-active-clone.sh)
-scripts/                 auto-update, URL·YouTube 인제스트, statusline, dev-link 등
+hooks/                   Claude Code UserPromptSubmit 훅 (inject-active-clone.sh)
+scripts/                 auto-update, URL·YouTube 인제스트, statusline, Codex context, dev-link 등
 references/              on-demand로 로드되는 워크플로우 문서
 clones/                  내장 프리셋 클론 (읽기 전용)
 assets/                  이미지·로고 등 리소스
 docs/                    사람용 개발자 문서
-setup / uninstall        설치·제거 스크립트 (settings.json의 훅·statusLine 등록/해제)
+setup / uninstall        설치·제거 스크립트 (Claude settings.json 또는 Codex AGENTS.md 관리)
 .github/scripts/         CI용 TypeScript 검증 스크립트
 ```
 
@@ -234,7 +234,9 @@ node .github/scripts/validate-skill.ts
 나머지 두 검사:
 
 ```bash
-shellcheck hooks/*.sh scripts/*.sh
+bash .github/scripts/smoke-hook.sh
+bash .github/scripts/smoke-host-setup.sh
+shellcheck hooks/*.sh scripts/*.sh setup uninstall
 npx markdownlint-cli2 "**/*.md"
 ```
 

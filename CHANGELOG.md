@@ -7,6 +7,7 @@
 ## [Unreleased]
 
 - GitHub 저장소가 `open-clone/openclone` → `team-attention/openclone`으로 이전. README 설치 one-liner, npm 메타데이터(`repository`/`homepage`/`bugs`), `clones/NOTICE.md` attribution, 이슈 템플릿, CLI User-Agent, setup 첫 설치 메시지를 모두 새 URL로 갱신. 기존 설치는 `scripts/session-update.sh`에 추가된 일회성 origin URL 마이그레이션 로직이 다음 세션 시작 시 자동으로 `git remote set-url` 처리. README 후원 표기를 "주관·유지(Maintained by/维护方)"로 정리.
+- Add first-class Codex skill install support via `./setup --host codex`, a managed `~/.codex/AGENTS.md` block, `scripts/codex-context.sh` runtime persona context, and Codex setup smoke tests.
 - Improve standalone CLI persona parity with Claude Code by adding AI SDK tools for local knowledge file reads plus best-effort `web_search`/`web_fetch`.
 - Default the OpenAI-compatible CLI provider model to `gpt-5.5`.
 - Add Ollama-run-like interactive conversation mode for `openclone chat <slug>` when no prompt/stdin is provided.
