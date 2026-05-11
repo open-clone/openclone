@@ -5,11 +5,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-clone/openclone.git"
+    "url": "git+https://github.com/team-attention/openclone.git"
   },
-  "homepage": "https://github.com/open-clone/openclone#readme",
+  "homepage": "https://github.com/team-attention/openclone#readme",
   "bugs": {
-    "url": "https://github.com/open-clone/openclone/issues"
+    "url": "https://github.com/team-attention/openclone/issues"
   },
   "bin": {
     "openclone": "./dist/cli/index.js"

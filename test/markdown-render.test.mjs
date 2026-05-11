@@ -86,9 +86,9 @@ test("Markdown renders inline code without surrounding backticks", async () => {
 });
 
 test("Markdown renders link text and shows the href", async () => {
-  const out = await renderMarkdownToText("Visit [openclone](https://github.com/open-clone/openclone)");
+  const out = await renderMarkdownToText("Visit [openclone](https://github.com/team-attention/openclone)");
   assert.match(out, /openclone/);
-  assert.match(out, /github\.com\/open-clone\/openclone/);
+  assert.match(out, /github\.com\/team-attention\/openclone/);
 });
 
 test("Markdown renders escaped-bracket citation as compact [1]", async () => {
