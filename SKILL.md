@@ -1,7 +1,7 @@
 ---
 name: openclone
 description: Create, manage, or talk to an openclone "clone" — a named AI persona with one or more categories (vc, tech, founder, expert, influencer, politician, celebrity) and attached knowledge. Triggers on phrases like "create a clone", "make a persona", "talk as <name>", "switch to <name>", "feed knowledge to", "ingest url for <clone>", "update <name> with latest info", "<name> 클론 최신 정보로 업데이트", "ask all VCs", "stop being <name>", or any mention of `/openclone`. Renders the home panel with no args; name/number activates a clone; sub-actions `stop`, `new`, `ingest`, `update`, `room`, `panel`.
-argument-hint: [name | N | stop | new | ingest | update | room | panel <category> "<q>"]
+argument-hint: '[name | N | stop | new | ingest | update | room | panel <category> "<q>"]'
 allowed-tools: Bash, Read, Write, Glob, WebFetch, WebSearch
 ---
 
